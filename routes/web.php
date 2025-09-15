@@ -1,9 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-// routes/web.php
 use App\Http\Controllers\ServersideController;
+use App\Http\Controllers\GreensandController;
 
+Route::get('/greensand/export', [GreensandController::class, 'export'])->name('greensand.export');
 Route::view('/', 'serverside.dashboard')->name('dashboard');
 Route::view('/serverside', 'serverside.serverside')->name('serverside.index');
 

@@ -46,7 +46,7 @@
                                         <label class="form-label mb-1">Shift</label>
                                         <select id="shiftSelect" class="form-control select2"
                                             data-placeholder="Select shift">
-                                            <option></option>
+                                            <option value=""></option>
                                             <option value="D">Day</option>
                                             <option value="S">Swing</option>
                                             <option value="N">Night</option>
@@ -233,7 +233,9 @@
 
             // CRUD
             store: "{{ route('serverside.processes.store') }}",
-            base: "{{ url('serverside/processes') }}" //
+            base: "{{ url('serverside/processes') }}",
+            // Export
+            export: "{{ route('greensand.export') }}",
         };
     </script>
     <script src="{{ asset('assets/js/serverside.js') }}" defer></script>

@@ -1,3 +1,16 @@
+@push('styles')
+<style>
+    .select2-container .select2-selection__rendered {
+        color: #212529 !important;
+    }
+
+    .select2-dropdown {
+        z-index: 2050 !important;
+    }
+
+    /* di atas modal bootstrap */
+</style>
+@endpush
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
@@ -31,23 +44,23 @@
                                             <input type="radio" name="mm" value="1" class="d-none"> 1
                                         </label>
                                         <label class="btn btn-outline-secondary w-100" id="mm2_btn">
-                                            <input type="radio" name="mm" value="1" class="d-none"> 2
+                                            <input type="radio" name="mm" value="2" class="d-none"> 2
                                         </label>
                                     </div>
                                     <div id="mm_error" class="invalid-feedback d-block" style="display:none;"></div>
                                 </div>
 
-                                {{-- Shift --}}
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label mb-1">Shift</label>
                                     <select name="shift" id="shift" class="form-control">
-                                        <option value="" selected disabled>-- Select Shift --</option>
+                                        <option value=""></option> <!-- kosong biar placeholder Select2 jalan -->
                                         <option value="D">Day</option>
                                         <option value="S">Swing</option>
                                         <option value="N">Night</option>
                                     </select>
                                     <div id="shift_error" class="invalid-feedback"></div>
                                 </div>
+
 
                                 {{-- Mix Ke --}}
                                 <div class="col-md-2 mb-2">

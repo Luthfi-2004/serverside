@@ -1,6 +1,6 @@
-// serverside.js
+// public/assets/js/serverside.js
 $(function () {
-    // guard
+    // --- guard
     if (!window.serversideRoutes) {
         console.error(
             "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -8,14 +8,17 @@ $(function () {
         return;
     }
 
-    // csrf
+    // --- CSRF (buat POST create/update/delete)
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // collapse
+    // --- GLOBAL STATE tab aktif (default mm1)
+    window.__GS_ACTIVE_TAB__ = "mm1"; // 'mm1' | 'mm2' | 'all'
+
+    // --- Collapse filter
     $("#filterHeader")
         .off("click")
         .on("click", function () {
@@ -23,25 +26,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // helpers
-    function resetGsForm() {
-        $("#gsForm")[0]?.reset();
-        $("#gs_id").val("");
-        $("#gs_mode").val("create");
-        $("#gsModalMode").text("Add");
-        $('input[name="mm"][value="1"]').prop("checked", true);
-        $("#mm1_btn").addClass("active");
-        $("#mm2_btn").removeClass("active");
-        clearErrors();
-    }
-
-    function pickTime(val) {
-        if (!val) return "";
-        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
-        return m ? m[1] : String(val);
-    }
-
-    // errors
+    // ========== Helpers (Form Modal) ==========
     function clearErrors() {
         $("#gsForm .form-control, #gsForm .custom-select").removeClass(
             "is-invalid"
@@ -50,6 +35,42 @@ $(function () {
         $("#gsForm .invalid-feedback").text("").hide();
         const $alert = $("#gsFormAlert");
         if ($alert.length) $alert.addClass("d-none").text("");
+    }
+
+    // baca tab aktif dari state; fallback DOM
+    function getActiveTab() {
+        const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
+        if (st === "mm1" || st === "mm2" || st === "all") return st;
+
+        // Fallback DOM bila state belum pernah ter-set
+        const $pane = $(".tab-content .tab-pane.show.active");
+        if ($pane.length) {
+            const id = ($pane.attr("id") || "").toLowerCase();
+            if (id === "mm1" || id === "mm2" || id === "all") return id;
+        }
+        const href = $(".nav-tabs .nav-link.active").attr("href") || "#mm1";
+        const id2 = (href.startsWith("#") ? href.slice(1) : href).toLowerCase();
+        return id2 === "mm1" || id2 === "mm2" || id2 === "all" ? id2 : "mm1";
+    }
+
+    function resetGsForm() {
+        $("#gsForm")[0]?.reset();
+        $("#gs_id").val("");
+        $("#gs_mode").val("create");
+        $("#gsModalMode").text("Add");
+        $("#shift").val(null).trigger("change");
+        const tab = getActiveTab();
+        const mmDefault = tab === "mm2" ? "2" : "1";
+        $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
+        $("#mm1_btn,#mm2_btn").removeClass("active");
+        (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
+        clearErrors();
+    }
+
+    function pickTime(val) {
+        if (!val) return "";
+        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
+        return m ? m[1] : String(val);
     }
 
     function applyErrors(errs) {
@@ -109,14 +130,15 @@ $(function () {
         }
     }
 
-    // fill
     function fillGsForm(data) {
         $("#gs_id").val(data.id);
         $("#gs_mode").val("edit");
         $("#gsModalMode").text("Edit");
-
+        $("#shift")
+            .val(data.shift || "")
+            .trigger("change");
         const mmVal = data.mm === "MM2" ? "2" : "1";
-        $('input[name="mm"][value="' + mmVal + '"]').prop("checked", true);
+        $(`input[name="mm"][value="${mmVal}"]`).prop("checked", true);
         $("#mm1_btn,#mm2_btn").removeClass("active");
         (mmVal === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
 
@@ -160,7 +182,7 @@ $(function () {
         ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    // openadd
+    // ========== Modal Add/Edit ==========
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -168,7 +190,6 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
-    // openedit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -190,7 +211,6 @@ $(function () {
                 });
         });
 
-    // submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -238,7 +258,7 @@ $(function () {
                 });
         });
 
-    // delete
+    // ========== Delete ==========
     let pendingDeleteId = null;
     $(document)
         .off("click", ".btn-delete-gs")
@@ -276,7 +296,7 @@ $(function () {
                 });
         });
 
-    // select2
+    // ========== Select2 & Datepicker ==========
     $(".select2").select2({
         theme: "bootstrap4",
         width: "100%",
@@ -285,8 +305,24 @@ $(function () {
             return $(this).data("placeholder") || "Select";
         },
     });
+    // --- Select2 untuk SHIFT di modal (dropdownParent = modal supaya z-index aman)
+    $("#modal-greensand").on("shown.bs.modal", function () {
+        const $sel = $("#shift");
+        if (!$sel.data("select2")) {
+            $sel.select2({
+                theme: "bootstrap4",
+                width: "100%",
+                placeholder: "Select shift",
+                allowClear: true,
+                minimumResultsForSearch: Infinity,
+                dropdownParent: $("#modal-greensand"),
+            });
+        } else {
+            // refresh tampilan setiap kali modal dibuka
+            $sel.trigger("change.select2");
+        }
+    });
 
-    // datepicker (dd-mm-yyyy)
     $("#startDate, #endDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
@@ -295,7 +331,7 @@ $(function () {
         orientation: "bottom",
     });
 
-    // pairing
+    // pairing date range
     $("#startDate").on("changeDate clearDate change", function () {
         const d = $("#startDate").datepicker("getDate");
         $("#endDate").datepicker("setStartDate", d || null);
@@ -307,11 +343,49 @@ $(function () {
         $("#startDate").datepicker("setEndDate", d || null);
     });
 
-    // getters
+    // ========== Filters ==========
     const getShift = () => $("#shiftSelect").val() || "";
     const getKeyword = () => $("#keywordInput").val() || "";
 
-    // columns
+    $("#btnSearch, #btnQuickSearch").off("click").on("click", reloadAll);
+
+    $("#btnRefresh")
+        .off("click")
+        .on("click", function () {
+            $("#startDate")
+                .datepicker("setDate", null)
+                .val("")
+                .datepicker("setStartDate", null)
+                .datepicker("setEndDate", null);
+            $("#endDate")
+                .datepicker("setDate", null)
+                .val("")
+                .datepicker("setStartDate", null)
+                .datepicker("setEndDate", null);
+            $("#shiftSelect").val(null).trigger("change");
+            $("#keywordInput").val("");
+            reloadAll();
+        });
+
+    $("#startDate, #endDate").off("changeDate").on("changeDate", reloadAll);
+    $("#shiftSelect").off("change").on("change", reloadAll);
+
+    // Keyword debounce + Enter
+    let kwTimer = null;
+    $("#keywordInput")
+        .off("input keydown")
+        .on("input", () => {
+            clearTimeout(kwTimer);
+            kwTimer = setTimeout(reloadAll, 350);
+        })
+        .on("keydown", (e) => {
+            if (e.key === "Enter") {
+                clearTimeout(kwTimer);
+                reloadAll();
+            }
+        });
+
+    // ========== DataTables ==========
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -353,7 +427,6 @@ $(function () {
         { data: "bc11_temp", name: "bc11_temp" },
     ];
 
-    // factory
     function makeDt($el, url) {
         return $el.DataTable({
             processing: true,
@@ -373,8 +446,8 @@ $(function () {
             ajax: {
                 url: url,
                 data: function (d) {
-                    d.start_date = $("#startDate").val(); // dd-mm-yyyy
-                    d.end_date = $("#endDate").val(); // dd-mm-yyyy
+                    d.start_date = $("#startDate").val();
+                    d.end_date = $("#endDate").val();
                     d.shift = getShift();
                     d.keyword = getKeyword();
                 },
@@ -385,28 +458,50 @@ $(function () {
         });
     }
 
-    // instances
     const instances = { mm1: null, mm2: null, all: null };
     window.instances = instances;
 
-    // init
+    // init default MM1 + set state awal dari DOM
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
+    (function seedActiveFromDom() {
+        const href = (
+            $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
+        ).toLowerCase();
+        if (href === "#mm2") window.__GS_ACTIVE_TAB__ = "mm2";
+        else if (href === "#all") window.__GS_ACTIVE_TAB__ = "all";
+        else window.__GS_ACTIVE_TAB__ = "mm1";
+    })();
 
-    // tabs
+    // load DT saat tab berganti + update STATE
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
-            const target = $(e.target).attr("href");
-            if (target === "#mm2" && !instances.mm2)
+            const href = ($(e.target).attr("href") || "").toLowerCase(); // "#mm1" | "#mm2" | "#all"
+            if (href === "#mm2") window.__GS_ACTIVE_TAB__ = "mm2";
+            else if (href === "#all") window.__GS_ACTIVE_TAB__ = "all";
+            else window.__GS_ACTIVE_TAB__ = "mm1";
+
+            if (href === "#mm2" && !instances.mm2)
                 instances.mm2 = makeDt($("#dt-mm2"), serversideRoutes.mm2);
-            if (target === "#all" && !instances.all)
+            if (href === "#all" && !instances.all)
                 instances.all = makeDt($("#dt-all"), serversideRoutes.all);
+
             $.fn.dataTable
                 .tables({ visible: true, api: true })
                 .columns.adjust();
         });
 
-    // reload
+    // EXTRA guard: kalau event Bootstrap nggak kepanggil, set juga saat klik link tab
+    $('a[data-toggle="tab"]')
+        .off("click.gs")
+        .on("click.gs", function () {
+            const href = ($(this).attr("href") || "").toLowerCase();
+            if (href === "#mm2") window.__GS_ACTIVE_TAB__ = "mm2";
+            else if (href === "#all") window.__GS_ACTIVE_TAB__ = "all";
+            else window.__GS_ACTIVE_TAB__ = "mm1";
+        });
+
+    // reload semua (termasuk hidden)
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
@@ -414,42 +509,37 @@ $(function () {
     }
     window.reloadAll = reloadAll;
 
-    // filters
-    $("#btnSearch, #btnQuickSearch").off("click").on("click", reloadAll);
+    // ========== Export ==========
+    $(document)
+        .off("click", "#btnExport")
+        .on("click", "#btnExport", function (e) {
+            e.preventDefault();
 
-    $("#btnRefresh")
-        .off("click")
-        .on("click", function () {
-            $("#startDate")
-                .datepicker("setDate", null)
-                .val("")
-                .datepicker("setStartDate", null)
-                .datepicker("setEndDate", null);
-            $("#endDate")
-                .datepicker("setDate", null)
-                .val("")
-                .datepicker("setStartDate", null)
-                .datepicker("setEndDate", null);
-            $("#shiftSelect").val(null).trigger("change");
-            $("#keywordInput").val("");
-            reloadAll();
-        });
+            const tab = getActiveTab(); // 'mm1' | 'mm2' | 'all' (dari STATE)
+            const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
 
-    $("#startDate, #endDate").off("changeDate").on("changeDate", reloadAll);
-    $("#shiftSelect").off("change").on("change", reloadAll);
-
-    // keyword debounce
-    let kwTimer = null;
-    $("#keywordInput")
-        .off("input keydown")
-        .on("input", () => {
-            clearTimeout(kwTimer);
-            kwTimer = setTimeout(reloadAll, 350);
-        })
-        .on("keydown", (e) => {
-            if (e.key === "Enter") {
-                clearTimeout(kwTimer);
-                reloadAll();
+            if (!window.serversideRoutes?.export) {
+                console.error(
+                    'Export route missing. Pastikan di Blade: route("greensand.export")'
+                );
+                return;
             }
+
+            const u = new URL(
+                window.serversideRoutes.export,
+                window.location.origin
+            );
+            u.searchParams.set("start_date", $("#startDate").val() || "");
+            u.searchParams.set("end_date", $("#endDate").val() || "");
+            u.searchParams.set("shift", $("#shiftSelect").val() || "");
+            u.searchParams.set("keyword", $("#keywordInput").val() || "");
+            if (mm) u.searchParams.set("mm", mm); // tab ALL => tanpa mm
+
+            // DEBUG: lihat URL & tab yg terbaca
+            console.log("[EXPORT] tab:", tab, "| mm param:", mm || "(none)");
+            console.log("[EXPORT] url:", u.toString());
+
+            // trigger download
+            window.location.href = u.toString();
         });
 });
