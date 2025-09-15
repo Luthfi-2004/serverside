@@ -34,11 +34,18 @@ class ServersideController extends Controller
             if ($mmFilter)
                 $q->where('mm', $mmFilter);
 
+            // parse
+            $sd = $request->filled('start_date') ? $this->toYmd($request->start_date) : null;
+            $ed = $request->filled('end_date') ? $this->toYmd($request->end_date) : null;
+
+            // range
+            [$sd, $ed] = $this->normalizeRange($sd, $ed);
+
             // filter
-            if ($request->filled('start_date'))
-                $q->whereDate('date', '>=', $request->start_date);
-            if ($request->filled('end_date'))
-                $q->whereDate('date', '<=', $request->end_date);
+            if ($sd)
+                $q->whereDate('date', '>=', $sd);
+            if ($ed)
+                $q->whereDate('date', '<=', $ed);
             if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
             if ($request->filled('keyword')) {
@@ -244,6 +251,40 @@ class ServersideController extends Controller
         if ($ignoreId)
             $q->where('id', '!=', $ignoreId);
         return $q->exists();
+    }
+
+    // parse
+    private function toYmd(?string $val): ?string
+    {
+        if (!$val)
+            return null;
+        foreach (['d-m-Y', 'Y-m-d', 'd/m/Y'] as $fmt) {
+            try {
+                return Carbon::createFromFormat($fmt, $val)->toDateString();
+            } catch (\Throwable $e) { /* continue */
+            }
+        }
+        try {
+            return Carbon::parse($val)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    // range
+    private function normalizeRange(?string $sd, ?string $ed): array
+    {
+        if ($sd && $ed) {
+            try {
+                $cs = Carbon::parse($sd);
+                $ce = Carbon::parse($ed);
+                if ($cs->gt($ce)) {
+                    [$sd, $ed] = [$ed, $sd];
+                }
+            } catch (\Throwable $e) { /* ignore */
+            }
+        }
+        return [$sd, $ed];
     }
 
     // map
