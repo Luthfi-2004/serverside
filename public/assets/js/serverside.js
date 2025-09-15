@@ -3,7 +3,7 @@ $(function () {
     // guard
     if (!window.serversideRoutes) {
         console.error(
-            "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts') untuk inject routes."
+            "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
         );
         return;
     }
@@ -29,8 +29,6 @@ $(function () {
         $("#gs_id").val("");
         $("#gs_mode").val("create");
         $("#gsModalMode").text("Add");
-
-        // mm (modal)
         $('input[name="mm"][value="1"]').prop("checked", true);
         $("#mm1_btn").addClass("active");
         $("#mm2_btn").removeClass("active");
@@ -105,11 +103,9 @@ $(function () {
 
         if (general.length) {
             const $alert = $("#gsFormAlert");
-            if ($alert.length) {
+            if ($alert.length)
                 $alert.removeClass("d-none").text(general.join(" "));
-            } else {
-                console.warn("Validation:", general.join(" "));
-            }
+            else console.warn("Validation:", general.join(" "));
         }
     }
 
@@ -128,7 +124,7 @@ $(function () {
         $("#mix_ke").val(data.mix_ke || "");
         $("#mix_start").val(pickTime(data.mix_start));
         $("#mix_finish").val(pickTime(data.mix_finish));
-        $("#rs_time").val(pickTime(data.rs_time)); // FIX
+        $("#rs_time").val(pickTime(data.rs_time));
 
         [
             "mm_p",
@@ -250,7 +246,6 @@ $(function () {
             pendingDeleteId = $(this).data("id");
             $("#confirmDeleteModal").modal("show");
         });
-
     $("#confirmDeleteYes")
         .off("click")
         .on("click", function () {
@@ -291,9 +286,9 @@ $(function () {
         },
     });
 
-    // datepicker
+    // datepicker (dd-mm-yyyy)
     $("#startDate, #endDate").datepicker({
-        format: "yyyy-mm-dd",
+        format: "dd-mm-yyyy",
         autoclose: true,
         todayHighlight: true,
         clearBtn: true,
@@ -302,19 +297,14 @@ $(function () {
 
     // pairing
     $("#startDate").on("changeDate clearDate change", function () {
-        const start = $(this).val();
-        if (start) {
-            $("#endDate").datepicker("setStartDate", start);
-            $("#endDate").datepicker("setDate", start);
-        } else {
-            $("#endDate").datepicker("setStartDate", null);
-            $("#endDate").val("");
-        }
+        const d = $("#startDate").datepicker("getDate");
+        $("#endDate").datepicker("setStartDate", d || null);
+        if (d) $("#endDate").datepicker("setDate", d);
+        else $("#endDate").val("");
     });
     $("#endDate").on("changeDate clearDate change", function () {
-        const end = $(this).val();
-        if (end) $("#startDate").datepicker("setEndDate", end);
-        else $("#startDate").datepicker("setEndDate", null);
+        const d = $("#endDate").datepicker("getDate");
+        $("#startDate").datepicker("setEndDate", d || null);
     });
 
     // getters
@@ -383,8 +373,8 @@ $(function () {
             ajax: {
                 url: url,
                 data: function (d) {
-                    d.start_date = $("#startDate").val();
-                    d.end_date = $("#endDate").val();
+                    d.start_date = $("#startDate").val(); // dd-mm-yyyy
+                    d.end_date = $("#endDate").val(); // dd-mm-yyyy
                     d.shift = getShift();
                     d.keyword = getKeyword();
                 },
@@ -431,15 +421,16 @@ $(function () {
         .off("click")
         .on("click", function () {
             $("#startDate")
-                .val("")
                 .datepicker("setDate", null)
+                .val("")
                 .datepicker("setStartDate", null)
                 .datepicker("setEndDate", null);
             $("#endDate")
-                .val("")
                 .datepicker("setDate", null)
+                .val("")
                 .datepicker("setStartDate", null)
                 .datepicker("setEndDate", null);
+            $("#shiftSelect").val(null).trigger("change");
             $("#keywordInput").val("");
             reloadAll();
         });
