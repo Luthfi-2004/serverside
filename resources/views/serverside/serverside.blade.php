@@ -21,33 +21,38 @@
                     {{-- Filter --}}
                     <div class="card mb-3">
                         <div id="filterHeader"
-                            class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line align-middle mr-1"></i> Filter Data
-                            </h5>
+                            class="card-header bg-light d-flex align-items-center justify-content-between">
+                            <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line mr-1"></i> Filter Data</h5>
                             <i id="filterIcon" class="ri-subtract-line"></i>
                         </div>
+
                         <div id="filterCollapse" class="show">
                             <div class="card-body">
                                 <div class="row align-items-end">
+
                                     <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label for="startDate" class="form-label mb-1">Start Date</label>
-                                        <input id="startDate" name="start_date" type="date" class="form-control"
-                                            autocomplete="off">
+                                        <label class="form-label mb-1">Start Date</label>
+                                        <input id="startDate" type="text" class="form-control datepicker"
+                                            placeholder="Start Date" autocomplete="off">
                                     </div>
+
                                     <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label for="endDate" class="form-label mb-1">End Date</label>
-                                        <input id="endDate" name="end_date" type="date" class="form-control"
-                                            autocomplete="off">
+                                        <label class="form-label mb-1">End Date</label>
+                                        <input id="endDate" type="text" class="form-control datepicker"
+                                            placeholder="End Date" autocomplete="off">
                                     </div>
+
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label class="form-label mb-1">Shift</label>
-                                        <select id="shiftSelect" class="form-control" autocomplete="off">
-                                            <option value="" selected>-- Select Shift --</option>
+                                        <select id="shiftSelect" class="form-control select2"
+                                            data-placeholder="Select shift">
+                                            <option></option>
                                             <option value="D">Day</option>
                                             <option value="S">Swing</option>
                                             <option value="N">Night</option>
                                         </select>
                                     </div>
+
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label class="form-label mb-1">Search (mix/model)</label>
                                         <div class="input-group">
@@ -60,6 +65,7 @@
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="col-xl-6 col-lg-12 mt-2">
                                         <div class="d-flex flex-wrap">
                                             <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
@@ -75,12 +81,11 @@
                                             </button>
                                         </div>
                                     </div>
-                                </div>{{-- row --}}
+
+                                </div>
                             </div>
                         </div>
                     </div>
-
-
                     {{-- Tables --}}
                     <div class="card mb-4">
                         <div class="card-body shadow-lg">
@@ -157,6 +162,67 @@
         </div>
     </div>
 @endsection
+@push('styles')
+<style>
+    /* --- Select2 normal --- */
+    .select2-container--bootstrap4 .select2-selection {
+        height: calc(1.5em + .75rem + 2px) !important;
+        padding: .375rem .75rem !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: .25rem !important;
+    }
+    .select2-container--bootstrap4 .select2-selection__rendered {
+        line-height: 1.5 !important;
+        padding-left: 0 !important;
+        color: #495057 !important;
+    }
+    .select2-container--bootstrap4 .select2-selection__arrow {
+        height: 100% !important;
+        right: .75rem !important;
+    }
+
+    /* --- Select2 focus: tebal --- */
+    .select2-container--bootstrap4.select2-container--focus .select2-selection,
+    .select2-container--bootstrap4.select2-container--open .select2-selection {
+        border-color: #80bdff !important;
+        border-width: 2px !important; /* tebal */
+        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; /* glow */
+        outline: 0 !important;
+    }
+    /* kalau Select2 di dalam input-group, tambah kekuatan selector */
+    .input-group .select2-container--bootstrap4 .select2-selection {
+        height: calc(1.5em + .75rem + 2px) !important;
+    }
+    .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
+    .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
+        border-color: #80bdff !important;
+        border-width: 2px !important;
+        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important;
+    }
+
+    /* --- Datepicker input normal --- */
+    .datepicker-input,
+    input.datepicker,
+    input.form-control.datepicker {
+        height: calc(1.5em + .75rem + 2px) !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+        border: 1.5px solid #ced4da !important;
+        border-radius: .25rem !important;
+    }
+
+    /* --- Datepicker focus: tebal --- */
+    input.form-control.datepicker:focus,
+    input.datepicker:focus {
+        border-color: #80bdff !important;
+        border-width: 2px !important; /* tebal */
+        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; /* glow */
+        outline: 0 !important;
+    }
+</style>
+@endpush
 
 @push('scripts')
     <script>

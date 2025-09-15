@@ -1,4 +1,3 @@
-{{-- resources/views/serverside/modal.blade.php --}}
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
@@ -13,9 +12,13 @@
             <form id="gsForm" autocomplete="off">
                 @csrf
                 <input type="hidden" name="id" id="gs_id">
-                <input type="hidden" name="form_mode" id="gs_mode" value="create"> {{-- create|edit --}}
+                <input type="hidden" name="form_mode" id="gs_mode" value="create">
 
                 <div class="modal-body">
+
+                    {{-- alert --}}
+                    <div id="gsFormAlert" class="alert alert-danger d-none mb-3"></div>
+
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="row">
@@ -23,14 +26,15 @@
                                 {{-- MM --}}
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label mb-1 d-block">MM</label>
-                                    <div class="btn-group btn-group-sm d-flex" data-toggle="buttons">
+                                    <div class="btn-group btn-group-sm d-flex" data-toggle="buttons" id="mm_group">
                                         <label class="btn btn-outline-secondary w-100" id="mm1_btn">
                                             <input type="radio" name="mm" value="1" class="d-none"> 1
                                         </label>
                                         <label class="btn btn-outline-secondary w-100" id="mm2_btn">
-                                            <input type="radio" name="mm" value="2" class="d-none"> 2
+                                            <input type="radio" name="mm" value="1" class="d-none"> 2
                                         </label>
                                     </div>
+                                    <div id="mm_error" class="invalid-feedback d-block" style="display:none;"></div>
                                 </div>
 
                                 {{-- Shift --}}
@@ -42,6 +46,7 @@
                                         <option value="S">Swing</option>
                                         <option value="N">Night</option>
                                     </select>
+                                    <div id="shift_error" class="invalid-feedback"></div>
                                 </div>
 
                                 {{-- Mix Ke --}}
@@ -49,18 +54,21 @@
                                     <label class="form-label mb-1">Mix Ke</label>
                                     <input type="number" min="1" step="1" name="mix_ke" id="mix_ke" class="form-control"
                                         placeholder="Enter Mix Ke">
+                                    <div id="mix_ke_error" class="invalid-feedback"></div>
                                 </div>
 
                                 {{-- Mix Start --}}
                                 <div class="col-md-3 mb-2">
                                     <label class="form-label mb-1">Mix Start</label>
                                     <input type="time" name="mix_start" id="mix_start" class="form-control">
+                                    <div id="mix_start_error" class="invalid-feedback"></div>
                                 </div>
 
                                 {{-- Mix Finish --}}
                                 <div class="col-md-3 mb-2">
                                     <label class="form-label mb-1">Mix Finish</label>
                                     <input type="time" name="mix_finish" id="mix_finish" class="form-control">
+                                    <div id="mix_finish_error" class="invalid-feedback"></div>
                                 </div>
 
                             </div>
@@ -87,22 +95,22 @@
                                 <div class="card-body">
                                     <div class="row">
                                         @php
-                                            $mmFields = [
-                                                ['mm_p', 'P'],
-                                                ['mm_c', 'C'],
-                                                ['mm_gt', 'G.T'],
-                                                ['mm_cb_mm', 'CB MM'],
-                                                ['mm_cb_lab', 'CB Lab'],
-                                                ['mm_m', 'Moisture'],
-                                                ['mm_bakunetsu', 'Bakunetsu'],
-                                                ['mm_ac', 'AC'],
-                                                ['mm_tc', 'TC'],
-                                                ['mm_vsd', 'Vsd'],
-                                                ['mm_ig', 'IG'],
-                                                ['mm_cb_weight', 'CB Weight'],
-                                                ['mm_tp50_weight', 'TP 50 Weight'],
-                                                ['mm_ssi', 'SSI'],
-                                            ];
+$mmFields = [
+    ['mm_p', 'P'],
+    ['mm_c', 'C'],
+    ['mm_gt', 'G.T'],
+    ['mm_cb_mm', 'CB MM'],
+    ['mm_cb_lab', 'CB Lab'],
+    ['mm_m', 'Moisture'],
+    ['mm_bakunetsu', 'Bakunetsu'],
+    ['mm_ac', 'AC'],
+    ['mm_tc', 'TC'],
+    ['mm_vsd', 'Vsd'],
+    ['mm_ig', 'IG'],
+    ['mm_cb_weight', 'CB Weight'],
+    ['mm_tp50_weight', 'TP 50 Weight'],
+    ['mm_ssi', 'SSI'],
+];
                                         @endphp
                                         @foreach ($mmFields as [$name, $label])
                                             <div class="col-md-3 mb-3">
@@ -225,12 +233,12 @@
                 </div> {{-- modal-body --}}
 
                 <div class="modal-footer d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-secondary mr-2" data-dismiss="modal">
-                        <i class="ri-close-line"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-success" id="gsSubmitBtn">
-                        <i class="ri-checkbox-circle-line"></i> Submit
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary mr-2" data-dismiss="modal"><i
+                            class="ri-close-line"></i>
+                        Cancel</button>
+                    <button type="submit" class="btn btn-success" id="gsSubmitBtn"><i
+                            class="ri-checkbox-circle-line"></i>
+                        Submit</button>
                 </div>
             </form>
 

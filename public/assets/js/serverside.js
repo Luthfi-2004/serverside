@@ -1,26 +1,21 @@
+// serverside.js
 $(function () {
-    //csrf
+    // guard
+    if (!window.serversideRoutes) {
+        console.error(
+            "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts') untuk inject routes."
+        );
+        return;
+    }
+
+    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    //minmax
-    $("#startDate")
-        .off("change")
-        .on("change", function () {
-            const start = $(this).val() || "";
-            const $end = $("#endDate");
-            if (start) {
-                $end.attr("min", start);
-                if ($end.val() && $end.val() < start) $end.val(start);
-            } else {
-                $end.removeAttr("min");
-            }
-        });
-
-    //collapse
+    // collapse
     $("#filterHeader")
         .off("click")
         .on("click", function () {
@@ -28,26 +23,97 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    //helpers
+    // helpers
     function resetGsForm() {
         $("#gsForm")[0]?.reset();
         $("#gs_id").val("");
         $("#gs_mode").val("create");
         $("#gsModalMode").text("Add");
+
+        // mm (modal)
         $('input[name="mm"][value="1"]').prop("checked", true);
         $("#mm1_btn").addClass("active");
         $("#mm2_btn").removeClass("active");
+        clearErrors();
     }
 
-    //parse
     function pickTime(val) {
         if (!val) return "";
-        // if "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DDTHH:mm:ss"
         const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
         return m ? m[1] : String(val);
     }
 
-    //fill
+    // errors
+    function clearErrors() {
+        $("#gsForm .form-control, #gsForm .custom-select").removeClass(
+            "is-invalid"
+        );
+        $("#mm1_btn,#mm2_btn").removeClass("is-invalid");
+        $("#gsForm .invalid-feedback").text("").hide();
+        const $alert = $("#gsFormAlert");
+        if ($alert.length) $alert.addClass("d-none").text("");
+    }
+
+    function applyErrors(errs) {
+        const map = {
+            mm: {
+                type: "group",
+                target: "#mm_error",
+                groupBtns: ["#mm1_btn", "#mm2_btn"],
+            },
+            shift: { type: "input", target: "#shift_error", control: "#shift" },
+            mix_ke: {
+                type: "input",
+                target: "#mix_ke_error",
+                control: "#mix_ke",
+            },
+            mix_start: {
+                type: "input",
+                target: "#mix_start_error",
+                control: "#mix_start",
+            },
+            mix_finish: {
+                type: "input",
+                target: "#mix_finish_error",
+                control: "#mix_finish",
+            },
+            rs_time: {
+                type: "input",
+                target: "#rs_time_error",
+                control: "#rs_time",
+            },
+        };
+        let general = [];
+
+        Object.entries(errs || {}).forEach(([key, messages]) => {
+            const msg = Array.isArray(messages)
+                ? messages.join(" ")
+                : String(messages);
+            const m = map[key];
+            if (m) {
+                if (m.type === "input" && m.control) {
+                    $(m.control).addClass("is-invalid");
+                    if ($(m.target).length) $(m.target).text(msg).show();
+                } else if (m.type === "group" && m.groupBtns) {
+                    m.groupBtns.forEach((sel) => $(sel).addClass("is-invalid"));
+                    if ($(m.target).length) $(m.target).text(msg).show();
+                }
+            } else {
+                general.push(msg);
+            }
+        });
+
+        if (general.length) {
+            const $alert = $("#gsFormAlert");
+            if ($alert.length) {
+                $alert.removeClass("d-none").text(general.join(" "));
+            } else {
+                console.warn("Validation:", general.join(" "));
+            }
+        }
+    }
+
+    // fill
     function fillGsForm(data) {
         $("#gs_id").val(data.id);
         $("#gs_mode").val("edit");
@@ -62,8 +128,9 @@ $(function () {
         $("#mix_ke").val(data.mix_ke || "");
         $("#mix_start").val(pickTime(data.mix_start));
         $("#mix_finish").val(pickTime(data.mix_finish));
+        $("#rs_time").val(pickTime(data.rs_time)); // FIX
 
-        const fields = [
+        [
             "mm_p",
             "mm_c",
             "mm_gt",
@@ -87,7 +154,6 @@ $(function () {
             "bc11_vsd",
             "bc16_cb",
             "bc16_m",
-            "rs_time",
             "rs_type",
             "bc9_moist",
             "bc10_moist",
@@ -95,11 +161,10 @@ $(function () {
             "bc9_temp",
             "bc10_temp",
             "bc11_temp",
-        ];
-        fields.forEach((f) => $("#" + f).val(data[f] ?? ""));
+        ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    //openadd
+    // openadd
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -107,10 +172,11 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
-    //openedit
+    // openedit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
+            clearErrors();
             const id = $(this).data("id");
             resetGsForm();
             $.get(`${serversideRoutes.base}/${id}`)
@@ -119,16 +185,21 @@ $(function () {
                     $("#modal-greensand").modal("show");
                 })
                 .fail((xhr) => {
-                    alert("Gagal mengambil data (edit).");
+                    const $alert = $("#gsFormAlert");
+                    if ($alert.length)
+                        $alert
+                            .removeClass("d-none")
+                            .text("Gagal mengambil data (edit).");
                     console.error(xhr.responseText || xhr);
                 });
         });
 
-    //submit
+    // submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
             e.preventDefault();
+            clearErrors();
             const mode = $("#gs_mode").val();
             const id = $("#gs_id").val();
             const formData = $(this).serialize();
@@ -144,29 +215,34 @@ $(function () {
 
             req.done(() => {
                 $("#modal-greensand").modal("hide");
-                $.fn.dataTable
-                    .tables({ visible: false, api: true })
-                    .ajax.reload(null, false);
+                reloadAll();
             })
                 .fail((xhr) => {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                        const msgs = Object.values(xhr.responseJSON.errors)
-                            .flat()
-                            .join("\n");
-                        alert("Validasi gagal:\n" + msgs);
+                        applyErrors(xhr.responseJSON.errors);
                     } else if (xhr.status === 419) {
-                        alert("CSRF token invalid (419). Refresh halaman.");
+                        const $alert = $("#gsFormAlert");
+                        if ($alert.length)
+                            $alert
+                                .removeClass("d-none")
+                                .text(
+                                    "CSRF token invalid (419). Silakan refresh halaman."
+                                );
                     } else {
-                        alert("Gagal menyimpan data. Cek console.");
+                        const $alert = $("#gsFormAlert");
+                        if ($alert.length)
+                            $alert
+                                .removeClass("d-none")
+                                .text("Gagal menyimpan data.");
                     }
                     console.error(xhr.responseText || xhr);
                 })
                 .always(() => {
                     $("#gsSubmitBtn").prop("disabled", false);
                 });
-        }); // end submit
+        });
 
-    //delete
+    // delete
     let pendingDeleteId = null;
     $(document)
         .off("click", ".btn-delete-gs")
@@ -174,6 +250,7 @@ $(function () {
             pendingDeleteId = $(this).data("id");
             $("#confirmDeleteModal").modal("show");
         });
+
     $("#confirmDeleteYes")
         .off("click")
         .on("click", function () {
@@ -183,16 +260,20 @@ $(function () {
             })
                 .done(() => {
                     $("#confirmDeleteModal").modal("hide");
-                    $.fn.dataTable
-                        .tables({ visible: false, api: true })
-                        .ajax.reload(null, false);
+                    reloadAll();
                 })
                 .fail((xhr) => {
-                    alert(
+                    const msg =
                         xhr.status === 419
-                            ? "CSRF token invalid (419). Refresh halaman."
-                            : "Gagal menghapus data."
+                            ? "CSRF token invalid (419). Silakan refresh halaman."
+                            : "Gagal menghapus data.";
+                    const $body = $("#confirmDeleteModal .modal-body");
+                    $body.prepend(
+                        '<div class="alert alert-danger mb-2">' + msg + "</div>"
                     );
+                    setTimeout(() => {
+                        $("#confirmDeleteModal .alert").remove();
+                    }, 2500);
                     console.error(xhr.responseText || xhr);
                 })
                 .always(() => {
@@ -200,11 +281,47 @@ $(function () {
                 });
         });
 
-    //getters
+    // select2
+    $(".select2").select2({
+        theme: "bootstrap4",
+        width: "100%",
+        allowClear: true,
+        placeholder: function () {
+            return $(this).data("placeholder") || "Select";
+        },
+    });
+
+    // datepicker
+    $("#startDate, #endDate").datepicker({
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        todayHighlight: true,
+        clearBtn: true,
+        orientation: "bottom",
+    });
+
+    // pairing
+    $("#startDate").on("changeDate clearDate change", function () {
+        const start = $(this).val();
+        if (start) {
+            $("#endDate").datepicker("setStartDate", start);
+            $("#endDate").datepicker("setDate", start);
+        } else {
+            $("#endDate").datepicker("setStartDate", null);
+            $("#endDate").val("");
+        }
+    });
+    $("#endDate").on("changeDate clearDate change", function () {
+        const end = $(this).val();
+        if (end) $("#startDate").datepicker("setEndDate", end);
+        else $("#startDate").datepicker("setEndDate", null);
+    });
+
+    // getters
     const getShift = () => $("#shiftSelect").val() || "";
     const getKeyword = () => $("#keywordInput").val() || "";
 
-    //columns
+    // columns
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -246,7 +363,7 @@ $(function () {
         { data: "bc11_temp", name: "bc11_temp" },
     ];
 
-    //factory
+    // factory
     function makeDt($el, url) {
         return $el.DataTable({
             processing: true,
@@ -278,14 +395,14 @@ $(function () {
         });
     }
 
-    //instances
+    // instances
     const instances = { mm1: null, mm2: null, all: null };
     window.instances = instances;
 
-    //init
+    // init
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
 
-    //tabs
+    // tabs
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
@@ -299,36 +416,49 @@ $(function () {
                 .columns.adjust();
         });
 
-    //reloadone
-    function reloadActive() {
-        const id = $(".tab-pane.active").attr("id");
-        const dt = instances[id];
-        if (dt) dt.ajax.reload(null, false);
-    }
-
-    //reloadall
+    // reload
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
             .ajax.reload(null, false);
     }
+    window.reloadAll = reloadAll;
 
-    //filters
+    // filters
     $("#btnSearch, #btnQuickSearch").off("click").on("click", reloadAll);
+
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
-            $("#startDate,#endDate").val("");
-            $("#shiftSelect").val("");
+            $("#startDate")
+                .val("")
+                .datepicker("setDate", null)
+                .datepicker("setStartDate", null)
+                .datepicker("setEndDate", null);
+            $("#endDate")
+                .val("")
+                .datepicker("setDate", null)
+                .datepicker("setStartDate", null)
+                .datepicker("setEndDate", null);
             $("#keywordInput").val("");
             reloadAll();
         });
+
+    $("#startDate, #endDate").off("changeDate").on("changeDate", reloadAll);
+    $("#shiftSelect").off("change").on("change", reloadAll);
+
+    // keyword debounce
+    let kwTimer = null;
     $("#keywordInput")
-        .off("keydown")
+        .off("input keydown")
+        .on("input", () => {
+            clearTimeout(kwTimer);
+            kwTimer = setTimeout(reloadAll, 350);
+        })
         .on("keydown", (e) => {
-            if (e.key === "Enter") reloadAll();
+            if (e.key === "Enter") {
+                clearTimeout(kwTimer);
+                reloadAll();
+            }
         });
-    $("#startDate, #endDate, #shiftSelect")
-        .off("change")
-        .on("change", reloadAll);
 });

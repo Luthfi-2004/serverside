@@ -10,44 +10,37 @@ use Illuminate\Support\Facades\Validator;
 
 class ServersideController extends Controller
 {
-    /** =======================
-     *  DATA ENDPOINTS (DT)
-     *  ======================= */
+    // endpoint
     public function dataMM1(Request $request)
     {
         return $this->makeResponse($request, 'MM1');
     }
-
     public function dataMM2(Request $request)
     {
         return $this->makeResponse($request, 'MM2');
     }
-
     public function dataAll(Request $request)
     {
         return $this->makeResponse($request, null);
     }
 
+    // dt
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
             $q = Process::query();
 
-            // filter mm
-            if ($mmFilter) {
+            // mm
+            if ($mmFilter)
                 $q->where('mm', $mmFilter);
-            }
 
-            // filters
-            if ($request->filled('start_date')) {
+            // filter
+            if ($request->filled('start_date'))
                 $q->whereDate('date', '>=', $request->start_date);
-            }
-            if ($request->filled('end_date')) {
+            if ($request->filled('end_date'))
                 $q->whereDate('date', '<=', $request->end_date);
-            }
-            if ($request->filled('shift')) {
+            if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
-            }
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
@@ -101,14 +94,11 @@ class ServersideController extends Controller
             return DataTables::of($q)
                 ->addColumn('action', function ($row) {
                     return '<div class="btn-group btn-group-sm se-2">
-        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit">
-            <i class="fas fa-edit"></i>
-        </button>
-        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus">
-            <i class="fas fa-trash"></i>
-        </button>
+        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>
     </div>';
                 })
+                // mm
                 ->editColumn('mm', function ($row) {
                     if ($row->mm === 'MM1')
                         return 1;
@@ -116,12 +106,12 @@ class ServersideController extends Controller
                         return 2;
                     return $row->mm;
                 })
+                // date
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface) {
+                    if ($row->date instanceof \DateTimeInterface)
                         return $row->date->format('d-m-Y H:i:s');
-                    }
                     try {
                         return Carbon::parse($row->date)->format('d-m-Y H:i:s');
                     } catch (\Throwable $e) {
@@ -135,27 +125,33 @@ class ServersideController extends Controller
             return response()->json([
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
-                'file' => $e->getFile(),
+                'file' => $e->getFile()
             ], 500);
         }
     }
-
-    /** =======================
-     *  CRUD JSON (Modal)
-     *  ======================= */
 
     // create
     public function store(Request $request)
     {
         $in = $request->all();
         $v = $this->validator($in, 'store');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
+
+        // unik
+        $mm = $this->normalizeMm($in['mm'] ?? null);
+        $shift = $in['shift'];
+        $mixKe = (int) $in['mix_ke'];
+        $day = now('Asia/Jakarta')->toDateString();
+        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, null)) {
+            return response()->json([
+                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
+            ], 422);
         }
 
+        // save
         $data = $this->mapRequestToProcess($in, null);
         $row = Process::create($data);
-
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
 
@@ -173,13 +169,23 @@ class ServersideController extends Controller
 
         $in = $request->all();
         $v = $this->validator($in, 'update');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
+
+        // unik
+        $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
+        $shift = $in['shift'] ?? $row->shift;
+        $mixKe = isset($in['mix_ke']) ? (int) $in['mix_ke'] : (int) $row->mix_ke;
+        $day = $this->dayString($row->date);
+        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, (int) $row->id)) {
+            return response()->json([
+                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
+            ], 422);
         }
 
+        // save
         $data = $this->mapRequestToProcess($in, $row);
         $row->update($data);
-
         return response()->json(['message' => 'Updated']);
     }
 
@@ -191,10 +197,7 @@ class ServersideController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    /** =======================
-     *  Helpers
-     *  ======================= */
-
+    // mm
     private function normalizeMm($val): ?string
     {
         if ($val === null || $val === '')
@@ -207,71 +210,67 @@ class ServersideController extends Controller
         return null;
     }
 
+    // valid
     private function validator(array $in, string $mode = 'store')
     {
-        // normalisasi mm untuk validasi
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
-
-        // catatan: process_date tidak wajib, akan diisi otomatis
-        $rules = [
+        return Validator::make($in, [
             'mm' => 'required|in:MM1,MM2',
             'shift' => 'required|in:D,S,N',
             'mix_ke' => 'required|integer|min:1',
-
-            // tanggal-jam
-            'process_date' => 'nullable|date',          // <-- tadinya required
             'mix_start' => 'nullable|date_format:H:i',
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
-
-            // numerik lain opsional (biarkan nullable)
-        ];
-
-        return Validator::make($in, $rules);
+        ]);
     }
 
-    /**
-     * Map request -> kolom Process.
-     * - store: process_date default hari ini (Asia/Jakarta) jika tidak dikirim.
-     * - update: jika process_date tidak dikirim, pakai tanggal dari record existing (tidak berubah).
-     * - kolom 'date' (datetime) = process_date + mix_start (atau 00:00:00 jika kosong).
-     */
+    // day
+    private function dayString($value): string
+    {
+        if ($value instanceof \DateTimeInterface)
+            return Carbon::instance($value)->toDateString();
+        return Carbon::parse($value)->toDateString();
+    }
+
+    // unik
+    private function isDuplicateMix(string $mm, string $shift, int $mixKe, string $dayYmd, ?int $ignoreId = null): bool
+    {
+        $q = Process::query()
+            ->whereDate('date', $dayYmd)
+            ->where('shift', $shift)
+            ->where('mm', $mm)
+            ->where('mix_ke', $mixKe);
+
+        if ($ignoreId)
+            $q->where('id', '!=', $ignoreId);
+        return $q->exists();
+    }
+
+    // map
     private function mapRequestToProcess(array $in, ?Process $existing = null): array
     {
         $mm = $this->normalizeMm($in['mm'] ?? null);
 
-        // tentukan process_date
-        if (!empty($in['process_date'])) {
-            $processDate = Carbon::parse($in['process_date'])->toDateString();
-        } elseif ($existing && !empty($existing->date)) {
-            // ambil date-part dari existing->date
+        // date
+        if ($existing) {
             try {
-                $processDate = ($existing->date instanceof \DateTimeInterface)
-                    ? Carbon::instance($existing->date)->toDateString()
-                    : Carbon::parse($existing->date)->toDateString();
+                $dateTime = $existing->date instanceof \DateTimeInterface
+                    ? Carbon::instance($existing->date)->format('Y-m-d H:i:s')
+                    : Carbon::parse($existing->date)->format('Y-m-d H:i:s');
             } catch (\Throwable $e) {
-                $processDate = now('Asia/Jakarta')->toDateString();
+                $dateTime = now('Asia/Jakarta')->format('Y-m-d H:i:s');
             }
         } else {
-            $processDate = now('Asia/Jakarta')->toDateString();
+            $dateTime = now('Asia/Jakarta')->format('Y-m-d H:i:s');
         }
 
-        // tentukan mix_start untuk kolom 'date'
-        $mixStartForDate = $in['mix_start']
-            ?? ($existing ? $existing->mix_start : null);
-
-        $dateTime = $processDate . ' ' . ($mixStartForDate ? "{$mixStartForDate}:00" : '00:00:00');
-
         return [
-            // waktu utama
             'date' => $dateTime,
             'shift' => $in['shift'] ?? ($existing->shift ?? null),
             'mm' => $mm,
             'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
             'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),
             'mix_finish' => $in['mix_finish'] ?? ($existing->mix_finish ?? null),
-
-            // MM Sample
             'mm_p' => $in['mm_p'] ?? ($existing->mm_p ?? null),
             'mm_c' => $in['mm_c'] ?? ($existing->mm_c ?? null),
             'mm_gt' => $in['mm_gt'] ?? ($existing->mm_gt ?? null),
@@ -286,21 +285,15 @@ class ServersideController extends Controller
             'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
             'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
             'mm_ssi' => $in['mm_ssi'] ?? ($existing->mm_ssi ?? null),
-
-            // Additives
             'add_m3' => $in['add_m3'] ?? ($existing->add_m3 ?? null),
             'add_vsd' => $in['add_vsd'] ?? ($existing->add_vsd ?? null),
             'add_sc' => $in['add_sc'] ?? ($existing->add_sc ?? null),
-
-            // BC Sample
             'bc12_cb' => $in['bc12_cb'] ?? ($existing->bc12_cb ?? null),
             'bc12_m' => $in['bc12_m'] ?? ($existing->bc12_m ?? null),
             'bc11_ac' => $in['bc11_ac'] ?? ($existing->bc11_ac ?? null),
             'bc11_vsd' => $in['bc11_vsd'] ?? ($existing->bc11_vsd ?? null),
             'bc16_cb' => $in['bc16_cb'] ?? ($existing->bc16_cb ?? null),
             'bc16_m' => $in['bc16_m'] ?? ($existing->bc16_m ?? null),
-
-            // Return Sand
             'rs_time' => $in['rs_time'] ?? ($existing->rs_time ?? null),
             'rs_type' => $in['rs_type'] ?? ($existing->rs_type ?? null),
             'bc9_moist' => $in['bc9_moist'] ?? ($existing->bc9_moist ?? null),

@@ -13,10 +13,10 @@
 <script src="{{ asset('assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js') }}"></script>
 <script src="{{ asset('assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
 
-<!-- {{-- Plugins lain (pakai kalau perlu) --}}
+{{-- Plugins lain (pakai kalau perlu) --}}
 <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
 <script src="{{ asset('assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
-<script src="{{ asset('assets/libs/sweetalert2/sweetalert2.min.js') }}"></script> 
+<!-- <script src="{{ asset('assets/libs/sweetalert2/sweetalert2.min.js') }}"></script> 
 <script src="{{ asset('assets/libs/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.min.js') }}"></script> 
 <script src="{{ asset('assets/libs/admin-resources/jquery.vectormap/maps/jquery-jvectormap-world-mill-en.js') }}"></script>  -->
 
