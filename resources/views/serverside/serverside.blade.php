@@ -31,13 +31,13 @@
                                 <div class="row align-items-end">
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label for="startDate" class="form-label mb-1">Start Date</label>
-                                        <input id="startDate" type="text" class="form-control date-input"
-                                            placeholder="Start Date" autocomplete="off">
+                                        <input id="startDate" name="start_date" type="date" class="form-control"
+                                            autocomplete="off">
                                     </div>
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label for="endDate" class="form-label mb-1">End Date</label>
-                                        <input id="endDate" type="text" class="form-control date-input"
-                                            placeholder="End Date" autocomplete="off">
+                                        <input id="endDate" name="end_date" type="date" class="form-control"
+                                            autocomplete="off">
                                     </div>
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label class="form-label mb-1">Shift</label>
@@ -79,6 +79,7 @@
                             </div>
                         </div>
                     </div>
+
 
                     {{-- Tables --}}
                     <div class="card mb-4">
@@ -158,20 +159,16 @@
 @endsection
 
 @push('scripts')
-  {{-- include modal sekali di halaman --}}
-  @include('serverside.modal')
+    <script>
+        window.serversideRoutes = {
+            mm1: "{{ route('serverside.data.mm1') }}",
+            mm2: "{{ route('serverside.data.mm2') }}",
+            all: "{{ route('serverside.data.all') }}",
 
-  <script>
-    window.serversideRoutes = {
-      mm1 : "{{ route('serverside.data.mm1') }}",
-      mm2 : "{{ route('serverside.data.mm2') }}",
-      all : "{{ route('serverside.data.all') }}",
-
-      // CRUD
-      store: "{{ route('serverside.processes.store') }}",
-      base : "{{ url('serverside/processes') }}" // <- pakai base, nanti jadi /serverside/processes/{id}
-    };
-  </script>
-  <script src="{{ asset('assets/js/serverside.js') }}" defer></script>
+            // CRUD
+            store: "{{ route('serverside.processes.store') }}",
+            base: "{{ url('serverside/processes') }}" //
+        };
+    </script>
+    <script src="{{ asset('assets/js/serverside.js') }}" defer></script>
 @endpush
-

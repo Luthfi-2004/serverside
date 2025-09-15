@@ -25,10 +25,10 @@
                                     <label class="form-label mb-1 d-block">MM</label>
                                     <div class="btn-group btn-group-sm d-flex" data-toggle="buttons">
                                         <label class="btn btn-outline-secondary w-100" id="mm1_btn">
-                                            <input type="radio" name="mm" value="1" autocomplete="off"> 1
+                                            <input type="radio" name="mm" value="1" class="d-none"> 1
                                         </label>
                                         <label class="btn btn-outline-secondary w-100" id="mm2_btn">
-                                            <input type="radio" name="mm" value="2" autocomplete="off"> 2
+                                            <input type="radio" name="mm" value="2" class="d-none"> 2
                                         </label>
                                     </div>
                                 </div>
@@ -43,13 +43,6 @@
                                         <option value="N">Night</option>
                                     </select>
                                 </div>
-
-                                {{-- Process Date --}}
-                                <div class="col-md-3 mb-2">
-                                    <label class="form-label mb-1">Process Date</label>
-                                    <input type="date" name="process_date" id="process_date" class="form-control" required>
-                                </div>
-
 
                                 {{-- Mix Ke --}}
                                 <div class="col-md-2 mb-2">
@@ -94,22 +87,22 @@
                                 <div class="card-body">
                                     <div class="row">
                                         @php
-$mmFields = [
-    ['mm_p', 'P'],
-    ['mm_c', 'C'],
-    ['mm_gt', 'G.T'],
-    ['mm_cb_mm', 'CB MM'],
-    ['mm_cb_lab', 'CB Lab'],
-    ['mm_m', 'Moisture'],
-    ['mm_bakunetsu', 'Bakunetsu'],
-    ['mm_ac', 'AC'],
-    ['mm_tc', 'TC'],
-    ['mm_vsd', 'Vsd'],
-    ['mm_ig', 'IG'],
-    ['mm_cb_weight', 'CB Weight'],
-    ['mm_tp50_weight', 'TP 50 Weight'],
-    ['mm_ssi', 'SSI'],
-];
+                                            $mmFields = [
+                                                ['mm_p', 'P'],
+                                                ['mm_c', 'C'],
+                                                ['mm_gt', 'G.T'],
+                                                ['mm_cb_mm', 'CB MM'],
+                                                ['mm_cb_lab', 'CB Lab'],
+                                                ['mm_m', 'Moisture'],
+                                                ['mm_bakunetsu', 'Bakunetsu'],
+                                                ['mm_ac', 'AC'],
+                                                ['mm_tc', 'TC'],
+                                                ['mm_vsd', 'Vsd'],
+                                                ['mm_ig', 'IG'],
+                                                ['mm_cb_weight', 'CB Weight'],
+                                                ['mm_tp50_weight', 'TP 50 Weight'],
+                                                ['mm_ssi', 'SSI'],
+                                            ];
                                         @endphp
                                         @foreach ($mmFields as [$name, $label])
                                             <div class="col-md-3 mb-3">

@@ -33,12 +33,12 @@ class ServersideController extends Controller
         try {
             $q = Process::query();
 
-            // Filter tab MM (DB menyimpan 'MM1'/'MM2')
+            // filter mm
             if ($mmFilter) {
                 $q->where('mm', $mmFilter);
             }
 
-            // Filter tanggal/shift/keyword
+            // filters
             if ($request->filled('start_date')) {
                 $q->whereDate('date', '>=', $request->start_date);
             }
@@ -56,7 +56,7 @@ class ServersideController extends Controller
                 });
             }
 
-            // Kolom yang dipakai DataTables (URUTAN harus cocok dengan JS)
+            // select
             $q->select([
                 'id',
                 'date',
@@ -101,29 +101,27 @@ class ServersideController extends Controller
             return DataTables::of($q)
                 ->addColumn('action', function ($row) {
                     return '<div class="btn-group btn-group-sm se-2">
-        <button class="btn btn-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit">
+        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit">
             <i class="fas fa-edit"></i>
         </button>
-        <button class="btn btn-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus">
+        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus">
             <i class="fas fa-trash"></i>
         </button>
     </div>';
                 })
-
-                // Tampilkan 1/2 di tabel (DB tetap simpan 'MM1'/'MM2')
                 ->editColumn('mm', function ($row) {
                     if ($row->mm === 'MM1')
                         return 1;
                     if ($row->mm === 'MM2')
                         return 2;
-                    return $row->mm; // fallback
+                    return $row->mm;
                 })
-                // Format tanggal
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface)
+                    if ($row->date instanceof \DateTimeInterface) {
                         return $row->date->format('d-m-Y H:i:s');
+                    }
                     try {
                         return Carbon::parse($row->date)->format('d-m-Y H:i:s');
                     } catch (\Throwable $e) {
@@ -146,45 +144,46 @@ class ServersideController extends Controller
      *  CRUD JSON (Modal)
      *  ======================= */
 
-    // Create
+    // create
     public function store(Request $request)
     {
         $in = $request->all();
-        $v = $this->validator($in);
+        $v = $this->validator($in, 'store');
         if ($v->fails()) {
             return response()->json(['errors' => $v->errors()], 422);
         }
 
-        $data = $this->mapRequestToProcess($in);
+        $data = $this->mapRequestToProcess($in, null);
         $row = Process::create($data);
 
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
 
-    // Read single (untuk Edit modal)
+    // read
     public function show($id)
     {
         $row = Process::findOrFail($id);
         return response()->json(['data' => $row]);
     }
 
-    // Update
+    // update
     public function update(Request $request, $id)
     {
+        $row = Process::findOrFail($id);
+
         $in = $request->all();
-        $v = $this->validator($in);
+        $v = $this->validator($in, 'update');
         if ($v->fails()) {
             return response()->json(['errors' => $v->errors()], 422);
         }
 
-        $row = Process::findOrFail($id);
-        $data = $this->mapRequestToProcess($in);
+        $data = $this->mapRequestToProcess($in, $row);
         $row->update($data);
 
         return response()->json(['message' => 'Updated']);
     }
 
-    // Delete
+    // delete
     public function destroy($id)
     {
         $row = Process::findOrFail($id);
@@ -192,7 +191,10 @@ class ServersideController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    // Normalisasi nilai 'mm' dari form (1/2) → 'MM1'/'MM2'
+    /** =======================
+     *  Helpers
+     *  ======================= */
+
     private function normalizeMm($val): ?string
     {
         if ($val === null || $val === '')
@@ -205,84 +207,108 @@ class ServersideController extends Controller
         return null;
     }
 
-    // Validasi input modal
-    private function validator(array $in)
+    private function validator(array $in, string $mode = 'store')
     {
-        // injek hasil normalisasi mm untuk validasi
+        // normalisasi mm untuk validasi
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
 
-        return \Validator::make($in, [
+        // catatan: process_date tidak wajib, akan diisi otomatis
+        $rules = [
             'mm' => 'required|in:MM1,MM2',
             'shift' => 'required|in:D,S,N',
             'mix_ke' => 'required|integer|min:1',
 
-            // TANGGAL + JAM
-            'process_date' => 'required|date',           // contoh: 2025-09-12
-            'mix_start' => 'nullable|date_format:H:i',// contoh: 08:15
+            // tanggal-jam
+            'process_date' => 'nullable|date',          // <-- tadinya required
+            'mix_start' => 'nullable|date_format:H:i',
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
 
-            // field numerik lain opsional
-        ]);
+            // numerik lain opsional (biarkan nullable)
+        ];
+
+        return Validator::make($in, $rules);
     }
 
-    // Mapping form → kolom tabel Process
-    private function mapRequestToProcess(array $in): array
+    /**
+     * Map request -> kolom Process.
+     * - store: process_date default hari ini (Asia/Jakarta) jika tidak dikirim.
+     * - update: jika process_date tidak dikirim, pakai tanggal dari record existing (tidak berubah).
+     * - kolom 'date' (datetime) = process_date + mix_start (atau 00:00:00 jika kosong).
+     */
+    private function mapRequestToProcess(array $in, ?Process $existing = null): array
     {
         $mm = $this->normalizeMm($in['mm'] ?? null);
 
-        // Kolom 'date' (datetime) = process_date + mix_start (jika ada) else jam 00:00:00
-        $processDate = $in['process_date'] ?? now()->toDateString();   // 'Y-m-d'
-        $mixStart = $in['mix_start'] ?? null;                        // 'H:i'
-        $dateTime = $processDate . ' ' . ($mixStart ? "$mixStart:00" : '00:00:00');
+        // tentukan process_date
+        if (!empty($in['process_date'])) {
+            $processDate = Carbon::parse($in['process_date'])->toDateString();
+        } elseif ($existing && !empty($existing->date)) {
+            // ambil date-part dari existing->date
+            try {
+                $processDate = ($existing->date instanceof \DateTimeInterface)
+                    ? Carbon::instance($existing->date)->toDateString()
+                    : Carbon::parse($existing->date)->toDateString();
+            } catch (\Throwable $e) {
+                $processDate = now('Asia/Jakarta')->toDateString();
+            }
+        } else {
+            $processDate = now('Asia/Jakarta')->toDateString();
+        }
+
+        // tentukan mix_start untuk kolom 'date'
+        $mixStartForDate = $in['mix_start']
+            ?? ($existing ? $existing->mix_start : null);
+
+        $dateTime = $processDate . ' ' . ($mixStartForDate ? "{$mixStartForDate}:00" : '00:00:00');
 
         return [
+            // waktu utama
             'date' => $dateTime,
-            'shift' => $in['shift'] ?? null,
+            'shift' => $in['shift'] ?? ($existing->shift ?? null),
             'mm' => $mm,
-            'mix_ke' => $in['mix_ke'] ?? null,
-            'mix_start' => $in['mix_start'] ?? null,
-            'mix_finish' => $in['mix_finish'] ?? null,
+            'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
+            'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),
+            'mix_finish' => $in['mix_finish'] ?? ($existing->mix_finish ?? null),
 
             // MM Sample
-            'mm_p' => $in['mm_p'] ?? null,
-            'mm_c' => $in['mm_c'] ?? null,
-            'mm_gt' => $in['mm_gt'] ?? null,
-            'mm_cb_mm' => $in['mm_cb_mm'] ?? null,
-            'mm_cb_lab' => $in['mm_cb_lab'] ?? null,
-            'mm_m' => $in['mm_m'] ?? null,
-            'mm_bakunetsu' => $in['mm_bakunetsu'] ?? null,
-            'mm_ac' => $in['mm_ac'] ?? null,
-            'mm_tc' => $in['mm_tc'] ?? null,
-            'mm_vsd' => $in['mm_vsd'] ?? null,
-            'mm_ig' => $in['mm_ig'] ?? null,
-            'mm_cb_weight' => $in['mm_cb_weight'] ?? null,
-            'mm_tp50_weight' => $in['mm_tp50_weight'] ?? null,
-            'mm_ssi' => $in['mm_ssi'] ?? null,
+            'mm_p' => $in['mm_p'] ?? ($existing->mm_p ?? null),
+            'mm_c' => $in['mm_c'] ?? ($existing->mm_c ?? null),
+            'mm_gt' => $in['mm_gt'] ?? ($existing->mm_gt ?? null),
+            'mm_cb_mm' => $in['mm_cb_mm'] ?? ($existing->mm_cb_mm ?? null),
+            'mm_cb_lab' => $in['mm_cb_lab'] ?? ($existing->mm_cb_lab ?? null),
+            'mm_m' => $in['mm_m'] ?? ($existing->mm_m ?? null),
+            'mm_bakunetsu' => $in['mm_bakunetsu'] ?? ($existing->mm_bakunetsu ?? null),
+            'mm_ac' => $in['mm_ac'] ?? ($existing->mm_ac ?? null),
+            'mm_tc' => $in['mm_tc'] ?? ($existing->mm_tc ?? null),
+            'mm_vsd' => $in['mm_vsd'] ?? ($existing->mm_vsd ?? null),
+            'mm_ig' => $in['mm_ig'] ?? ($existing->mm_ig ?? null),
+            'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
+            'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
+            'mm_ssi' => $in['mm_ssi'] ?? ($existing->mm_ssi ?? null),
 
             // Additives
-            'add_m3' => $in['add_m3'] ?? null,
-            'add_vsd' => $in['add_vsd'] ?? null,
-            'add_sc' => $in['add_sc'] ?? null,
+            'add_m3' => $in['add_m3'] ?? ($existing->add_m3 ?? null),
+            'add_vsd' => $in['add_vsd'] ?? ($existing->add_vsd ?? null),
+            'add_sc' => $in['add_sc'] ?? ($existing->add_sc ?? null),
 
             // BC Sample
-            'bc12_cb' => $in['bc12_cb'] ?? null,
-            'bc12_m' => $in['bc12_m'] ?? null,
-            'bc11_ac' => $in['bc11_ac'] ?? null,
-            'bc11_vsd' => $in['bc11_vsd'] ?? null,
-            'bc16_cb' => $in['bc16_cb'] ?? null,
-            'bc16_m' => $in['bc16_m'] ?? null,
+            'bc12_cb' => $in['bc12_cb'] ?? ($existing->bc12_cb ?? null),
+            'bc12_m' => $in['bc12_m'] ?? ($existing->bc12_m ?? null),
+            'bc11_ac' => $in['bc11_ac'] ?? ($existing->bc11_ac ?? null),
+            'bc11_vsd' => $in['bc11_vsd'] ?? ($existing->bc11_vsd ?? null),
+            'bc16_cb' => $in['bc16_cb'] ?? ($existing->bc16_cb ?? null),
+            'bc16_m' => $in['bc16_m'] ?? ($existing->bc16_m ?? null),
 
             // Return Sand
-            'rs_time' => $in['rs_time'] ?? null,
-            'rs_type' => $in['rs_type'] ?? null,
-            'bc9_moist' => $in['bc9_moist'] ?? null,
-            'bc10_moist' => $in['bc10_moist'] ?? null,
-            'bc11_moist' => $in['bc11_moist'] ?? null,
-            'bc9_temp' => $in['bc9_temp'] ?? null,
-            'bc10_temp' => $in['bc10_temp'] ?? null,
-            'bc11_temp' => $in['bc11_temp'] ?? null,
+            'rs_time' => $in['rs_time'] ?? ($existing->rs_time ?? null),
+            'rs_type' => $in['rs_type'] ?? ($existing->rs_type ?? null),
+            'bc9_moist' => $in['bc9_moist'] ?? ($existing->bc9_moist ?? null),
+            'bc10_moist' => $in['bc10_moist'] ?? ($existing->bc10_moist ?? null),
+            'bc11_moist' => $in['bc11_moist'] ?? ($existing->bc11_moist ?? null),
+            'bc9_temp' => $in['bc9_temp'] ?? ($existing->bc9_temp ?? null),
+            'bc10_temp' => $in['bc10_temp'] ?? ($existing->bc10_temp ?? null),
+            'bc11_temp' => $in['bc11_temp'] ?? ($existing->bc11_temp ?? null),
         ];
     }
-
 }
