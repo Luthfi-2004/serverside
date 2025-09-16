@@ -1,6 +1,6 @@
 // public/assets/js/serverside.js
 $(function () {
-    // --- guard
+    // guard
     if (!window.serversideRoutes) {
         console.error(
             "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -8,17 +8,17 @@ $(function () {
         return;
     }
 
-    // --- CSRF
+    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // --- GLOBAL STATE tab aktif
+    // state
     window.__GS_ACTIVE_TAB__ = "mm1"; // 'mm1' | 'mm2' | 'all'
 
-    // --- Collapse filter
+    // collapse
     $("#filterHeader")
         .off("click")
         .on("click", function () {
@@ -26,7 +26,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // ========== Helpers ==========
+    // helper
     function clearErrors() {
         $("#gsForm .form-control, #gsForm .custom-select").removeClass(
             "is-invalid"
@@ -56,17 +56,17 @@ $(function () {
         return m ? m[1] : String(val);
     }
 
-    // ========== Form Modal ==========
+    // form
     function resetGsForm() {
         $("#gsForm")[0]?.reset();
         $("#gs_id").val("");
         $("#gs_mode").val("create");
         $("#gsModalMode").text("Add");
 
-        // reset select2 shift (modal)
+        // shift
         $("#shift").val(null).trigger("change");
 
-        // default MM mengikuti tab aktif
+        // mm
         const tab = getActiveTab();
         const mmDefault = tab === "mm2" ? "2" : "1";
         $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
@@ -138,7 +138,7 @@ $(function () {
         $("#gs_mode").val("edit");
         $("#gsModalMode").text("Edit");
 
-        // set shift (modal) sekali + trigger change biar label tampil
+        // shift
         $("#shift")
             .val(data.shift || null)
             .trigger("change");
@@ -187,7 +187,7 @@ $(function () {
         ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    // Open modal Add
+    // add
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -195,7 +195,7 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
-    // Open modal Edit
+    // edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -217,7 +217,7 @@ $(function () {
                 });
         });
 
-    // Submit form (Create/Update)
+    // submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -265,7 +265,7 @@ $(function () {
                 });
         });
 
-    // ========== Delete ==========
+    // delete
     let pendingDeleteId = null;
     $(document)
         .off("click", ".btn-delete-gs")
@@ -303,8 +303,7 @@ $(function () {
                 });
         });
 
-    // ========== Select2 ==========
-    // FILTER SHIFT (di header filter)
+    // select2
     $("#shiftSelect")
         .select2({
             theme: "bootstrap4",
@@ -319,7 +318,7 @@ $(function () {
             reloadAll();
         });
 
-    // MODAL SHIFT (di dalam modal)
+    // modal
     $("#modal-greensand").on("shown.bs.modal", function () {
         const $sel = $("#shift");
         if (!$sel.data("select2")) {
@@ -332,11 +331,10 @@ $(function () {
                 dropdownParent: $("#modal-greensand"),
             });
         }
-        // sinkron tampilan saat modal dibuka
         if (!$sel.val()) $sel.val(null).trigger("change");
     });
 
-    // ========== Datepicker ==========
+    // date
     $("#startDate, #endDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
@@ -345,7 +343,7 @@ $(function () {
         orientation: "bottom",
     });
 
-    // pairing date range
+    // range
     $("#startDate").on("changeDate clearDate change", function () {
         const d = $("#startDate").datepicker("getDate");
         $("#endDate").datepicker("setStartDate", d || null);
@@ -357,7 +355,7 @@ $(function () {
         $("#startDate").datepicker("setEndDate", d || null);
     });
 
-    // ========== Filters ==========
+    // filter
     const getShift = () => $("#shiftSelect").val() || "";
     const getKeyword = () => $("#keywordInput").val() || "";
 
@@ -366,7 +364,6 @@ $(function () {
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
-            // reset date
             $("#startDate")
                 .datepicker("setDate", null)
                 .val("")
@@ -377,9 +374,7 @@ $(function () {
                 .val("")
                 .datepicker("setStartDate", null)
                 .datepicker("setEndDate", null);
-            // reset shift filter -> placeholder
             $("#shiftSelect").val(null).trigger("change");
-            // reset keyword
             $("#keywordInput").val("");
             reloadAll();
         });
@@ -387,15 +382,15 @@ $(function () {
     $("#startDate, #endDate").off("changeDate");
     $("#shiftSelect").off("change.gs").on("change.gs");
 
-  $("#keywordInput")
-      .off("keydown")
-      .on("keydown", (e) => {
-          if (e.key === "Enter") {
-              $("#btnSearch").trigger("click"); 
-          }
-      });
+    $("#keywordInput")
+        .off("keydown")
+        .on("keydown", (e) => {
+            if (e.key === "Enter") {
+                $("#btnSearch").trigger("click");
+            }
+        });
 
-    // ========== DataTables ==========
+    // datatable
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -471,7 +466,7 @@ $(function () {
     const instances = { mm1: null, mm2: null, all: null };
     window.instances = instances;
 
-    // init default MM1 + seed state dari DOM
+    // init
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
     (function seedActiveFromDom() {
         const href = (
@@ -482,7 +477,7 @@ $(function () {
         else window.__GS_ACTIVE_TAB__ = "mm1";
     })();
 
-    // load DT saat tab berganti + update STATE
+    // tab
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
@@ -501,7 +496,7 @@ $(function () {
                 .columns.adjust();
         });
 
-    // reload semua (termasuk hidden)
+    // reload
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
@@ -509,7 +504,7 @@ $(function () {
     }
     window.reloadAll = reloadAll;
 
-    // ========== Export ==========
+    // export
     $(document)
         .off("click", "#btnExport")
         .on("click", "#btnExport", function (e) {
