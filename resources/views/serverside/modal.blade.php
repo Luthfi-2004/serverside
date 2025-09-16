@@ -1,15 +1,15 @@
 @push('styles')
-<style>
-    .select2-container .select2-selection__rendered {
-        color: #212529 !important;
-    }
+    <style>
+        .select2-container .select2-selection__rendered {
+            color: #212529 !important;
+        }
 
-    .select2-dropdown {
-        z-index: 2050 !important;
-    }
+        .select2-dropdown {
+            z-index: 2050 !important;
+        }
 
-    /* di atas modal bootstrap */
-</style>
+        /* di atas modal bootstrap */
+    </style>
 @endpush
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel"
     aria-hidden="true">
@@ -108,22 +108,22 @@
                                 <div class="card-body">
                                     <div class="row">
                                         @php
-$mmFields = [
-    ['mm_p', 'P'],
-    ['mm_c', 'C'],
-    ['mm_gt', 'G.T'],
-    ['mm_cb_mm', 'CB MM'],
-    ['mm_cb_lab', 'CB Lab'],
-    ['mm_m', 'Moisture'],
-    ['mm_bakunetsu', 'Bakunetsu'],
-    ['mm_ac', 'AC'],
-    ['mm_tc', 'TC'],
-    ['mm_vsd', 'Vsd'],
-    ['mm_ig', 'IG'],
-    ['mm_cb_weight', 'CB Weight'],
-    ['mm_tp50_weight', 'TP 50 Weight'],
-    ['mm_ssi', 'SSI'],
-];
+                                            $mmFields = [
+                                                ['mm_p', 'P'],
+                                                ['mm_c', 'C'],
+                                                ['mm_gt', 'G.T'],
+                                                ['mm_cb_mm', 'CB MM'],
+                                                ['mm_cb_lab', 'CB Lab'],
+                                                ['mm_m', 'Moisture'],
+                                                ['mm_bakunetsu', 'Bakunetsu'],
+                                                ['mm_ac', 'AC'],
+                                                ['mm_tc', 'TC'],
+                                                ['mm_vsd', 'Vsd'],
+                                                ['mm_ig', 'IG'],
+                                                ['mm_cb_weight', 'CB Weight'],
+                                                ['mm_tp50_weight', 'TP 50 Weight'],
+                                                ['mm_ssi', 'SSI'],
+                                            ];
                                         @endphp
                                         @foreach ($mmFields as [$name, $label])
                                             <div class="col-md-3 mb-3">

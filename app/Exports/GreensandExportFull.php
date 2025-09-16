@@ -23,26 +23,57 @@ class GreensandExportFull implements
     WithColumnWidths,
     WithEvents
 {
+    /** ====== EDIT DI SINI JIKA PERLU (nilai referensi) ====== */
+    private array $mmRef = [
+        //               P         C         GT         CB MM      CB Lab    M       Bakunetsu   AC        TC       VSD      IG       CB w     TP50 w    SSI
+        'standard' => ['220~260', '85~115', '450~550', '40~45', '32.0~42.6', '2.65', '25~35', '5.7~7.3', '8.7~10.3', '8.7~11.3', '3.7~4.8', '85~110', '141~144', '85~95'],
+        'target' => ['240', '15,5', '550', '41,0', '37', '2,65', '65,0', '7,00', '10,0', '10,0', '3,50', '-', '30', '150'],
+        'satuan' => ['g/Cm²', 'Mpa', 'g/Cm²', '%', '%', '%', '%', '%', '%', '%', '%', 'g', 'g', '%'],
+        'ct' => ['52', '75', '62', '', '', '', '', '', '', '', '', '', '30', '150'],
+        'freq' => ['min 6x/shift/MM', 'min 2x/shift/MM', 'min 2x/shift/MM', 'Every mixing', 'min 1x/shift/MM', 'min 1x/shift/MM', 'min 1x/shift/MM', 'min 2x/shift', 'min 1x/shift', 'min 2x/shift', 'min 1x/shift', 'min 2x/shift/MM', 'min 2x/shift/MM', 'min 1x/shift/MM'],
+    ];
+
+    private array $bc12Ref = [
+        'standard' => ['3~8', '1.5~2.0'],
+        'target' => ['12', '1,5'],
+        'satuan' => ['%', '%'],
+        'ct' => ['', ''],
+        'freq' => ['min 2x/shift/MM', ''],
+    ];
+    private array $bc11Ref = [
+        'standard' => ['6.4~7.0', '0.4~1.0'],
+        'target' => ['6,8', '0,7'],
+        'satuan' => ['%', '%'],
+        'ct' => ['', ''],
+        'freq' => ['min 1x/shift', ''],
+    ];
+    private array $bc16Ref = [
+        'standard' => ['3.7~4.8', '2.2~2.3'],
+        'target' => ['36', '2,6'],
+        'satuan' => ['%', '%'],
+        'ct' => ['', ''],
+        'freq' => ['min 2x/shift', ''],
+    ];
+    /** ======================================================== */
+
     public function __construct(
         protected ?string $start = null,
         protected ?string $end = null,
         protected ?string $shift = null,
         protected ?string $q = null,
-        protected ?string $mm = null, // contoh: 'MM1' / 'MM2'
+        protected ?string $mm = null
     ) {
     }
 
     public function query()
     {
         $q = Process::query()->select([
-            // identitas
             'date',
             'shift',
             'mm',
             'mix_ke',
             'mix_start',
             'mix_finish',
-            // mm sample
             'mm_p',
             'mm_c',
             'mm_gt',
@@ -57,18 +88,15 @@ class GreensandExportFull implements
             'mm_cb_weight',
             'mm_tp50_weight',
             'mm_ssi',
-            // additive
             'add_m3',
             'add_vsd',
             'add_sc',
-            // bc sample
             'bc12_cb',
             'bc12_m',
             'bc11_ac',
             'bc11_vsd',
             'bc16_cb',
             'bc16_m',
-            // return sand
             'rs_time',
             'rs_type',
             'bc9_moist',
@@ -79,20 +107,14 @@ class GreensandExportFull implements
             'bc11_temp',
         ]);
 
-        // filter optional biar sama dengan UI
         if ($this->mm)
-            $q->where('mm', $this->mm);     // DB kamu simpan 'MM1'/'MM2'. Kalau angka, mapping dulu.
-
+            $q->where('mm', $this->mm);
         if ($this->start)
             $q->whereDate('date', '>=', $this->start);
-
         if ($this->end)
             $q->whereDate('date', '<=', $this->end);
-
         if ($this->shift)
             $q->where('shift', $this->shift);
-
-        // PENTING: pakai $this->q (di-controller diisi dari 'keyword')
         if ($this->q) {
             $q->where(function ($w) {
                 $w->where('rs_type', 'like', '%' . $this->q . '%')
@@ -101,21 +123,24 @@ class GreensandExportFull implements
             });
         }
 
-
         return $q->orderBy('date')->orderBy('mix_start');
     }
 
     public function headings(): array
     {
-        // Baris 1: judul group; Baris 2: subheader
+        // 9 baris header; data mulai baris-10
         return [
+            // Row1: Title
+            array_merge(['MIX MULLER :   1 & 2'], array_fill(0, 36, '')),
+
+            // Row2: Groups (persis template)
             [
-                'Process Date',
-                'Shift',
-                'MM No',
-                'Mix No',
-                'Mix Start',
-                'Mix Finish',
+                'Item Check',
+                '',
+                '',                   // A..C
+                'TIME',
+                '',
+                '',                         // D..F
                 'MM Sample',
                 '',
                 '',
@@ -130,24 +155,69 @@ class GreensandExportFull implements
                 '',
                 '',
                 '',
-                'Additive',
+                '',
+                '', // G..T
+                'ADDITIVE ADDITIONAL',
+                '',
+                '',          // U..W
+                'BC 12 Sample',
+                '',                    // X..Y
+                'BC 11 Sample',
+                '',                    // Z..AA
+                'BC 16 Sample',
+                '',                    // AB..AC
+                'Return Sand Check (2x/type/shift)',
                 '',
                 '',
-                'BC Sample',
                 '',
                 '',
                 '',
                 '',
+                '', // AD..AK
+            ],
+
+            // Row3: Leaves (nama parameter) + RS level-1
+            [
+                'Process Date',
+                'Shift',
+                'MM No',
+                'Mix No',
+                'Mix Start',
+                'Mix Finish',
+                'P',
+                'C',
+                'G.T',
+                'CB MM',
+                'CB Lab',
+                'M',
+                'Bakunetsu',
+                'AC',
+                'TC',
+                'Vsd',
+                'IG',
+                'CB weight',
+                'TP 50 weight',
+                'SSI',
+                'M3',
+                'VSD',
+                'SC',
+                'CB',
+                'M',
+                'AC',
+                'Vsd',
+                'CB',
+                'M',
+                'Time',
+                'Type',
+                'Moisture',
                 '',
-                'Return Sand',
                 '',
-                '',
-                '',
-                '',
-                '',
+                'Temperature',
                 '',
                 '',
             ],
+
+            // Row4: RS BC9/10/11 (yang lain di-merge vertikal)
             [
                 '',
                 '',
@@ -155,38 +225,44 @@ class GreensandExportFull implements
                 '',
                 '',
                 '',
-                'P',
-                'C',
-                'GT',
-                'CB (MM)',
-                'CB (Lab)',
-                'M',
-                'Bakunetsu',
-                'AC',
-                'TC',
-                'VSD (MM)',
-                'IG',
-                'CB Weight',
-                'TP50 Weight',
-                'SSI',
-                'M3',
-                'VSD',
-                'SC',
-                'BC12 CB',
-                'BC12 M',
-                'BC11 AC',
-                'BC11 VSD',
-                'BC16 CB',
-                'BC16 M',
-                'RS Time',
-                'Type',
-                'Moist BC9',
-                'Moist BC10',
-                'Moist BC11',
-                'Temp BC9',
-                'Temp BC10',
-                'Temp BC11',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'BC9',
+                'BC10',
+                'BC11',
+                'BC9',
+                'BC10',
+                'BC11',
             ],
+
+            // Row5..Row9: tabel referensi (Standard/Target/Satuan/C/T/Freq)
+            ['Standard', '', '', '', '', '', ...array_fill(0, 20, ''), ...array_fill(0, 3, ''), ...array_fill(0, 2, ''), ...array_fill(0, 2, ''), ...array_fill(0, 8, '')],
+            ['Target', '', '', '', '', '', ...array_fill(0, 20, ''), ...array_fill(0, 3, ''), ...array_fill(0, 2, ''), ...array_fill(0, 2, ''), ...array_fill(0, 8, '')],
+            ['Satuan', '', '', '', '', '', ...array_fill(0, 20, ''), ...array_fill(0, 3, ''), ...array_fill(0, 2, ''), ...array_fill(0, 2, ''), ...array_fill(0, 8, '')],
+            ['C/T (detik)', '', '', '', '', '', ...array_fill(0, 20, ''), ...array_fill(0, 3, ''), ...array_fill(0, 2, ''), ...array_fill(0, 2, ''), ...array_fill(0, 8, '')],
+            ['Freq. Check', '', '', '', '', '', ...array_fill(0, 20, ''), ...array_fill(0, 3, ''), ...array_fill(0, 2, ''), ...array_fill(0, 2, ''), ...array_fill(0, 8, '')],
         ];
     }
 
@@ -200,6 +276,7 @@ class GreensandExportFull implements
             $fmtDate($row->date),
             $val($row->shift),
             $val($row->mm),
+
             $val($row->mix_ke),
             $fmtTime($row->mix_start),
             $fmtTime($row->mix_finish),
@@ -243,55 +320,74 @@ class GreensandExportFull implements
 
     public function styles(Worksheet $sheet)
     {
-        // Merge blok judul
-        $sheet->mergeCells('A1:A2');
-        $sheet->mergeCells('B1:B2');
-        $sheet->mergeCells('C1:C2');
-        $sheet->mergeCells('D1:D2');
-        $sheet->mergeCells('E1:E2');
-        $sheet->mergeCells('F1:F2');
-        $sheet->mergeCells('G1:T1');   // MM
-        $sheet->mergeCells('U1:W1');   // Additive
-        $sheet->mergeCells('X1:AC1');  // BC
-        $sheet->mergeCells('AD1:AK1'); // Return Sand
+        // ======= MERGES =======
+        $sheet->mergeCells('A1:AK1');              // title
 
-        $lastCol = 'AK';
-        $highest = $sheet->getHighestRow();
+        // groups row2
+        $sheet->mergeCells('A2:C2'); // Item Check
+        $sheet->mergeCells('D2:F2'); // TIME
+        $sheet->mergeCells('G2:T2'); // MM Sample
+        $sheet->mergeCells('U2:W2'); // Additive
+        $sheet->mergeCells('X2:Y2'); // BC12
+        $sheet->mergeCells('Z2:AA2'); // BC11
+        $sheet->mergeCells('AB2:AC2'); // BC16
+        $sheet->mergeCells('AD2:AK2'); // RS
 
-        // Header styling
-        $sheet->getStyle("A1:{$lastCol}2")->applyFromArray([
+        // leaf vertical (row3:row4) — selain RS
+        foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC'] as $col) {
+            $sheet->mergeCells("{$col}3:{$col}4");
+        }
+
+        // RS subgroups
+        $sheet->mergeCells('AD3:AD4'); // Time
+        $sheet->mergeCells('AE3:AE4'); // Type
+        $sheet->mergeCells('AF3:AH3'); // Moisture
+        $sheet->mergeCells('AI3:AK3'); // Temperature
+
+        // blok label referensi (kolom A..F vertikal)
+        foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $col) {
+            $sheet->mergeCells("{$col}5:{$col}9");
+        }
+
+        // ======= STYLING =======
+        $sheet->getStyle('A1:AK1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 13],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // header (row2..row4)
+        $sheet->getStyle('A2:AK4')->applyFromArray([
             'font' => ['bold' => true],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-                'wrapText' => true,
-            ],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
         ]);
 
-        // Warna grup (sekilas menyerupai form)
-        $sheet->getStyle('A1:F2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2EFDA');
-        $sheet->getStyle('G1:T1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC');
-        $sheet->getStyle('G2:T2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF9E5');
-        $sheet->getStyle('U1:W1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC');
-        $sheet->getStyle('U2:W2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF9E5');
-        $sheet->getStyle('X1:AC1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('DDEBF7');
-        $sheet->getStyle('X2:AC2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('EEF5FD');
-        $sheet->getStyle('AD1:AK1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFE699');
-        $sheet->getStyle('AD2:AK2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC');
+        // warna mendekati template
+        $sheet->getStyle('A2:C4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2EFDA'); // Item Check
+        $sheet->getStyle('D2:F4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2EFDA'); // TIME
 
-        // Border seluruh area
-        $sheet->getStyle("A1:{$lastCol}{$highest}")->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
+        $sheet->getStyle('G2:T2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC'); // MM grp
+        $sheet->getStyle('G3:T4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF9E5');
+
+        $sheet->getStyle('U2:W2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC'); // Add
+        $sheet->getStyle('U3:W4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF9E5');
+
+        $sheet->getStyle('X2:AC2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('DDEBF7'); // BC
+        $sheet->getStyle('X3:AC4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('EEF5FD');
+
+        $sheet->getStyle('AD2:AK2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFE699'); // RS
+        $sheet->getStyle('AD3:AK4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF2CC');
+
+        // garis besar semua
+        $highest = max(9, $sheet->getHighestRow());
+        $sheet->getStyle("A1:AK{$highest}")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000']]],
         ]);
 
-        // Tinggi header
-        $sheet->getRowDimension(1)->setRowHeight(24);
-        $sheet->getRowDimension(2)->setRowHeight(24);
+        // tinggi baris header
+        foreach ([2, 3, 4] as $r)
+            $sheet->getRowDimension($r)->setRowHeight(22);
+        foreach ([5, 6, 7, 8, 9] as $r)
+            $sheet->getRowDimension($r)->setRowHeight(20);
 
         return [];
     }
@@ -301,8 +397,37 @@ class GreensandExportFull implements
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $sheet->freezePane('A3');          // kunci header
-                $sheet->setAutoFilter('A2:AK2');   // filter di baris 2
+
+                // ==== isi nilai referensi (baris 5..9) ====
+                // mapping kolom parameter agar gampang taruh teks
+                $mmCols = ['G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']; // 14 kolom MM
+                $bc12Cols = ['X', 'Y'];
+                $bc11Cols = ['Z', 'AA'];
+                $bc16Cols = ['AB', 'AC'];
+
+                // MM Sample
+                foreach (['standard' => 5, 'target' => 6, 'satuan' => 7, 'ct' => 8, 'freq' => 9] as $key => $row) {
+                    $vals = $this->mmRef[$key] ?? [];
+                    foreach ($mmCols as $i => $col) {
+                        $sheet->setCellValue("{$col}{$row}", $vals[$i] ?? '');
+                    }
+                }
+
+                // BC 12/11/16
+                foreach (['standard' => 5, 'target' => 6, 'satuan' => 7, 'ct' => 8, 'freq' => 9] as $key => $row) {
+                    foreach ($bc12Cols as $i => $col)
+                        $sheet->setCellValue("{$col}{$row}", $this->bc12Ref[$key][$i] ?? '');
+                    foreach ($bc11Cols as $i => $col)
+                        $sheet->setCellValue("{$col}{$row}", $this->bc11Ref[$key][$i] ?? '');
+                    foreach ($bc16Cols as $i => $col)
+                        $sheet->setCellValue("{$col}{$row}", $this->bc16Ref[$key][$i] ?? '');
+                }
+
+                // label kiri (kol A) untuk baris 5..9 sudah di headings()
+    
+                // freeze & filter untuk area data
+                $sheet->freezePane('A10');
+                $sheet->setAutoFilter('A9:AK9');
             },
         ];
     }

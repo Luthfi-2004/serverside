@@ -7,7 +7,7 @@
             <div class="row">
                 <div class="col-12">
 
-                    {{-- Title + Breadcrumb --}}
+                    <!-- title -->
                     <div class="page-title-box d-flex align-items-center justify-content-between">
                         <h4 class="mb-0">Green Sand Check</h4>
                         <div class="page-title-right">
@@ -18,7 +18,7 @@
                         </div>
                     </div>
 
-                    {{-- Filter --}}
+                    <!-- filter -->
                     <div class="card mb-3">
                         <div id="filterHeader"
                             class="card-header bg-light d-flex align-items-center justify-content-between">
@@ -44,12 +44,13 @@
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label class="form-label mb-1">Shift</label>
-                                    <select id="shiftSelect" class="form-control select2" data-placeholder="Select shift">
-                                        <option value=""></option>
-                                        <option value="D">Day</option>
-                                        <option value="S">Swing</option>
-                                        <option value="N">Night</option>
-                                    </select>
+                                        <select id="shiftSelect" class="form-control select2"
+                                            data-placeholder="Select shift">
+                                            <option value=""></option>
+                                            <option value="D">Day</option>
+                                            <option value="S">Swing</option>
+                                            <option value="N">Night</option>
+                                        </select>
                                     </div>
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
@@ -85,7 +86,8 @@
                             </div>
                         </div>
                     </div>
-                    {{-- Tables --}}
+
+                    <!-- table -->
                     <div class="card mb-4">
                         <div class="card-body shadow-lg">
                             <div class="mb-3 d-flex justify-content-between align-items-center">
@@ -93,9 +95,10 @@
                                     <i class="ri-add-line"></i> Add Data
                                 </button>
                             </div>
+
                             @include('serverside.modal')
 
-                            {{-- Tabs --}}
+                            <!-- tabs -->
                             <ul class="nav nav-tabs" role="tablist">
                                 <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#mm1" role="tab">MM
                                         1</a></li>
@@ -106,36 +109,32 @@
                             </ul>
 
                             <div class="tab-content p-3 border border-top-0">
-
-                                {{-- MM1 --}}
+                                <!-- mm1 -->
                                 <div class="tab-pane fade show active" id="mm1" role="tabpanel">
                                     <table id="dt-mm1" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
-
-                                {{-- MM2 --}}
+                                <!-- mm2 -->
                                 <div class="tab-pane fade" id="mm2" role="tabpanel">
                                     <table id="dt-mm2" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
-
-                                {{-- ALL --}}
+                                <!-- all -->
                                 <div class="tab-pane fade" id="all" role="tabpanel">
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
-
                             </div>
                         </div>
                     </div>
 
-                    {{-- Confirm Delete Modal --}}
+                    <!-- modal -->
                     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
                         aria-labelledby="confirmDeleteTitle" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -161,69 +160,72 @@
         </div>
     </div>
 @endsection
+
 @push('styles')
-<style>
-    /* --- Select2 normal --- */
-    .select2-container--bootstrap4 .select2-selection {
-        height: calc(1.5em + .75rem + 2px) !important;
-        padding: .375rem .75rem !important;
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-        border: 1px solid #ced4da !important;
-        border-radius: .25rem !important;
-    }
-    .select2-container--bootstrap4 .select2-selection__rendered {
-        line-height: 1.5 !important;
-        padding-left: 0 !important;
-        color: #495057 !important;
-    }
-    .select2-container--bootstrap4 .select2-selection__arrow {
-        height: 100% !important;
-        right: .75rem !important;
-    }
+    <style>
+        /* style */
+        .select2-container--bootstrap4 .select2-selection {
+            height: calc(1.5em + .75rem + 2px) !important;
+            padding: .375rem .75rem !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            border: 1px solid #ced4da !important;
+            border-radius: .25rem !important;
+        }
 
+        .select2-container--bootstrap4 .select2-selection__rendered {
+            line-height: 1.5 !important;
+            padding-left: 0 !important;
+            color: #495057 !important;
+        }
 
-    .select2-container--bootstrap4.select2-container--focus .select2-selection,
-    .select2-container--bootstrap4.select2-container--open .select2-selection {
-        border-color: #80bdff !important;
-        border-width: 2px !important;
-        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; 
-        outline: 0 !important;
-    }
+        .select2-container--bootstrap4 .select2-selection__arrow {
+            height: 100% !important;
+            right: .75rem !important;
+        }
 
-    .input-group .select2-container--bootstrap4 .select2-selection {
-        height: calc(1.5em + .75rem + 2px) !important;
-    }
-    .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
-    .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
-        border-color: #80bdff !important;
-        border-width: 2px !important;
-        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important;
-    }
+        .select2-container--bootstrap4.select2-container--focus .select2-selection,
+        .select2-container--bootstrap4.select2-container--open .select2-selection {
+            border-color: #80bdff !important;
+            border-width: 2px !important;
+            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
+            outline: 0 !important;
+        }
 
+        .input-group .select2-container--bootstrap4 .select2-selection {
+            height: calc(1.5em + .75rem + 2px) !important;
+        }
 
-    .datepicker-input,
-    input.datepicker,
-    input.form-control.datepicker {
-        height: calc(1.5em + .75rem + 2px) !important;
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-        border: 1.5px solid #ced4da !important;
-        border-radius: .25rem !important;
-    }
+        .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
+        .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
+            border-color: #80bdff !important;
+            border-width: 2px !important;
+            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
+        }
 
-    input.form-control.datepicker:focus,
-    input.datepicker:focus {
-        border-color: #80bdff !important;
-        border-width: 2px !important; /* tebal */
-        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; /* glow */
-        outline: 0 !important;
-    }
-</style>
+        .datepicker-input,
+        input.datepicker,
+        input.form-control.datepicker {
+            height: calc(1.5em + .75rem + 2px) !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            border: 1.5px solid #ced4da !important;
+            border-radius: .25rem !important;
+        }
+
+        input.form-control.datepicker:focus,
+        input.datepicker:focus {
+            border-color: #80bdff !important;
+            border-width: 2px !important;
+            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
+            outline: 0 !important;
+        }
+    </style>
 @endpush
 
 @push('scripts')
     <script>
+        // routes
         window.serversideRoutes = {
             mm1: "{{ route('serverside.data.mm1') }}",
             mm2: "{{ route('serverside.data.mm2') }}",
