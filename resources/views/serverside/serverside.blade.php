@@ -44,13 +44,12 @@
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
                                         <label class="form-label mb-1">Shift</label>
-                                        <select id="shiftSelect" class="form-control select2"
-                                            data-placeholder="Select shift">
-                                            <option value=""></option>
-                                            <option value="D">Day</option>
-                                            <option value="S">Swing</option>
-                                            <option value="N">Night</option>
-                                        </select>
+                                    <select id="shiftSelect" class="form-control select2" data-placeholder="Select shift">
+                                        <option value=""></option>
+                                        <option value="D">Day</option>
+                                        <option value="S">Swing</option>
+                                        <option value="N">Night</option>
+                                    </select>
                                     </div>
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
@@ -183,15 +182,15 @@
         right: .75rem !important;
     }
 
-    /* --- Select2 focus: tebal --- */
+
     .select2-container--bootstrap4.select2-container--focus .select2-selection,
     .select2-container--bootstrap4.select2-container--open .select2-selection {
         border-color: #80bdff !important;
-        border-width: 2px !important; /* tebal */
-        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; /* glow */
+        border-width: 2px !important;
+        box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important; 
         outline: 0 !important;
     }
-    /* kalau Select2 di dalam input-group, tambah kekuatan selector */
+
     .input-group .select2-container--bootstrap4 .select2-selection {
         height: calc(1.5em + .75rem + 2px) !important;
     }
@@ -202,7 +201,7 @@
         box-shadow: 0 0 0 .25rem rgba(0,123,255,.35) !important;
     }
 
-    /* --- Datepicker input normal --- */
+
     .datepicker-input,
     input.datepicker,
     input.form-control.datepicker {
@@ -213,7 +212,6 @@
         border-radius: .25rem !important;
     }
 
-    /* --- Datepicker focus: tebal --- */
     input.form-control.datepicker:focus,
     input.datepicker:focus {
         border-color: #80bdff !important;
@@ -230,11 +228,8 @@
             mm1: "{{ route('serverside.data.mm1') }}",
             mm2: "{{ route('serverside.data.mm2') }}",
             all: "{{ route('serverside.data.all') }}",
-
-            // CRUD
             store: "{{ route('serverside.processes.store') }}",
             base: "{{ url('serverside/processes') }}",
-            // Export
             export: "{{ route('greensand.export') }}",
         };
     </script>

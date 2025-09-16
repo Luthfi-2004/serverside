@@ -8,14 +8,14 @@ $(function () {
         return;
     }
 
-    // --- CSRF (buat POST create/update/delete)
+    // --- CSRF
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // --- GLOBAL STATE tab aktif (default mm1)
+    // --- GLOBAL STATE tab aktif
     window.__GS_ACTIVE_TAB__ = "mm1"; // 'mm1' | 'mm2' | 'all'
 
     // --- Collapse filter
@@ -26,7 +26,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // ========== Helpers (Form Modal) ==========
+    // ========== Helpers ==========
     function clearErrors() {
         $("#gsForm .form-control, #gsForm .custom-select").removeClass(
             "is-invalid"
@@ -37,12 +37,9 @@ $(function () {
         if ($alert.length) $alert.addClass("d-none").text("");
     }
 
-    // baca tab aktif dari state; fallback DOM
     function getActiveTab() {
         const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
         if (st === "mm1" || st === "mm2" || st === "all") return st;
-
-        // Fallback DOM bila state belum pernah ter-set
         const $pane = $(".tab-content .tab-pane.show.active");
         if ($pane.length) {
             const id = ($pane.attr("id") || "").toLowerCase();
@@ -53,24 +50,30 @@ $(function () {
         return id2 === "mm1" || id2 === "mm2" || id2 === "all" ? id2 : "mm1";
     }
 
+    function pickTime(val) {
+        if (!val) return "";
+        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
+        return m ? m[1] : String(val);
+    }
+
+    // ========== Form Modal ==========
     function resetGsForm() {
         $("#gsForm")[0]?.reset();
         $("#gs_id").val("");
         $("#gs_mode").val("create");
         $("#gsModalMode").text("Add");
+
+        // reset select2 shift (modal)
         $("#shift").val(null).trigger("change");
+
+        // default MM mengikuti tab aktif
         const tab = getActiveTab();
         const mmDefault = tab === "mm2" ? "2" : "1";
         $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
         $("#mm1_btn,#mm2_btn").removeClass("active");
         (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
-        clearErrors();
-    }
 
-    function pickTime(val) {
-        if (!val) return "";
-        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
-        return m ? m[1] : String(val);
+        clearErrors();
     }
 
     function applyErrors(errs) {
@@ -134,15 +137,17 @@ $(function () {
         $("#gs_id").val(data.id);
         $("#gs_mode").val("edit");
         $("#gsModalMode").text("Edit");
+
+        // set shift (modal) sekali + trigger change biar label tampil
         $("#shift")
-            .val(data.shift || "")
+            .val(data.shift || null)
             .trigger("change");
+
         const mmVal = data.mm === "MM2" ? "2" : "1";
         $(`input[name="mm"][value="${mmVal}"]`).prop("checked", true);
         $("#mm1_btn,#mm2_btn").removeClass("active");
         (mmVal === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
 
-        $("#shift").val(data.shift || "");
         $("#mix_ke").val(data.mix_ke || "");
         $("#mix_start").val(pickTime(data.mix_start));
         $("#mix_finish").val(pickTime(data.mix_finish));
@@ -182,7 +187,7 @@ $(function () {
         ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    // ========== Modal Add/Edit ==========
+    // Open modal Add
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -190,6 +195,7 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
+    // Open modal Edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -211,6 +217,7 @@ $(function () {
                 });
         });
 
+    // Submit form (Create/Update)
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -296,16 +303,23 @@ $(function () {
                 });
         });
 
-    // ========== Select2 & Datepicker ==========
-    $(".select2").select2({
-        theme: "bootstrap4",
-        width: "100%",
-        allowClear: true,
-        placeholder: function () {
-            return $(this).data("placeholder") || "Select";
-        },
-    });
-    // --- Select2 untuk SHIFT di modal (dropdownParent = modal supaya z-index aman)
+    // ========== Select2 ==========
+    // FILTER SHIFT (di header filter)
+    $("#shiftSelect")
+        .select2({
+            theme: "bootstrap4",
+            width: "100%",
+            placeholder: "Select shift",
+            allowClear: true,
+            minimumResultsForSearch: Infinity,
+            dropdownParent: $("#filterCollapse"),
+        })
+        .off("change.gs")
+        .on("change.gs", function () {
+            reloadAll();
+        });
+
+    // MODAL SHIFT (di dalam modal)
     $("#modal-greensand").on("shown.bs.modal", function () {
         const $sel = $("#shift");
         if (!$sel.data("select2")) {
@@ -317,12 +331,12 @@ $(function () {
                 minimumResultsForSearch: Infinity,
                 dropdownParent: $("#modal-greensand"),
             });
-        } else {
-            // refresh tampilan setiap kali modal dibuka
-            $sel.trigger("change.select2");
         }
+        // sinkron tampilan saat modal dibuka
+        if (!$sel.val()) $sel.val(null).trigger("change");
     });
 
+    // ========== Datepicker ==========
     $("#startDate, #endDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
@@ -352,6 +366,7 @@ $(function () {
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
+            // reset date
             $("#startDate")
                 .datepicker("setDate", null)
                 .val("")
@@ -362,28 +377,23 @@ $(function () {
                 .val("")
                 .datepicker("setStartDate", null)
                 .datepicker("setEndDate", null);
+            // reset shift filter -> placeholder
             $("#shiftSelect").val(null).trigger("change");
+            // reset keyword
             $("#keywordInput").val("");
             reloadAll();
         });
 
-    $("#startDate, #endDate").off("changeDate").on("changeDate", reloadAll);
-    $("#shiftSelect").off("change").on("change", reloadAll);
+    $("#startDate, #endDate").off("changeDate");
+    $("#shiftSelect").off("change.gs").on("change.gs");
 
-    // Keyword debounce + Enter
-    let kwTimer = null;
-    $("#keywordInput")
-        .off("input keydown")
-        .on("input", () => {
-            clearTimeout(kwTimer);
-            kwTimer = setTimeout(reloadAll, 350);
-        })
-        .on("keydown", (e) => {
-            if (e.key === "Enter") {
-                clearTimeout(kwTimer);
-                reloadAll();
-            }
-        });
+  $("#keywordInput")
+      .off("keydown")
+      .on("keydown", (e) => {
+          if (e.key === "Enter") {
+              $("#btnSearch").trigger("click"); 
+          }
+      });
 
     // ========== DataTables ==========
     const baseColumns = [
@@ -461,7 +471,7 @@ $(function () {
     const instances = { mm1: null, mm2: null, all: null };
     window.instances = instances;
 
-    // init default MM1 + set state awal dari DOM
+    // init default MM1 + seed state dari DOM
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
     (function seedActiveFromDom() {
         const href = (
@@ -476,7 +486,7 @@ $(function () {
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
-            const href = ($(e.target).attr("href") || "").toLowerCase(); // "#mm1" | "#mm2" | "#all"
+            const href = ($(e.target).attr("href") || "").toLowerCase();
             if (href === "#mm2") window.__GS_ACTIVE_TAB__ = "mm2";
             else if (href === "#all") window.__GS_ACTIVE_TAB__ = "all";
             else window.__GS_ACTIVE_TAB__ = "mm1";
@@ -489,16 +499,6 @@ $(function () {
             $.fn.dataTable
                 .tables({ visible: true, api: true })
                 .columns.adjust();
-        });
-
-    // EXTRA guard: kalau event Bootstrap nggak kepanggil, set juga saat klik link tab
-    $('a[data-toggle="tab"]')
-        .off("click.gs")
-        .on("click.gs", function () {
-            const href = ($(this).attr("href") || "").toLowerCase();
-            if (href === "#mm2") window.__GS_ACTIVE_TAB__ = "mm2";
-            else if (href === "#all") window.__GS_ACTIVE_TAB__ = "all";
-            else window.__GS_ACTIVE_TAB__ = "mm1";
         });
 
     // reload semua (termasuk hidden)
@@ -515,7 +515,7 @@ $(function () {
         .on("click", "#btnExport", function (e) {
             e.preventDefault();
 
-            const tab = getActiveTab(); // 'mm1' | 'mm2' | 'all' (dari STATE)
+            const tab = getActiveTab();
             const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
 
             if (!window.serversideRoutes?.export) {
@@ -533,13 +533,8 @@ $(function () {
             u.searchParams.set("end_date", $("#endDate").val() || "");
             u.searchParams.set("shift", $("#shiftSelect").val() || "");
             u.searchParams.set("keyword", $("#keywordInput").val() || "");
-            if (mm) u.searchParams.set("mm", mm); // tab ALL => tanpa mm
+            if (mm) u.searchParams.set("mm", mm);
 
-            // DEBUG: lihat URL & tab yg terbaca
-            console.log("[EXPORT] tab:", tab, "| mm param:", mm || "(none)");
-            console.log("[EXPORT] url:", u.toString());
-
-            // trigger download
             window.location.href = u.toString();
         });
 });

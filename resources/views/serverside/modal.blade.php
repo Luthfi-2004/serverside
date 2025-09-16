@@ -53,7 +53,7 @@
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label mb-1">Shift</label>
                                     <select name="shift" id="shift" class="form-control">
-                                        <option value=""></option> <!-- kosong biar placeholder Select2 jalan -->
+                                        <option value=""></option>
                                         <option value="D">Day</option>
                                         <option value="S">Swing</option>
                                         <option value="N">Night</option>
