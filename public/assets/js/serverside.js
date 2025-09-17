@@ -308,9 +308,6 @@ $(function () {
         .select2({
             theme: "bootstrap4",
             width: "100%",
-            placeholder: "Select shift",
-            allowClear: true,
-            minimumResultsForSearch: Infinity,
             dropdownParent: $("#filterCollapse"),
         })
         .off("change.gs")
@@ -325,9 +322,6 @@ $(function () {
             $sel.select2({
                 theme: "bootstrap4",
                 width: "100%",
-                placeholder: "Select shift",
-                allowClear: true,
-                minimumResultsForSearch: Infinity,
                 dropdownParent: $("#modal-greensand"),
             });
         }
@@ -338,8 +332,6 @@ $(function () {
     $("#startDate, #endDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
-        todayHighlight: true,
-        clearBtn: true,
         orientation: "bottom",
     });
 

@@ -162,65 +162,67 @@
 @endsection
 
 @push('styles')
-    <style>
-        /* style */
-        .select2-container--bootstrap4 .select2-selection {
-            height: calc(1.5em + .75rem + 2px) !important;
-            padding: .375rem .75rem !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
-            border: 1px solid #ced4da !important;
-            border-radius: .25rem !important;
-        }
+        <style>
+           .select2-container--bootstrap4 .select2-selection {
+        height: calc(1.5em + .75rem + 2px) !important;
+        padding: .375rem .75rem !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: .25rem !important;
+    }
 
-        .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 1.5 !important;
-            padding-left: 0 !important;
-            color: #495057 !important;
-        }
+    .select2-container--bootstrap4 .select2-selection__rendered {
+        line-height: 1.5 !important;
+        padding-left: 0 !important;
+        color: #495057 !important;
+    }
 
-        .select2-container--bootstrap4 .select2-selection__arrow {
-            height: 100% !important;
-            right: .75rem !important;
-        }
+    .select2-container--bootstrap4 .select2-selection__arrow {
+        height: 100% !important;
+        right: .75rem !important;
+    }
 
-        .select2-container--bootstrap4.select2-container--focus .select2-selection,
-        .select2-container--bootstrap4.select2-container--open .select2-selection {
-            border-color: #80bdff !important;
-            border-width: 2px !important;
-            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
-            outline: 0 !important;
-        }
+    /* Hilangin efek border biru ketika focus/open */
+    .select2-container--bootstrap4.select2-container--focus .select2-selection,
+    .select2-container--bootstrap4.select2-container--open .select2-selection {
+        border-color: #ced4da !important;
+        border-width: 1px !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+    }
 
-        .input-group .select2-container--bootstrap4 .select2-selection {
-            height: calc(1.5em + .75rem + 2px) !important;
-        }
+    .input-group .select2-container--bootstrap4 .select2-selection {
+        height: calc(1.5em + .75rem + 2px) !important;
+    }
 
-        .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
-        .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
-            border-color: #80bdff !important;
-            border-width: 2px !important;
-            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
-        }
+    .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
+    .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
+        border-color: #ced4da !important;
+        border-width: 1px !important;
+        box-shadow: none !important;
+    }
 
-        .datepicker-input,
-        input.datepicker,
-        input.form-control.datepicker {
-            height: calc(1.5em + .75rem + 2px) !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
-            border: 1.5px solid #ced4da !important;
-            border-radius: .25rem !important;
-        }
+    .datepicker-input,
+    input.datepicker,
+    input.form-control.datepicker {
+        height: calc(1.5em + .75rem + 2px) !important;
+        font-size: 1rem !important;
+        line-height: 1.5 !important;
+        border: 1px solid #ced4da !important;
+        border-radius: .25rem !important;
+    }
 
-        input.form-control.datepicker:focus,
-        input.datepicker:focus {
-            border-color: #80bdff !important;
-            border-width: 2px !important;
-            box-shadow: 0 0 0 .25rem rgba(0, 123, 255, .35) !important;
-            outline: 0 !important;
-        }
-    </style>
+    /* Hilangin efek biru pada datepicker saat focus */
+    input.form-control.datepicker:focus,
+    input.datepicker:focus {
+        border-color: #ced4da !important;
+        border-width: 1px !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+    }
+
+        </style>
 @endpush
 
 @push('scripts')
