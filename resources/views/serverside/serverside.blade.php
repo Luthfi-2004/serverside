@@ -31,15 +31,9 @@
                                 <div class="row align-items-end">
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label class="form-label mb-1">Start Date</label>
-                                        <input id="startDate" type="text" class="form-control datepicker"
-                                            placeholder="Start Date" autocomplete="off">
-                                    </div>
-
-                                    <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label class="form-label mb-1">End Date</label>
-                                        <input id="endDate" type="text" class="form-control datepicker"
-                                            placeholder="End Date" autocomplete="off">
+                                        <label class="form-label mb-1">Date</label>
+                                        <input id="filterDate" type="text" class="form-control datepicker"
+                                            placeholder="Date" autocomplete="off">
                                     </div>
 
                                     <div class="col-xl-3 col-lg-3 mb-2">
@@ -53,7 +47,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-xl-3 col-lg-3 mb-2">
+                                    <div class="col-xl-6 col-lg-6 mb-2">
                                         <label class="form-label mb-1">Search (mix/model)</label>
                                         <div class="input-group">
                                             <input id="keywordInput" type="text" class="form-control"
@@ -66,7 +60,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-xl-6 col-lg-12 mt-2">
+                                    <div class="col-xl-12 col-lg-12 mt-2">
                                         <div class="d-flex flex-wrap">
                                             <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
                                                 <i class="ri-search-line mr-1"></i> Search
@@ -124,17 +118,26 @@
                                     </table>
                                 </div>
                                 <!-- all -->
+                                <!-- all -->
                                 <div class="tab-pane fade" id="all" role="tabpanel">
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
+                                        <tfoot>
+                                            <tr class="gs-summary-row">
+                                                {{-- isi akan diinject via JS, jadi cukup placeholder kosong --}}
+                                                @for ($i = 0; $i < 38; $i++)
+                                                    <th></th>
+                                                @endfor
+                                            </tr>
+                                        </tfoot> {{-- footer untuk MIN/MAX/AVG/JUDGE --}}
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- modal -->
+                    <!-- modal confirm delete -->
                     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
                         aria-labelledby="confirmDeleteTitle" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -162,72 +165,74 @@
 @endsection
 
 @push('styles')
-        <style>
-           .select2-container--bootstrap4 .select2-selection {
-        height: calc(1.5em + .75rem + 2px) !important;
-        padding: .375rem .75rem !important;
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-        border: 1px solid #ced4da !important;
-        border-radius: .25rem !important;
-    }
+    <style>
+        #dt-all tfoot .gs-summary-row:first-child td {
+            border-top: 2px solid #333 !important;
+        }
 
-    .select2-container--bootstrap4 .select2-selection__rendered {
-        line-height: 1.5 !important;
-        padding-left: 0 !important;
-        color: #495057 !important;
-    }
+        #dt-all tfoot .gs-summary-row td {
+            background: #fff;
+            font-size: .95rem;
+            text-align: center;
+        }
 
-    .select2-container--bootstrap4 .select2-selection__arrow {
-        height: 100% !important;
-        right: .75rem !important;
-    }
+        #dt-all tfoot .gs-summary-row td:first-child {
+            text-align: left;
+            white-space: nowrap;
+        }
 
-    /* Hilangin efek border biru ketika focus/open */
-    .select2-container--bootstrap4.select2-container--focus .select2-selection,
-    .select2-container--bootstrap4.select2-container--open .select2-selection {
-        border-color: #ced4da !important;
-        border-width: 1px !important;
-        box-shadow: none !important;
-        outline: 0 !important;
-    }
+        .select2-container--bootstrap4 .select2-selection {
+            height: calc(1.5em + .75rem + 2px) !important;
+            padding: .375rem .75rem !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            border: 1px solid #ced4da !important;
+            border-radius: .25rem !important;
+        }
 
-    .input-group .select2-container--bootstrap4 .select2-selection {
-        height: calc(1.5em + .75rem + 2px) !important;
-    }
+        .select2-container--bootstrap4 .select2-selection__rendered {
+            line-height: 1.5 !important;
+            padding-left: 0 !important;
+            color: #495057 !important;
+        }
 
-    .input-group .select2-container--bootstrap4.select2-container--focus .select2-selection,
-    .input-group .select2-container--bootstrap4.select2-container--open .select2-selection {
-        border-color: #ced4da !important;
-        border-width: 1px !important;
-        box-shadow: none !important;
-    }
+        .select2-container--bootstrap4 .select2-selection__arrow {
+            height: 100% !important;
+            right: .75rem !important;
+        }
 
-    .datepicker-input,
-    input.datepicker,
-    input.form-control.datepicker {
-        height: calc(1.5em + .75rem + 2px) !important;
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-        border: 1px solid #ced4da !important;
-        border-radius: .25rem !important;
-    }
+        .select2-container--bootstrap4.select2-container--focus .select2-selection,
+        .select2-container--bootstrap4.select2-container--open .select2-selection {
+            border-color: #ced4da !important;
+            border-width: 1px !important;
+            box-shadow: none !important;
+            outline: 0 !important;
+        }
 
-    /* Hilangin efek biru pada datepicker saat focus */
-    input.form-control.datepicker:focus,
-    input.datepicker:focus {
-        border-color: #ced4da !important;
-        border-width: 1px !important;
-        box-shadow: none !important;
-        outline: 0 !important;
-    }
+        .input-group .select2-container--bootstrap4 .select2-selection {
+            height: calc(1.5em + .75rem + 2px) !important;
+        }
 
-        </style>
+        /* datepicker */
+        input.form-control.datepicker {
+            height: calc(1.5em + .75rem + 2px) !important;
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            border: 1px solid #ced4da !important;
+            border-radius: .25rem !important;
+        }
+
+        input.form-control.datepicker:focus {
+            border-color: #ced4da !important;
+            border-width: 1px !important;
+            box-shadow: none !important;
+            outline: 0 !important;
+        }
+    </style>
 @endpush
 
 @push('scripts')
     <script>
-        // routes
         window.serversideRoutes = {
             mm1: "{{ route('serverside.data.mm1') }}",
             mm2: "{{ route('serverside.data.mm2') }}",
@@ -235,6 +240,7 @@
             store: "{{ route('serverside.processes.store') }}",
             base: "{{ url('serverside/processes') }}",
             export: "{{ route('greensand.export') }}",
+            summary: "{{ route('serverside.summary') }}",
         };
     </script>
     <script src="{{ asset('assets/js/serverside.js') }}" defer></script>

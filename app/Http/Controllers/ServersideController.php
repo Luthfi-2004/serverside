@@ -7,6 +7,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\Process;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ServersideController extends Controller
 {
@@ -24,30 +25,130 @@ class ServersideController extends Controller
         return $this->makeResponse($request, null);
     }
 
+    // summary (min/max/avg + judge OK/NG)
+    public function summaryAll(Request $request)
+    {
+        $q = Process::query();
+
+        // filter date & shift
+        $d = $request->filled('date') ? $this->toYmd($request->date) : null;
+        if ($d)
+            $q->whereDate('date', $d);
+        if ($request->filled('shift'))
+            $q->where('shift', $request->shift);
+        if ($request->filled('keyword')) {
+            $kw = $request->keyword;
+            $q->where(function ($x) use ($kw) {
+                $x->where('mix_ke', 'like', "%{$kw}%")
+                    ->orWhere('rs_type', 'like', "%{$kw}%");
+            });
+        }
+
+        // kolom numerik untuk summary
+        $fields = [
+            'mm_p',
+            'mm_c',
+            'mm_gt',
+            'mm_cb_mm',
+            'mm_cb_lab',
+            'mm_m',
+            'mm_bakunetsu',
+            'mm_ac',
+            'mm_tc',
+            'mm_vsd',
+            'mm_ig',
+            'mm_cb_weight',
+            'mm_tp50_weight',
+            'mm_ssi',
+            'add_m3',
+            'add_vsd',
+            'add_sc',
+            'bc12_cb',
+            'bc12_m',
+            'bc11_ac',
+            'bc11_vsd',
+            'bc16_cb',
+            'bc16_m',
+            'bc9_moist',
+            'bc10_moist',
+            'bc11_moist',
+            'bc9_temp',
+            'bc10_temp',
+            'bc11_temp'
+        ];
+
+        // spec range hardcode (isi sesuai standar kamu)
+        $spec = [
+            'mm_p' => ['min' => 220, 'max' => 260],
+            'mm_c' => ['min' => 13.5, 'max' => 17.5],
+            'mm_gt' => ['min' => 450, 'max' => 650],
+            'mm_cb_mm'=> ['min'=> 40, 'max'=> 43],
+            'mm_cb_lab'=> ['min'=> 32, 'max'=> 42],
+            'mm_m' => ['min' => 2.45, 'max' => 2.85],
+            'mm_bakunetsu' => ['min' => 20, 'max' => 85],
+            'mm_ac' => ['min' => 6.7, 'max' => 7.3],
+            'mm_tc' => ['min' => 9, 'max' => 11],
+            'mm_vsd' => ['min' => 0.7, 'max' => 1.3],
+            'mm_ig' => ['min' => 3, 'max' => 4],
+            'mm_cb_weight' => ['min' => 163, 'max' => 170],
+            'mm_tp50_weight' => ['min' => 141, 'max' => 144],
+            'mm_ssi' => ['min' => 85, 'max' => 95],
+            // tambahkan semua field lain sesuai tabel standar
+        ];
+
+        // agregasi min/max/avg
+        $agg = [];
+        foreach ($fields as $f) {
+            $agg[] = DB::raw("MIN($f) as min_$f");
+            $agg[] = DB::raw("MAX($f) as max_$f");
+            $agg[] = DB::raw("AVG($f) as avg_$f");
+        }
+        $row = $q->select($agg)->first();
+
+        $result = [];
+        foreach ($fields as $f) {
+            $min = $row->{"min_$f"} ?? null;
+            $max = $row->{"max_$f"} ?? null;
+            $avg = $row->{"avg_$f"} ?? null;
+            $judge = null;
+
+            if ($avg !== null && isset($spec[$f])) {
+                $judge = ($avg >= $spec[$f]['min'] && $avg <= $spec[$f]['max']) ? "OK" : "NG";
+            }
+
+            $result[] = [
+                'field' => $f,
+                'min' => $min,
+                'max' => $max,
+                'avg' => $avg ? round($avg, 2) : null,
+                'spec' => $spec[$f] ?? null,
+                'judge' => $judge,
+            ];
+        }
+
+        return response()->json(['summary' => $result]);
+    }
+
     // dt
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
             $q = Process::query();
 
-            // mm
+            // mm filter
             if ($mmFilter)
                 $q->where('mm', $mmFilter);
 
-            // parse
-            $sd = $request->filled('start_date') ? $this->toYmd($request->start_date) : null;
-            $ed = $request->filled('end_date') ? $this->toYmd($request->end_date) : null;
+            // === single date filter (exact day) ===
+            $d = $request->filled('date') ? $this->toYmd($request->date) : null;
+            if ($d)
+                $q->whereDate('date', $d);
 
-            // range
-            [$sd, $ed] = $this->normalizeRange($sd, $ed);
-
-            // filter
-            if ($sd)
-                $q->whereDate('date', '>=', $sd);
-            if ($ed)
-                $q->whereDate('date', '<=', $ed);
+            // shift
             if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
+
+            // keyword
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
@@ -101,11 +202,10 @@ class ServersideController extends Controller
             return DataTables::of($q)
                 ->addColumn('action', function ($row) {
                     return '<div class="btn-group btn-group-sm se-2">
-        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>
-    </div>';
+                        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>';
                 })
-                // mm
                 ->editColumn('mm', function ($row) {
                     if ($row->mm === 'MM1')
                         return 1;
@@ -113,7 +213,6 @@ class ServersideController extends Controller
                         return 2;
                     return $row->mm;
                 })
-                // date
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
@@ -145,19 +244,19 @@ class ServersideController extends Controller
         if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
 
-        // unik
         $mm = $this->normalizeMm($in['mm'] ?? null);
         $shift = $in['shift'];
-        $mixKe = (int) $in['mix_ke'];
-        $day = now('Asia/Jakarta')->toDateString();
+        $day = $this->toYmd($in['date'] ?? null) ?: now('Asia/Jakarta')->toDateString();
+        $mixKe = (int) ($in['mix_ke'] ?? 0);
+
+        // unik per hari + shift + mm + mix_ke
         if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, null)) {
             return response()->json([
                 'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
             ], 422);
         }
 
-        // save
-        $data = $this->mapRequestToProcess($in, null);
+        $data = $this->mapRequestToProcess($in, null, $day);
         $row = Process::create($data);
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
@@ -169,29 +268,27 @@ class ServersideController extends Controller
         return response()->json(['data' => $row]);
     }
 
-    // update
+    // update (tidak ubah shift/date record)
     public function update(Request $request, $id)
     {
         $row = Process::findOrFail($id);
-
         $in = $request->all();
         $v = $this->validator($in, 'update');
         if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
 
-        // unik
         $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
-        $shift = $in['shift'] ?? $row->shift;
+        $shift = $row->shift; // lock shift on update
         $mixKe = isset($in['mix_ke']) ? (int) $in['mix_ke'] : (int) $row->mix_ke;
-        $day = $this->dayString($row->date);
+        $day = $this->dayString($row->date); // lock date (day part)
+
         if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, (int) $row->id)) {
             return response()->json([
                 'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
             ], 422);
         }
 
-        // save
-        $data = $this->mapRequestToProcess($in, $row);
+        $data = $this->mapRequestToProcess($in, $row, $day, true, true);
         $row->update($data);
         return response()->json(['message' => 'Updated']);
     }
@@ -204,7 +301,7 @@ class ServersideController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    // mm
+    // --- helpers ---
     private function normalizeMm($val): ?string
     {
         if ($val === null || $val === '')
@@ -217,7 +314,6 @@ class ServersideController extends Controller
         return null;
     }
 
-    // valid
     private function validator(array $in, string $mode = 'store')
     {
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
@@ -231,7 +327,6 @@ class ServersideController extends Controller
         ]);
     }
 
-    // day
     private function dayString($value): string
     {
         if ($value instanceof \DateTimeInterface)
@@ -239,7 +334,6 @@ class ServersideController extends Controller
         return Carbon::parse($value)->toDateString();
     }
 
-    // unik
     private function isDuplicateMix(string $mm, string $shift, int $mixKe, string $dayYmd, ?int $ignoreId = null): bool
     {
         $q = Process::query()
@@ -253,7 +347,6 @@ class ServersideController extends Controller
         return $q->exists();
     }
 
-    // parse
     private function toYmd(?string $val): ?string
     {
         if (!$val)
@@ -261,7 +354,7 @@ class ServersideController extends Controller
         foreach (['d-m-Y', 'Y-m-d', 'd/m/Y'] as $fmt) {
             try {
                 return Carbon::createFromFormat($fmt, $val)->toDateString();
-            } catch (\Throwable $e) { /* continue */
+            } catch (\Throwable $e) {
             }
         }
         try {
@@ -271,7 +364,6 @@ class ServersideController extends Controller
         }
     }
 
-    // range
     private function normalizeRange(?string $sd, ?string $ed): array
     {
         if ($sd && $ed) {
@@ -281,19 +373,18 @@ class ServersideController extends Controller
                 if ($cs->gt($ce)) {
                     [$sd, $ed] = [$ed, $sd];
                 }
-            } catch (\Throwable $e) { /* ignore */
+            } catch (\Throwable $e) {
             }
         }
         return [$sd, $ed];
     }
 
-    // map
-    private function mapRequestToProcess(array $in, ?Process $existing = null): array
+    private function mapRequestToProcess(array $in, ?Process $existing = null, ?string $dayYmd = null, bool $lockDate = false, bool $lockShift = false): array
     {
-        $mm = $this->normalizeMm($in['mm'] ?? null);
+        $mm = $this->normalizeMm($in['mm'] ?? ($existing->mm ?? null));
 
         // date
-        if ($existing) {
+        if ($existing && $lockDate) {
             try {
                 $dateTime = $existing->date instanceof \DateTimeInterface
                     ? Carbon::instance($existing->date)->format('Y-m-d H:i:s')
@@ -302,12 +393,19 @@ class ServersideController extends Controller
                 $dateTime = now('Asia/Jakarta')->format('Y-m-d H:i:s');
             }
         } else {
-            $dateTime = now('Asia/Jakarta')->format('Y-m-d H:i:s');
+            $day = $dayYmd ?: now('Asia/Jakarta')->toDateString();
+            $timeNow = now('Asia/Jakarta')->format('H:i:s');
+            $dateTime = "{$day} {$timeNow}";
         }
+
+        // shift
+        $shiftVal = $lockShift
+            ? ($existing->shift ?? null)
+            : ($in['shift'] ?? ($existing->shift ?? null));
 
         return [
             'date' => $dateTime,
-            'shift' => $in['shift'] ?? ($existing->shift ?? null),
+            'shift' => $shiftVal,
             'mm' => $mm,
             'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
             'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),

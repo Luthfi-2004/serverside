@@ -1,6 +1,5 @@
 // public/assets/js/serverside.js
 $(function () {
-    // guard
     if (!window.serversideRoutes) {
         console.error(
             "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -8,17 +7,42 @@ $(function () {
         return;
     }
 
-    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // state
-    window.__GS_ACTIVE_TAB__ = "mm1"; // 'mm1' | 'mm2' | 'all'
+    // ===== Helpers =====
+    function detectShiftByNow() {
+        const hh = new Date().getHours();
+        if (hh >= 6 && hh < 16) return "D"; // Day
+        if (hh >= 16 && hh < 22) return "S"; // Swing
+        return "N"; // Night
+    }
+    function todayDdMmYyyy() {
+        const d = new Date();
+        return `${String(d.getDate()).padStart(
+            2,
+            "0"
+        )}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+    }
+    function getActiveTab() {
+        const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
+        if (["mm1", "mm2", "all"].includes(st)) return st;
+        const href = $(".nav-tabs .nav-link.active").attr("href") || "#mm1";
+        const id = href.startsWith("#") ? href.slice(1) : href;
+        return ["mm1", "mm2", "all"].includes(id) ? id : "mm1";
+    }
+    function pickTime(val) {
+        if (!val) return "";
+        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
+        return m ? m[1] : String(val);
+    }
+    const getKeyword = () => $("#keywordInput").val() || "";
 
-    // collapse
+    // ===== UI state =====
+    window.__GS_ACTIVE_TAB__ = "mm1";
     $("#filterHeader")
         .off("click")
         .on("click", function () {
@@ -26,7 +50,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // helper
+    // ===== Errors =====
     function clearErrors() {
         $("#gsForm .form-control, #gsForm .custom-select").removeClass(
             "is-invalid"
@@ -36,46 +60,6 @@ $(function () {
         const $alert = $("#gsFormAlert");
         if ($alert.length) $alert.addClass("d-none").text("");
     }
-
-    function getActiveTab() {
-        const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
-        if (st === "mm1" || st === "mm2" || st === "all") return st;
-        const $pane = $(".tab-content .tab-pane.show.active");
-        if ($pane.length) {
-            const id = ($pane.attr("id") || "").toLowerCase();
-            if (id === "mm1" || id === "mm2" || id === "all") return id;
-        }
-        const href = $(".nav-tabs .nav-link.active").attr("href") || "#mm1";
-        const id2 = (href.startsWith("#") ? href.slice(1) : href).toLowerCase();
-        return id2 === "mm1" || id2 === "mm2" || id2 === "all" ? id2 : "mm1";
-    }
-
-    function pickTime(val) {
-        if (!val) return "";
-        const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
-        return m ? m[1] : String(val);
-    }
-
-    // form
-    function resetGsForm() {
-        $("#gsForm")[0]?.reset();
-        $("#gs_id").val("");
-        $("#gs_mode").val("create");
-        $("#gsModalMode").text("Add");
-
-        // shift
-        $("#shift").val(null).trigger("change");
-
-        // mm
-        const tab = getActiveTab();
-        const mmDefault = tab === "mm2" ? "2" : "1";
-        $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
-        $("#mm1_btn,#mm2_btn").removeClass("active");
-        (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
-
-        clearErrors();
-    }
-
     function applyErrors(errs) {
         const map = {
             mm: {
@@ -83,7 +67,6 @@ $(function () {
                 target: "#mm_error",
                 groupBtns: ["#mm1_btn", "#mm2_btn"],
             },
-            shift: { type: "input", target: "#shift_error", control: "#shift" },
             mix_ke: {
                 type: "input",
                 target: "#mix_ke_error",
@@ -106,7 +89,6 @@ $(function () {
             },
         };
         let general = [];
-
         Object.entries(errs || {}).forEach(([key, messages]) => {
             const msg = Array.isArray(messages)
                 ? messages.join(" ")
@@ -124,24 +106,49 @@ $(function () {
                 general.push(msg);
             }
         });
-
         if (general.length) {
             const $alert = $("#gsFormAlert");
             if ($alert.length)
                 $alert.removeClass("d-none").text(general.join(" "));
-            else console.warn("Validation:", general.join(" "));
         }
     }
 
+    // ===== Form (Modal) =====
+    function resetGsForm() {
+        $("#gsForm")[0]?.reset();
+        $("#gs_id").val("");
+        $("#gs_mode").val("create");
+        $("#gsModalMode").text("Add");
+
+        const mmDefault = getActiveTab() === "mm2" ? "2" : "1";
+        $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
+        $("#mm1_btn,#mm2_btn").removeClass("active");
+        (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active"); // <- fixed
+
+        const curShift = $("#shiftSelect").val() || detectShiftByNow();
+        const label =
+            curShift === "D" ? "Day" : curShift === "S" ? "Swing" : "Night";
+        if ($("#gsShiftInfo").length)
+            $("#gsShiftInfo").text(`Shift: ${curShift} (${label})`);
+
+        clearErrors();
+    }
     function fillGsForm(data) {
         $("#gs_id").val(data.id);
         $("#gs_mode").val("edit");
         $("#gsModalMode").text("Edit");
 
-        // shift
-        $("#shift")
-            .val(data.shift || null)
-            .trigger("change");
+        const curShift = data.shift || "-";
+        const label =
+            curShift === "D"
+                ? "Day"
+                : curShift === "S"
+                ? "Swing"
+                : curShift === "N"
+                ? "Night"
+                : "-";
+        if ($("#gsShiftInfo").length)
+            $("#gsShiftInfo").text(`Shift: ${curShift} (${label})`);
 
         const mmVal = data.mm === "MM2" ? "2" : "1";
         $(`input[name="mm"][value="${mmVal}"]`).prop("checked", true);
@@ -187,15 +194,13 @@ $(function () {
         ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    // add
+    // Add / Edit
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
             resetGsForm();
             $("#modal-greensand").modal("show");
         });
-
-    // edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -217,17 +222,32 @@ $(function () {
                 });
         });
 
-    // submit
+    // Submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
             e.preventDefault();
             clearErrors();
+
+            const shift = $("#shiftSelect").val() || "";
+            const date = $("#filterDate").val() || "";
+            if (!shift) {
+                const $alert = $("#gsFormAlert");
+                if ($alert.length)
+                    $alert
+                        .removeClass("d-none")
+                        .text("Shift wajib dipilih dari filter.");
+                return;
+            }
+
             const mode = $("#gs_mode").val();
             const id = $("#gs_id").val();
-            const formData = $(this).serialize();
-            $("#gsSubmitBtn").prop("disabled", true);
+            let formData = $(this).serialize();
+            formData += `&shift=${encodeURIComponent(
+                shift
+            )}&date=${encodeURIComponent(date)}`;
 
+            $("#gsSubmitBtn").prop("disabled", true);
             const req =
                 mode === "edit"
                     ? $.post(
@@ -244,19 +264,15 @@ $(function () {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
                         applyErrors(xhr.responseJSON.errors);
                     } else if (xhr.status === 419) {
-                        const $alert = $("#gsFormAlert");
-                        if ($alert.length)
-                            $alert
-                                .removeClass("d-none")
-                                .text(
-                                    "CSRF token invalid (419). Silakan refresh halaman."
-                                );
+                        $("#gsFormAlert")
+                            .removeClass("d-none")
+                            .text(
+                                "CSRF token invalid (419). Silakan refresh halaman."
+                            );
                     } else {
-                        const $alert = $("#gsFormAlert");
-                        if ($alert.length)
-                            $alert
-                                .removeClass("d-none")
-                                .text("Gagal menyimpan data.");
+                        $("#gsFormAlert")
+                            .removeClass("d-none")
+                            .text("Gagal menyimpan data.");
                     }
                     console.error(xhr.responseText || xhr);
                 })
@@ -265,7 +281,7 @@ $(function () {
                 });
         });
 
-    // delete
+    // Delete
     let pendingDeleteId = null;
     $(document)
         .off("click", ".btn-delete-gs")
@@ -289,8 +305,7 @@ $(function () {
                         xhr.status === 419
                             ? "CSRF token invalid (419). Silakan refresh halaman."
                             : "Gagal menghapus data.";
-                    const $body = $("#confirmDeleteModal .modal-body");
-                    $body.prepend(
+                    $("#confirmDeleteModal .modal-body").prepend(
                         '<div class="alert alert-danger mb-2">' + msg + "</div>"
                     );
                     setTimeout(() => {
@@ -303,7 +318,7 @@ $(function () {
                 });
         });
 
-    // select2
+    // ===== Filter widgets =====
     $("#shiftSelect")
         .select2({
             theme: "bootstrap4",
@@ -314,75 +329,28 @@ $(function () {
         .on("change.gs", function () {
             reloadAll();
         });
-
-    // modal
-    $("#modal-greensand").on("shown.bs.modal", function () {
-        const $sel = $("#shift");
-        if (!$sel.data("select2")) {
-            $sel.select2({
-                theme: "bootstrap4",
-                width: "100%",
-                dropdownParent: $("#modal-greensand"),
-            });
-        }
-        if (!$sel.val()) $sel.val(null).trigger("change");
-    });
-
-    // date
-    $("#startDate, #endDate").datepicker({
+    $("#filterDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
         orientation: "bottom",
     });
 
-    // range
-    $("#startDate").on("changeDate clearDate change", function () {
-        const d = $("#startDate").datepicker("getDate");
-        $("#endDate").datepicker("setStartDate", d || null);
-        if (d) $("#endDate").datepicker("setDate", d);
-        else $("#endDate").val("");
-    });
-    $("#endDate").on("changeDate clearDate change", function () {
-        const d = $("#endDate").datepicker("getDate");
-        $("#startDate").datepicker("setEndDate", d || null);
-    });
-
-    // filter
-    const getShift = () => $("#shiftSelect").val() || "";
-    const getKeyword = () => $("#keywordInput").val() || "";
-
     $("#btnSearch, #btnQuickSearch").off("click").on("click", reloadAll);
-
+    $("#keywordInput")
+        .off("keydown")
+        .on("keydown", (e) => {
+            if (e.key === "Enter") $("#btnSearch").trigger("click");
+        });
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
-            $("#startDate")
-                .datepicker("setDate", null)
-                .val("")
-                .datepicker("setStartDate", null)
-                .datepicker("setEndDate", null);
-            $("#endDate")
-                .datepicker("setDate", null)
-                .val("")
-                .datepicker("setStartDate", null)
-                .datepicker("setEndDate", null);
-            $("#shiftSelect").val(null).trigger("change");
+            $("#filterDate").datepicker("setDate", todayDdMmYyyy());
+            $("#shiftSelect").val(detectShiftByNow()).trigger("change");
             $("#keywordInput").val("");
             reloadAll();
         });
 
-    $("#startDate, #endDate").off("changeDate");
-    $("#shiftSelect").off("change.gs").on("change.gs");
-
-    $("#keywordInput")
-        .off("keydown")
-        .on("keydown", (e) => {
-            if (e.key === "Enter") {
-                $("#btnSearch").trigger("click");
-            }
-        });
-
-    // datatable
+    // ===== DataTables =====
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -424,7 +392,91 @@ $(function () {
         { data: "bc11_temp", name: "bc11_temp" },
     ];
 
+    // Render summary ke footer #dt-all
+    function renderAllFooterSummary(summary) {
+        const $tfoot = $("#dt-all tfoot");
+        if (!$tfoot.length) return;
+
+        const colCount = $("#dt-all thead th").length;
+
+        function makeRow(label, valuesMap) {
+            let tds = "";
+            for (let i = 0; i < colCount; i++) {
+                if (i === 0) {
+                    tds += `<td>${label}</td>`;
+                    continue;
+                }
+                const val =
+                    valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
+                tds += `<td>${val}</td>`;
+            }
+            return `<tr class="gs-summary-row">${tds}</tr>`;
+        }
+
+        // mapping index kolom sesuai thead
+        const colIndex = {
+            mm_p: 7,
+            mm_c: 8,
+            mm_gt: 9,
+            mm_cb_mm: 10,
+            mm_cb_lab: 11,
+            mm_m: 12,
+            mm_bakunetsu: 13,
+            mm_ac: 14,
+            mm_tc: 15,
+            mm_vsd: 16,
+            mm_ig: 17,
+            mm_cb_weight: 18,
+            mm_tp50_weight: 19,
+            mm_ssi: 20,
+            add_m3: 21,
+            add_vsd: 22,
+            add_sc: 23,
+            bc12_cb: 24,
+            bc12_m: 25,
+            bc11_ac: 26,
+            bc11_vsd: 27,
+            bc16_cb: 28,
+            bc16_m: 29,
+            // rs_time: 30, rs_type: 31, // tidak disummary
+            bc9_moist: 32,
+            bc10_moist: 33,
+            bc11_moist: 34,
+            bc9_temp: 35,
+            bc10_temp: 36,
+            bc11_temp: 37,
+        };
+
+        const rowMin = {},
+            rowMax = {},
+            rowAvg = {},
+            rowJudge = {};
+        (summary || []).forEach((s) => {
+            const idx = colIndex[s.field];
+            if (idx == null) return;
+            rowMin[idx] = s.min != null ? s.min : "";
+            rowMax[idx] = s.max != null ? s.max : "";
+            rowAvg[idx] = s.avg != null ? s.avg : "";
+            rowJudge[idx] = s.judge
+                ? `<span class="${
+                      s.judge === "NG"
+                          ? "text-danger font-weight-bold"
+                          : "text-success font-weight-bold"
+                  }">${s.judge}</span>`
+                : "";
+        });
+
+        const html =
+            makeRow("MIN", rowMin) +
+            makeRow("MAX", rowMax) +
+            makeRow("AVG", rowAvg) +
+            makeRow("JUDGE", rowJudge);
+        $tfoot.html(html);
+    }
+
     function makeDt($el, url) {
+        const isAll = $el.attr("id") === "dt-all";
+
         return $el.DataTable({
             processing: true,
             serverSide: true,
@@ -443,23 +495,67 @@ $(function () {
             ajax: {
                 url: url,
                 data: function (d) {
-                    d.start_date = $("#startDate").val();
-                    d.end_date = $("#endDate").val();
-                    d.shift = getShift();
+                    d.date = $("#filterDate").val();
+                    d.shift = $("#shiftSelect").val() || "";
                     d.keyword = getKeyword();
                 },
             },
-            order: [[1, "desc"]],
+            order: isAll
+                ? [
+                      [3, "asc"],
+                      [1, "desc"],
+                  ]
+                : [[1, "desc"]],
             columns: baseColumns,
             stateSave: false,
+
+            drawCallback: function () {
+                const api = this.api();
+
+                if (isAll) {
+                    // spacer antar MM
+                    const mmColIdx = 3;
+                    const $tbody = $(api.table().body());
+                    $tbody.find("tr.mm-spacer").remove();
+                    let prevMM = null;
+                    $tbody.find("tr").each(function () {
+                        const $tr = $(this);
+                        const cells = $tr.find("td");
+                        if (!cells.length) return;
+                        const mmText = (cells.eq(mmColIdx).text() || "").trim(); // "1" / "2"
+                        if (prevMM !== null && prevMM !== mmText) {
+                            for (let i = 0; i < 3; i++) {
+                                $tr.before(
+                                    `<tr class="mm-spacer"><td colspan="${cells.length}" style="height:10px;border:none;padding:0;"></td></tr>`
+                                );
+                            }
+                        }
+                        prevMM = mmText;
+                    });
+
+                    // summary ke footer
+                    if (window.serversideRoutes.summary) {
+                        $.get(window.serversideRoutes.summary, {
+                            date: $("#filterDate").val() || "",
+                            shift: $("#shiftSelect").val() || "",
+                            keyword: $("#keywordInput").val() || "",
+                        })
+                            .done((res) =>
+                                renderAllFooterSummary(
+                                    res && res.summary ? res.summary : []
+                                )
+                            )
+                            .fail(() => renderAllFooterSummary([]));
+                    }
+                }
+            },
         });
     }
 
     const instances = { mm1: null, mm2: null, all: null };
-    window.instances = instances;
-
-    // init
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
+
+    // seed active tab
     (function seedActiveFromDom() {
         const href = (
             $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
@@ -469,7 +565,7 @@ $(function () {
         else window.__GS_ACTIVE_TAB__ = "mm1";
     })();
 
-    // tab
+    // tab switching
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
@@ -488,7 +584,6 @@ $(function () {
                 .columns.adjust();
         });
 
-    // reload
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
@@ -496,32 +591,32 @@ $(function () {
     }
     window.reloadAll = reloadAll;
 
-    // export
+    // Export
     $(document)
         .off("click", "#btnExport")
         .on("click", "#btnExport", function (e) {
             e.preventDefault();
-
             const tab = getActiveTab();
             const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
-
             if (!window.serversideRoutes?.export) {
                 console.error(
                     'Export route missing. Pastikan di Blade: route("greensand.export")'
                 );
                 return;
             }
-
             const u = new URL(
                 window.serversideRoutes.export,
                 window.location.origin
             );
-            u.searchParams.set("start_date", $("#startDate").val() || "");
-            u.searchParams.set("end_date", $("#endDate").val() || "");
+            u.searchParams.set("date", $("#filterDate").val() || "");
             u.searchParams.set("shift", $("#shiftSelect").val() || "");
             u.searchParams.set("keyword", $("#keywordInput").val() || "");
             if (mm) u.searchParams.set("mm", mm);
-
             window.location.href = u.toString();
         });
+
+    // init defaults
+    $("#filterDate").datepicker("setDate", todayDdMmYyyy());
+    $("#shiftSelect").val(detectShiftByNow()).trigger("change");
+    reloadAll();
 });
