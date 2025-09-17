@@ -393,86 +393,87 @@ $(function () {
     ];
 
     // Render summary ke footer #dt-all
-    function renderAllFooterSummary(summary) {
-        const $tfoot = $("#dt-all tfoot");
-        if (!$tfoot.length) return;
+// === REPLACE fungsi lama ===
+function renderAllFooterSummary(summary) {
+    const $tfoot = $("#dt-all tfoot");
+    if (!$tfoot.length) return;
 
-        const colCount = $("#dt-all thead th").length;
+    // Jumlah kolom HARUS sama dengan DataTables (aman pakai baseColumns.length)
+    const colCount = baseColumns.length;
 
-        function makeRow(label, valuesMap) {
-            let tds = "";
-            for (let i = 0; i < colCount; i++) {
-                if (i === 0) {
-                    tds += `<td>${label}</td>`;
-                    continue;
-                }
-                const val =
-                    valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
-                tds += `<td>${val}</td>`;
+    // util: bikin satu baris footer dengan label di kolom pertama
+    function makeRow(label, valuesMap) {
+        let tds = "";
+        for (let i = 0; i < colCount; i++) {
+            if (i === 0) {
+                tds += `<td>${label}</td>`;
+                continue;
             }
-            return `<tr class="gs-summary-row">${tds}</tr>`;
+            const val = valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
+            tds += `<td>${val}</td>`;
         }
-
-        // mapping index kolom sesuai thead
-        const colIndex = {
-            mm_p: 7,
-            mm_c: 8,
-            mm_gt: 9,
-            mm_cb_mm: 10,
-            mm_cb_lab: 11,
-            mm_m: 12,
-            mm_bakunetsu: 13,
-            mm_ac: 14,
-            mm_tc: 15,
-            mm_vsd: 16,
-            mm_ig: 17,
-            mm_cb_weight: 18,
-            mm_tp50_weight: 19,
-            mm_ssi: 20,
-            add_m3: 21,
-            add_vsd: 22,
-            add_sc: 23,
-            bc12_cb: 24,
-            bc12_m: 25,
-            bc11_ac: 26,
-            bc11_vsd: 27,
-            bc16_cb: 28,
-            bc16_m: 29,
-            // rs_time: 30, rs_type: 31, // tidak disummary
-            bc9_moist: 32,
-            bc10_moist: 33,
-            bc11_moist: 34,
-            bc9_temp: 35,
-            bc10_temp: 36,
-            bc11_temp: 37,
-        };
-
-        const rowMin = {},
-            rowMax = {},
-            rowAvg = {},
-            rowJudge = {};
-        (summary || []).forEach((s) => {
-            const idx = colIndex[s.field];
-            if (idx == null) return;
-            rowMin[idx] = s.min != null ? s.min : "";
-            rowMax[idx] = s.max != null ? s.max : "";
-            rowAvg[idx] = s.avg != null ? s.avg : "";
-            rowJudge[idx] = s.judge
-                ? `<span class="${
-                      s.judge === "NG"
-                          ? "text-danger font-weight-bold"
-                          : "text-success font-weight-bold"
-                  }">${s.judge}</span>`
-                : "";
-        });
-
-        const html =
-            makeRow("MIN", rowMin) +
-            makeRow("MAX", rowMax) +
-            makeRow("AVG", rowAvg) +
-            makeRow("JUDGE", rowJudge);
-        $tfoot.html(html);
+        return `<tr class="gs-summary-row">${tds}</tr>`;
     }
+
+    // Peta index kolom sesuai baseColumns (0-based)
+    const colIndex = {
+        // — 7 kolom awal (action/date/shift/mm/mix_ke/mix_start/mix_finish) sengaja TIDAK diisi summary —
+        mm_p: 7,
+        mm_c: 8,
+        mm_gt: 9,
+        mm_cb_mm: 10,
+        mm_cb_lab: 11,
+        mm_m: 12,
+        mm_bakunetsu: 13,
+        mm_ac: 14,
+        mm_tc: 15,
+        mm_vsd: 16,
+        mm_ig: 17,
+        mm_cb_weight: 18,
+        mm_tp50_weight: 19,
+        mm_ssi: 20,
+        add_m3: 21,
+        add_vsd: 22,
+        add_sc: 23,
+        bc12_cb: 24,
+        bc12_m: 25,
+        bc11_ac: 26,
+        bc11_vsd: 27,
+        bc16_cb: 28,
+        bc16_m: 29,
+        // rs_time (30) & rs_type (31) bukan numerik → skip summary
+        bc9_moist: 32,
+        bc10_moist: 33,
+        bc11_moist: 34,
+        bc9_temp: 35,
+        bc10_temp: 36,
+        bc11_temp: 37,
+    };
+
+    const rowMin = {}, rowMax = {}, rowAvg = {}, rowJudge = {};
+
+    (summary || []).forEach((s) => {
+        const idx = colIndex[s.field];
+        if (idx == null) return;
+        rowMin[idx] = s.min != null ? s.min : "";
+        rowMax[idx] = s.max != null ? s.max : "";
+        rowAvg[idx] = s.avg != null ? s.avg : "";
+        rowJudge[idx] = s.judge
+            ? `<span class="${
+                  s.judge === "NG" ? "text-danger font-weight-bold" : "text-success font-weight-bold"
+              }">${s.judge}</span>`
+            : "";
+    });
+
+    const html =
+        makeRow("MIN", rowMin) +
+        makeRow("MAX", rowMax) +
+        makeRow("AVG", rowAvg) +
+        makeRow("JUDGE", rowJudge);
+
+    $tfoot.html(html);
+}
+
 
     function makeDt($el, url) {
         const isAll = $el.attr("id") === "dt-all";

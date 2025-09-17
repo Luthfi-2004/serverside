@@ -166,6 +166,7 @@
 
 @push('styles')
     <style>
+        
         #dt-all tfoot .gs-summary-row:first-child td {
             border-top: 2px solid #333 !important;
         }
