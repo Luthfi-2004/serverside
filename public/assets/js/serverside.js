@@ -1,5 +1,6 @@
 // public/assets/js/serverside.js
 $(function () {
+    // guard
     if (!window.serversideRoutes) {
         console.error(
             "serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -7,18 +8,19 @@ $(function () {
         return;
     }
 
+    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // ===== Helpers =====
+    // helpers
     function detectShiftByNow() {
         const hh = new Date().getHours();
-        if (hh >= 6 && hh < 16) return "D"; // Day
-        if (hh >= 16 && hh < 22) return "S"; // Swing
-        return "N"; // Night
+        if (hh >= 6 && hh < 16) return "D";
+        if (hh >= 16 && hh < 22) return "S";
+        return "N";
     }
     function todayDdMmYyyy() {
         const d = new Date();
@@ -41,7 +43,7 @@ $(function () {
     }
     const getKeyword = () => $("#keywordInput").val() || "";
 
-    // ===== UI state =====
+    // ui
     window.__GS_ACTIVE_TAB__ = "mm1";
     $("#filterHeader")
         .off("click")
@@ -50,7 +52,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // ===== Errors =====
+    // errors
     function clearErrors() {
         $("#gsForm .form-control, #gsForm .custom-select").removeClass(
             "is-invalid"
@@ -113,7 +115,7 @@ $(function () {
         }
     }
 
-    // ===== Form (Modal) =====
+    // form
     function resetGsForm() {
         $("#gsForm")[0]?.reset();
         $("#gs_id").val("");
@@ -123,7 +125,7 @@ $(function () {
         const mmDefault = getActiveTab() === "mm2" ? "2" : "1";
         $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
         $("#mm1_btn,#mm2_btn").removeClass("active");
-        (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active"); // <- fixed
+        (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
 
         const curShift = $("#shiftSelect").val() || detectShiftByNow();
         const label =
@@ -194,13 +196,15 @@ $(function () {
         ].forEach((f) => $("#" + f).val(data[f] ?? ""));
     }
 
-    // Add / Edit
+    // add
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
             resetGsForm();
             $("#modal-greensand").modal("show");
         });
+
+    // edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -222,7 +226,7 @@ $(function () {
                 });
         });
 
-    // Submit
+    // submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -281,7 +285,7 @@ $(function () {
                 });
         });
 
-    // Delete
+    // delete
     let pendingDeleteId = null;
     $(document)
         .off("click", ".btn-delete-gs")
@@ -318,23 +322,21 @@ $(function () {
                 });
         });
 
-    // ===== Filter widgets =====
+    // filter
     $("#shiftSelect")
-        .select2({
-            theme: "bootstrap4",
-            width: "100%",
-            dropdownParent: $("#filterCollapse"),
-        })
+        .select2()
         .off("change.gs")
         .on("change.gs", function () {
             reloadAll();
         });
+
     $("#filterDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
         orientation: "bottom",
     });
 
+    // search
     $("#btnSearch, #btnQuickSearch").off("click").on("click", reloadAll);
     $("#keywordInput")
         .off("keydown")
@@ -350,7 +352,7 @@ $(function () {
             reloadAll();
         });
 
-    // ===== DataTables =====
+    // columns
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -392,92 +394,104 @@ $(function () {
         { data: "bc11_temp", name: "bc11_temp" },
     ];
 
-    // Render summary ke footer #dt-all
-// === REPLACE fungsi lama ===
-function renderAllFooterSummary(summary) {
-    const $tfoot = $("#dt-all tfoot");
-    if (!$tfoot.length) return;
-
-    // Jumlah kolom HARUS sama dengan DataTables (aman pakai baseColumns.length)
-    const colCount = baseColumns.length;
-
-    // util: bikin satu baris footer dengan label di kolom pertama
-    function makeRow(label, valuesMap) {
-        let tds = "";
-        for (let i = 0; i < colCount; i++) {
-            if (i === 0) {
-                tds += `<td>${label}</td>`;
-                continue;
-            }
-            const val = valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
-            tds += `<td>${val}</td>`;
-        }
-        return `<tr class="gs-summary-row">${tds}</tr>`;
+    // footer summary function - extracted to be reusable
+    function loadAllFooterSummary() {
+        if (!window.serversideRoutes.summary) return;
+        
+        $.get(window.serversideRoutes.summary, {
+            date: $("#filterDate").val() || "",
+            shift: $("#shiftSelect").val() || "",
+            keyword: $("#keywordInput").val() || "",
+        })
+        .done((res) => renderAllFooterSummary(res && res.summary ? res.summary : []))
+        .fail(() => renderAllFooterSummary([]));
     }
 
-    // Peta index kolom sesuai baseColumns (0-based)
-    const colIndex = {
-        // — 7 kolom awal (action/date/shift/mm/mix_ke/mix_start/mix_finish) sengaja TIDAK diisi summary —
-        mm_p: 7,
-        mm_c: 8,
-        mm_gt: 9,
-        mm_cb_mm: 10,
-        mm_cb_lab: 11,
-        mm_m: 12,
-        mm_bakunetsu: 13,
-        mm_ac: 14,
-        mm_tc: 15,
-        mm_vsd: 16,
-        mm_ig: 17,
-        mm_cb_weight: 18,
-        mm_tp50_weight: 19,
-        mm_ssi: 20,
-        add_m3: 21,
-        add_vsd: 22,
-        add_sc: 23,
-        bc12_cb: 24,
-        bc12_m: 25,
-        bc11_ac: 26,
-        bc11_vsd: 27,
-        bc16_cb: 28,
-        bc16_m: 29,
-        // rs_time (30) & rs_type (31) bukan numerik → skip summary
-        bc9_moist: 32,
-        bc10_moist: 33,
-        bc11_moist: 34,
-        bc9_temp: 35,
-        bc10_temp: 36,
-        bc11_temp: 37,
-    };
+    // footer
+    function renderAllFooterSummary(summary) {
+        const $tfoot = $("#dt-all tfoot");
+        if (!$tfoot.length) return;
 
-    const rowMin = {}, rowMax = {}, rowAvg = {}, rowJudge = {};
+        const colCount = baseColumns.length;
 
-    (summary || []).forEach((s) => {
-        const idx = colIndex[s.field];
-        if (idx == null) return;
-        rowMin[idx] = s.min != null ? s.min : "";
-        rowMax[idx] = s.max != null ? s.max : "";
-        rowAvg[idx] = s.avg != null ? s.avg : "";
-        rowJudge[idx] = s.judge
-            ? `<span class="${
-                  s.judge === "NG" ? "text-danger font-weight-bold" : "text-success font-weight-bold"
-              }">${s.judge}</span>`
-            : "";
-    });
+        function makeRow(label, valuesMap) {
+            let tds = "";
+            for (let i = 0; i < colCount; i++) {
+                if (i === 0) {
+                    tds += `<td>${label}</td>`;
+                    continue;
+                }
+                const val =
+                    valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
+                tds += `<td>${val}</td>`;
+            }
+            return `<tr class="gs-summary-row">${tds}</tr>`;
+        }
 
-    const html =
-        makeRow("MIN", rowMin) +
-        makeRow("MAX", rowMax) +
-        makeRow("AVG", rowAvg) +
-        makeRow("JUDGE", rowJudge);
+        const colIndex = {
+            mm_p: 7,
+            mm_c: 8,
+            mm_gt: 9,
+            mm_cb_mm: 10,
+            mm_cb_lab: 11,
+            mm_m: 12,
+            mm_bakunetsu: 13,
+            mm_ac: 14,
+            mm_tc: 15,
+            mm_vsd: 16,
+            mm_ig: 17,
+            mm_cb_weight: 18,
+            mm_tp50_weight: 19,
+            mm_ssi: 20,
+            add_m3: 21,
+            add_vsd: 22,
+            add_sc: 23,
+            bc12_cb: 24,
+            bc12_m: 25,
+            bc11_ac: 26,
+            bc11_vsd: 27,
+            bc16_cb: 28,
+            bc16_m: 29,
+            bc9_moist: 32,
+            bc10_moist: 33,
+            bc11_moist: 34,
+            bc9_temp: 35,
+            bc10_temp: 36,
+            bc11_temp: 37,
+        };
 
-    $tfoot.html(html);
-}
+        const rowMin = {},
+            rowMax = {},
+            rowAvg = {},
+            rowJudge = {};
+        (summary || []).forEach((s) => {
+            const idx = colIndex[s.field];
+            if (idx == null) return;
+            rowMin[idx] = s.min != null ? s.min : "";
+            rowMax[idx] = s.max != null ? s.max : "";
+            rowAvg[idx] = s.avg != null ? s.avg : "";
+            rowJudge[idx] = s.judge
+                ? `<span class="${
+                      s.judge === "NG"
+                          ? "text-danger font-weight-bold"
+                          : "text-success font-weight-bold"
+                  }">${s.judge}</span>`
+                : "";
+        });
 
+        const html =
+            makeRow("MIN", rowMin) +
+            makeRow("MAX", rowMax) +
+            makeRow("AVG", rowAvg) +
+            makeRow("JUDGE", rowJudge);
+        $tfoot.html(html);
 
+        return html;
+    }
+
+    // table
     function makeDt($el, url) {
         const isAll = $el.attr("id") === "dt-all";
-
         return $el.DataTable({
             processing: true,
             serverSide: true,
@@ -509,12 +523,10 @@ function renderAllFooterSummary(summary) {
                 : [[1, "desc"]],
             columns: baseColumns,
             stateSave: false,
-
             drawCallback: function () {
                 const api = this.api();
 
                 if (isAll) {
-                    // spacer antar MM
                     const mmColIdx = 3;
                     const $tbody = $(api.table().body());
                     $tbody.find("tr.mm-spacer").remove();
@@ -523,7 +535,7 @@ function renderAllFooterSummary(summary) {
                         const $tr = $(this);
                         const cells = $tr.find("td");
                         if (!cells.length) return;
-                        const mmText = (cells.eq(mmColIdx).text() || "").trim(); // "1" / "2"
+                        const mmText = (cells.eq(mmColIdx).text() || "").trim();
                         if (prevMM !== null && prevMM !== mmText) {
                             for (let i = 0; i < 3; i++) {
                                 $tr.before(
@@ -534,29 +546,18 @@ function renderAllFooterSummary(summary) {
                         prevMM = mmText;
                     });
 
-                    // summary ke footer
-                    if (window.serversideRoutes.summary) {
-                        $.get(window.serversideRoutes.summary, {
-                            date: $("#filterDate").val() || "",
-                            shift: $("#shiftSelect").val() || "",
-                            keyword: $("#keywordInput").val() || "",
-                        })
-                            .done((res) =>
-                                renderAllFooterSummary(
-                                    res && res.summary ? res.summary : []
-                                )
-                            )
-                            .fail(() => renderAllFooterSummary([]));
-                    }
+                    // Load footer summary after table is drawn
+                    loadAllFooterSummary();
                 }
             },
         });
     }
 
+    // instances
     const instances = { mm1: null, mm2: null, all: null };
     instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
 
-    // seed active tab
+    // seed
     (function seedActiveFromDom() {
         const href = (
             $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
@@ -566,7 +567,7 @@ function renderAllFooterSummary(summary) {
         else window.__GS_ACTIVE_TAB__ = "mm1";
     })();
 
-    // tab switching
+    // tabs
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
@@ -583,16 +584,33 @@ function renderAllFooterSummary(summary) {
             $.fn.dataTable
                 .tables({ visible: true, api: true })
                 .columns.adjust();
+
+            // Load summary when switching to "all" tab
+            if (href === "#all") {
+                // Small delay to ensure table is fully rendered
+                setTimeout(() => {
+                    loadAllFooterSummary();
+                }, 100);
+            }
         });
 
+    // reload
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
             .ajax.reload(null, false);
+        
+        // If currently on "all" tab, reload the summary as well
+        const currentTab = getActiveTab();
+        if (currentTab === "all") {
+            setTimeout(() => {
+                loadAllFooterSummary();
+            }, 500); // Wait a bit for the table to reload
+        }
     }
     window.reloadAll = reloadAll;
 
-    // Export
+    // export
     $(document)
         .off("click", "#btnExport")
         .on("click", "#btnExport", function (e) {
@@ -616,7 +634,7 @@ function renderAllFooterSummary(summary) {
             window.location.href = u.toString();
         });
 
-    // init defaults
+    // init
     $("#filterDate").datepicker("setDate", todayDdMmYyyy());
     $("#shiftSelect").val(detectShiftByNow()).trigger("change");
     reloadAll();

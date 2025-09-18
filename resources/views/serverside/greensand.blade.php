@@ -7,7 +7,6 @@
             <div class="row">
                 <div class="col-12">
 
-                    <!-- title -->
                     <div class="page-title-box d-flex align-items-center justify-content-between">
                         <h4 class="mb-0">Green Sand Check</h4>
                         <div class="page-title-right">
@@ -18,7 +17,6 @@
                         </div>
                     </div>
 
-                    <!-- filter -->
                     <div class="card mb-3">
                         <div id="filterHeader"
                             class="card-header bg-light d-flex align-items-center justify-content-between">
@@ -29,39 +27,47 @@
                         <div id="filterCollapse" class="show">
                             <div class="card-body">
                                 <div class="row align-items-end">
-
-                                    <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label class="form-label mb-1">Date</label>
-                                        <input id="filterDate" type="text" class="form-control datepicker"
-                                            placeholder="Date" autocomplete="off">
-                                    </div>
-
-                                    <div class="col-xl-3 col-lg-3 mb-2">
-                                        <label class="form-label mb-1">Shift</label>
-                                        <select id="shiftSelect" class="form-control select2"
-                                            data-placeholder="Select shift">
-                                            <option value=""></option>
-                                            <option value="D">Day</option>
-                                            <option value="S">Swing</option>
-                                            <option value="N">Night</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-xl-6 col-lg-6 mb-2">
-                                        <label class="form-label mb-1">Search (mix/model)</label>
-                                        <div class="input-group">
-                                            <input id="keywordInput" type="text" class="form-control"
-                                                placeholder="keyword..." autocomplete="off">
-                                            <div class="input-group-append">
-                                                <button id="btnQuickSearch" type="button" class="btn btn-primary btn-sm">
-                                                    <i class="ri-search-line"></i>
-                                                </button>
+                                    <div class="col-xl-4 col-lg-4">
+                                        <div class="form-group mb-2">
+                                            <label>Process Date</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="filterDate"
+                                                    data-provide="datepicker" data-date-format="dd-mm-yyyy"
+                                                    data-date-autoclose="true">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-xl-12 col-lg-12 mt-2">
-                                        <div class="d-flex flex-wrap">
+                                    <div class="col-xl-4 col-lg-4">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label mb-1">Shift</label>
+                                            <select id="shiftSelect" class="form-control select2"
+                                                data-placeholder="Select shift" style="width:100%;">
+                                                <option value=""></option>
+                                                <option value="D">D</option>
+                                                <option value="S">S</option>
+                                                <option value="N">N</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xl-4 col-lg-4">
+                                        <div class="form-group mb-2">
+                                            <label class="form-label mb-1">Search (mix/model)</label>
+                                            <div class="input-group">
+                                                <input id="keywordInput" type="text" class="form-control"
+                                                    placeholder="keyword..." autocomplete="off">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap mt-1">
                                             <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
                                                 <i class="ri-search-line mr-1"></i> Search
                                             </button>
@@ -75,13 +81,12 @@
                                             </button>
                                         </div>
                                     </div>
-
                                 </div>
+
                             </div>
                         </div>
                     </div>
 
-                    <!-- table -->
                     <div class="card mb-4">
                         <div class="card-body shadow-lg">
                             <div class="mb-3 d-flex justify-content-between align-items-center">
@@ -92,7 +97,6 @@
 
                             @include('serverside.modal')
 
-                            <!-- tabs -->
                             <ul class="nav nav-tabs" role="tablist">
                                 <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#mm1" role="tab">MM
                                         1</a></li>
@@ -103,49 +107,46 @@
                             </ul>
 
                             <div class="tab-content p-3 border border-top-0">
-                                <!-- mm1 -->
                                 <div class="tab-pane fade show active" id="mm1" role="tabpanel">
                                     <table id="dt-mm1" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
-                                <!-- mm2 -->
+
                                 <div class="tab-pane fade" id="mm2" role="tabpanel">
                                     <table id="dt-mm2" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
-                                <!-- all -->
-                                <!-- all -->
+
                                 <div class="tab-pane fade" id="all" role="tabpanel">
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'serverside._thead')
                                         <tbody></tbody>
                                         <tfoot>
                                             <tr class="gs-summary-row">
-                                                {{-- isi akan diinject via JS, jadi cukup placeholder kosong --}}
                                                 @for ($i = 0; $i < 38; $i++)
                                                     <th></th>
                                                 @endfor
                                             </tr>
-                                        </tfoot> {{-- footer untuk MIN/MAX/AVG/JUDGE --}}
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- modal confirm delete -->
                     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
                         aria-labelledby="confirmDeleteTitle" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered" role="document">
                             <div class="modal-content border-0">
                                 <div class="modal-header bg-danger text-white">
                                     <h5 class="modal-title" id="confirmDeleteTitle">Confirm Delete</h5>
-                                    <button type="button" class="close text-white" data-dismiss="modal"
-                                        aria-label="Close"><span aria-hidden="true">×</span></button>
+                                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">×</span>
+                                    </button>
                                 </div>
                                 <div class="modal-body">
                                     <p id="confirmDeleteText" class="mb-0">Are you sure you want to delete this data?</p>
@@ -166,7 +167,6 @@
 
 @push('styles')
     <style>
-        
         #dt-all tfoot .gs-summary-row:first-child td {
             border-top: 2px solid #333 !important;
         }
@@ -181,58 +181,20 @@
             text-align: left;
             white-space: nowrap;
         }
-
-        .select2-container--bootstrap4 .select2-selection {
-            height: calc(1.5em + .75rem + 2px) !important;
-            padding: .375rem .75rem !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
-            border: 1px solid #ced4da !important;
-            border-radius: .25rem !important;
-        }
-
-        .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 1.5 !important;
-            padding-left: 0 !important;
-            color: #495057 !important;
-        }
-
-        .select2-container--bootstrap4 .select2-selection__arrow {
-            height: 100% !important;
-            right: .75rem !important;
-        }
-
-        .select2-container--bootstrap4.select2-container--focus .select2-selection,
-        .select2-container--bootstrap4.select2-container--open .select2-selection {
-            border-color: #ced4da !important;
-            border-width: 1px !important;
-            box-shadow: none !important;
-            outline: 0 !important;
-        }
-
-        .input-group .select2-container--bootstrap4 .select2-selection {
-            height: calc(1.5em + .75rem + 2px) !important;
-        }
-
-        /* datepicker */
-        input.form-control.datepicker {
-            height: calc(1.5em + .75rem + 2px) !important;
-            font-size: 1rem !important;
-            line-height: 1.5 !important;
-            border: 1px solid #ced4da !important;
-            border-radius: .25rem !important;
-        }
-
-        input.form-control.datepicker:focus {
-            border-color: #ced4da !important;
-            border-width: 1px !important;
-            box-shadow: none !important;
-            outline: 0 !important;
-        }
     </style>
 @endpush
 
 @push('scripts')
+    <script>
+        $(function () {
+            $('#shiftSelect').select2();
+            $('#filterDate').datepicker({
+                format: 'dd-mm-yyyy',
+                autoclose: true,
+                orientation: 'bottom'
+            });
+        });
+    </script>
     <script>
         window.serversideRoutes = {
             mm1: "{{ route('serverside.data.mm1') }}",

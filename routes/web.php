@@ -6,7 +6,7 @@ use App\Http\Controllers\GreensandController;
 
 Route::get('/greensand/export', [GreensandController::class, 'export'])->name('greensand.export');
 Route::view('/', 'serverside.dashboard')->name('dashboard');
-Route::view('/serverside', 'serverside.serverside')->name('serverside.index');
+Route::view('/serverside', 'serverside.greensand')->name('serverside.index');
 Route::get('/serverside/summary', [ServersideController::class, 'summaryAll'])->name('serverside.summary');
 
 Route::prefix('serverside')->name('serverside.')->group(function () {
