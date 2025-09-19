@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tb_jsh_gfns', function (Blueprint $table) {
+        Schema::create('tb_gfn_jsh', function (Blueprint $table) {
             $table->id();
 
             $table->date('gfn_date')->nullable();
@@ -32,7 +32,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('tb_jsh_gfns');
+        Schema::dropIfExists('tb_gfn_jsh');
     }
 };
-    

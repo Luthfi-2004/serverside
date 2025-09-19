@@ -11,8 +11,8 @@
                         <h4 class="mb-0">Green Sand Check</h4>
                         <div class="page-title-right">
                             <ol class="breadcrumb m-0">
-                                <li class="breadcrumb-item"><a href="javascript:void(0);">SandLab</a></li>
-                                <li class="breadcrumb-item active">Green Sand Check</li>
+                                <li class="breadcrumb-item"><a href="javascript:void(0);">Greensand</a></li>
+                                <li class="breadcrumb-item active">Green Sand Daily Check</li>
                             </ol>
                         </div>
                     </div>

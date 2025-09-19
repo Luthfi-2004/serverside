@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class JshGfn extends Model
 {
-    protected $table = 'tb_jsh_gfns';
+    // tabel baru
+    protected $table = 'tb_gfn_jsh';
 
     protected $fillable = [
         'gfn_date',
