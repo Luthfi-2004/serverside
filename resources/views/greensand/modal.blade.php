@@ -1,4 +1,3 @@
-<!-- modal -->
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
@@ -6,8 +5,6 @@
             @csrf
             <input type="hidden" name="id" id="gs_id">
             <input type="hidden" name="form_mode" id="gs_mode" value="create">
-
-            <!-- header -->
             <div class="modal-header">
                 <h5 class="modal-title" id="gsModalLabel">
                     <span id="gsModalMode">Add</span> Green Sand
@@ -15,17 +12,11 @@
                 <button type="button" class="close" data-dismiss="modal"
                     aria-label="Close"><span>&times;</span></button>
             </div>
-
-            <!-- body -->
             <div class="modal-body">
                 <div id="gsFormAlert" class="alert alert-danger d-none mb-3"></div>
-
-                <!-- meta -->
                 <div class="card mb-2">
                     <div class="card-body">
                         <div class="row">
-
-                            <!-- mm -->
                             <div class="col-md-3 mb-2">
                                 <label class="form-label mb-1 d-block">MM</label>
                                 <div class="btn-group btn-group-sm d-flex" data-toggle="buttons" id="mm_group">
@@ -38,23 +29,17 @@
                                 </div>
                                 <div id="mm_error" class="invalid-feedback d-block" style="display:none;"></div>
                             </div>
-
-                            <!-- mixke -->
                             <div class="col-md-3 mb-2">
                                 <label class="form-label mb-1">Mix Ke</label>
                                 <input type="number" min="1" step="1" name="mix_ke" id="mix_ke" class="form-control"
                                     placeholder="Enter Mix Ke">
                                 <div id="mix_ke_error" class="invalid-feedback"></div>
                             </div>
-
-                            <!-- start -->
                             <div class="col-md-3 mb-2">
                                 <label class="form-label mb-1">Mix Start</label>
                                 <input type="time" name="mix_start" id="mix_start" class="form-control">
                                 <div id="mix_start_error" class="invalid-feedback"></div>
                             </div>
-
-                            <!-- finish -->
                             <div class="col-md-3 mb-2">
                                 <label class="form-label mb-1">Mix Finish</label>
                                 <input type="time" name="mix_finish" id="mix_finish" class="form-control">
@@ -64,8 +49,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- tabs -->
                 <ul class="nav nav-tabs mb-2" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link active" data-toggle="tab" href="#tab-mm" role="tab">
@@ -88,11 +71,7 @@
                         </a>
                     </li>
                 </ul>
-
-                <!-- panes -->
                 <div class="tab-content">
-
-                    <!-- pane-mm -->
                     <div class="tab-pane fade show active" id="tab-mm" role="tabpanel">
                         <div class="card mb-0">
                             <div class="card-body">
@@ -126,8 +105,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- pane-additive -->
                     <div class="tab-pane fade" id="tab-additive" role="tabpanel">
                         <div class="card mb-0">
                             <div class="card-body">
@@ -151,8 +128,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- pane-bc -->
                     <div class="tab-pane fade" id="tab-bc" role="tabpanel">
                         <div class="card mb-0">
                             <div class="card-body">
@@ -195,8 +170,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- pane-return -->
                     <div class="tab-pane fade" id="tab-return" role="tabpanel">
                         <div class="card mb-0">
                             <div class="card-body">
@@ -214,8 +187,6 @@
                                             placeholder="Enter Sample Type (WIP / ES01 / ...)">
                                     </div>
                                 </div>
-
-                                <!-- moist -->
                                 <div class="mb-2">
                                     <label class="mb-1">Moisture</label>
                                     <div class="row">
@@ -233,8 +204,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- temp -->
                                 <div class="mb-0">
                                     <label class="mb-1">Temperature</label>
                                     <div class="row">
@@ -256,10 +225,9 @@
                             </div>
                         </div>
                     </div>
-                </div> <!-- panes -->
-            </div> <!-- body -->
+                </div>
+            </div>
 
-            <!-- footer -->
             <div class="modal-footer d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary mr-2 d-flex align-items-center"
                     data-dismiss="modal">

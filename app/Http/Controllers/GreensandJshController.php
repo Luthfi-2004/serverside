@@ -219,7 +219,7 @@ class GreensandJshController extends Controller
         return response()->json(['data' => $row]);
     }
 
-    // update (tidak ubah shift/date record)
+    // update 
     public function update(Request $request, $id)
     {
         $row = GreensandJsh::findOrFail($id);

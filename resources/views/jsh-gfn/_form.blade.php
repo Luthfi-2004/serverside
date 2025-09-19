@@ -12,21 +12,21 @@
             <div class="modal-body">
                 <div class="row mb-3">
                     <div class="col-xl-6 col-lg-6 mb-2">
-                        <label class="form-label mb-1">Tanggal</label>
-                        <input id="gfnDate" type="date" name="gfn_date" class="form-control"
-                            value="{{ old('gfn_date') }}" placeholder="YYYY-MM-DD" autocomplete="off">
-                        @error('gfn_date') <small class="text-danger">{{ $message }}</small> @enderror
-                    </div>
-                    <div class="col-xl-6 col-lg-6 mb-2">
-                        <label class="form-label mb-1">Shift</label>
-                        <select class="form-control" name="shift">
-                            <option value="" hidden>Pilih Shift</option>
-                            <option value="D" @selected(old('shift') === 'D')>D (Day)</option>
-                            <option value="S" @selected(old('shift') === 'S')>S (Swing)</option>
-                            <option value="N" @selected(old('shift') === 'N')>N (Night)</option>
-                        </select>
-                        @error('shift') <small class="text-danger">{{ $message }}</small> @enderror
-                    </div>
+  <label class="form-label mb-1">Tanggal</label>
+  <input id="gfnDate" type="text" name="gfn_date" class="form-control"
+         value="{{ old('gfn_date') }}" placeholder="YYYY-MM-DD" autocomplete="off">
+  @error('gfn_date') <small class="text-danger">{{ $message }}</small> @enderror
+</div>
+<div class="col-xl-6 col-lg-6 mb-2">
+  <label class="form-label mb-1">Shift</label>
+  <select class="form-control select2" name="shift" data-placeholder="Pilih Shift">
+    <option value="" hidden>Pilih Shift</option>
+    <option value="D" @selected(old('shift') === 'D')>D</option>
+    <option value="S" @selected(old('shift') === 'S')>S</option>
+    <option value="N" @selected(old('shift') === 'N')>N</option>
+  </select>
+  @error('shift') <small class="text-danger">{{ $message }}</small> @enderror
+</div>
                 </div>
 
                 <div class="table-responsive">

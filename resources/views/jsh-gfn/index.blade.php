@@ -75,7 +75,7 @@
                         </div>
                     </div>
 
-                    {{-- ====== CARD PUTIH: Add + Detail + Rekap ====== --}}
+                   
                     <div class="card shadow-sm">
                         <div class="card-body">
 
@@ -97,7 +97,7 @@
                                 @endif
                             </div>
 
-                            {{-- TABEL DETAIL --}}
+          
                             <div class="table-responsive">
                                 <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                                     <thead class="bg-dark text-white text-center">
@@ -143,7 +143,7 @@
                                 </table>
                             </div>
 
-                            {{-- TABEL REKAP --}}
+               
                             <div class="table-responsive mt-4">
                                 <table class="table table-bordered table-striped nowrap w-auto">
                                     <thead class="bg-dark text-white text-center">
@@ -179,10 +179,10 @@
 
                         </div>
                     </div>
-                    {{-- ====== /CARD PUTIH ====== --}}
+     
 
 
-                    {{-- MODAL FORM --}}
+
                     @include('jsh-gfn._form', ['meshes' => $meshes, 'indices' => $indices])
                 </div>
             </div>
@@ -211,7 +211,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light " data-dismiss="modal">Cancel</button>
 
-                    {{-- Form hidden untuk submit delete --}}
+
                     <form id="deleteForm" action="{{ route('jshgfn.deleteToday') }}" method="POST" class="m-0 p-0">
                         @csrf
                         <input type="hidden" name="gfn_date" id="delDate">

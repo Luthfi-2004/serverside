@@ -12,39 +12,41 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class JshGfnPageController extends Controller
 {
-    /** Urutan mesh & index harus konsisten */
+    /** Meshes */
     private array $meshes = ['18,5', '26', '36', '50', '70', '100', '140', '200', '280', 'PAN'];
+
+    /** Indeks */
     private array $indices = [10, 20, 30, 40, 50, 70, 100, 140, 200, 300];
 
-    /**
-     * Index: filter pakai 1 tanggal (date) + shift (opsional).
-     * Jika tidak ada filter, ambil rekap TERBARU secara global.
-     */
+    /** Index */
     public function index(Request $req)
     {
+        // Param
         $date = $req->query('date');
         $shift = $req->query('shift');
         $q = $req->query('q');
 
-        // infer
+        // Infer
         if (!$date || !$shift) {
             $now = now('Asia/Jakarta');
             $h = (int) $now->format('H');
 
-            // default shift by jam
+            // Shift
             $autoShift = ($h >= 6 && $h < 17) ? 'D' : (($h >= 22 || $h < 6) ? 'N' : 'S');
 
-            // kalau user nggak isi date/shift, pakai default
-            $date = $date ?: $now->toDateString(); // yyyy-mm-dd (selalu "hari ini")
+            // Default
+            $date = $date ?: $now->toDateString();
             $shift = $shift ?: $autoShift;
         }
 
+        // Terbaru
         $latestRecap = TotalGfn::query()
             ->whereDate('gfn_date', $date)
             ->when($shift, fn($qq) => $qq->where('shift', $shift))
             ->orderByDesc('created_at')
             ->first();
 
+        // Kosong
         if (!$latestRecap) {
             return view('jsh-gfn.index', [
                 'meshes' => $this->meshes,
@@ -55,8 +57,10 @@ class JshGfnPageController extends Controller
             ]);
         }
 
+        // Susun
         [$displayRows, $displayRecap] = $this->setDisplayForLatest($latestRecap->gfn_date, $latestRecap->shift);
 
+        // View
         return view('jsh-gfn.index', [
             'meshes' => $this->meshes,
             'indices' => $this->indices,
@@ -66,9 +70,10 @@ class JshGfnPageController extends Controller
         ]);
     }
 
-
+    /** Simpan */
     public function store(Request $request)
     {
+        // Validasi
         $validator = Validator::make($request->all(), [
             'gfn_date' => ['required', 'date'],
             'shift' => ['required', 'in:D,S,N'],
@@ -80,16 +85,18 @@ class JshGfnPageController extends Controller
             'grams' => 'Gram',
         ]);
 
+        // Gagal
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput()->with('open_modal', true);
         }
 
-        // Normalisasi grams
+        // Normalisasi
         $grams = array_map(
             fn($v) => ($v === null || $v === '') ? 0.0 : (float) $v,
             $request->input('grams', [])
         );
 
+        // Total
         $totalGram = array_sum($grams);
         if ($totalGram <= 0) {
             return back()
@@ -98,11 +105,12 @@ class JshGfnPageController extends Controller
                 ->with('open_modal', true);
         }
 
-        // Hitung % dan %Index
+        // Hitung
         $percentages = [];
         $percentageIndices = [];
         $sumPI = 0.0;
 
+        // Loop
         for ($i = 0; $i < 10; $i++) {
             $g = $grams[$i];
             $pct = $totalGram > 0 ? ($g / $totalGram) * 100 : 0.0;
@@ -113,8 +121,9 @@ class JshGfnPageController extends Controller
             $sumPI += $percentageIndices[$i];
         }
 
+        // Transaksi
         DB::transaction(function () use ($request, $grams, $percentages, $percentageIndices, $totalGram, $sumPI) {
-            // Simpan 10 baris detail
+            // Detail
             for ($i = 0; $i < 10; $i++) {
                 JshGfn::create([
                     'gfn_date' => $request->gfn_date,
@@ -129,12 +138,12 @@ class JshGfnPageController extends Controller
                 ]);
             }
 
-            // Simpan total rekap (tanpa batch_code)
+            // Rekap
             TotalGfn::create([
                 'gfn_date' => $request->gfn_date,
                 'shift' => $request->shift,
                 'nilai_gfn' => round($sumPI / 100, 2),
-                'mesh_total140' => round($percentages[6] ?? 0, 2),  // mesh 140 = index ke-6
+                'mesh_total140' => round($percentages[6] ?? 0, 2),
                 'mesh_total70' => round(($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0), 2),
                 'meshpan' => round(($percentages[8] ?? 0) + ($percentages[9] ?? 0), 2),
                 'judge_mesh_140' => ($percentages[6] >= 3.50 && $percentages[6] <= 8.00) ? 'OK' : 'NG',
@@ -145,70 +154,73 @@ class JshGfnPageController extends Controller
             ]);
         });
 
-        return redirect()->route('jshgfn.index')
-            ->with('status', 'Data GFN berhasil disimpan.');
+        // Redirect
+        return redirect()->route('jshgfn.index')->with('status', 'Data GFN berhasil disimpan.');
     }
 
-    /**
-     * Hapus SET hari ini berdasarkan gfn_date + shift (tanpa batch_code)
-     * Kirimkan gfn_date & shift via form (POST).
-     */
+    /** Hapus */
     public function deleteTodaySet(Request $request)
     {
+        // Input
         $gfnDate = $request->input('gfn_date');
         $shift = $request->input('shift');
 
+        // Cek
         if (!$gfnDate || !$shift) {
             return back()->withErrors(['delete' => 'gfn_date dan shift wajib diisi.']);
         }
 
+        // Hari
         $sinceToday = now()->startOfDay();
 
+        // Ada
         $existsToday = JshGfn::whereDate('gfn_date', $gfnDate)
             ->where('shift', $shift)
             ->where('created_at', '>=', $sinceToday)
             ->exists();
 
+        // Tidak
         if (!$existsToday) {
             return back()->withErrors(['delete' => 'Tidak ada data untuk kombinasi tanggal/shift ini hari ini.']);
         }
 
+        // Transaksi
         DB::transaction(function () use ($gfnDate, $shift, $sinceToday) {
+            // HapusDetail
             JshGfn::whereDate('gfn_date', $gfnDate)
                 ->where('shift', $shift)
                 ->where('created_at', '>=', $sinceToday)
                 ->delete();
 
+            // HapusRekap
             TotalGfn::whereDate('gfn_date', $gfnDate)
                 ->where('shift', $shift)
                 ->where('created_at', '>=', $sinceToday)
                 ->delete();
         });
 
+        // Sukses
         return redirect()->route('jshgfn.index')->with('status', 'Data hari ini untuk tanggal/shift tersebut berhasil dihapus.');
     }
 
-    /**
-     * Export: pakai 1 tanggal (date) + shift (opsional).
-     * Pastikan JshGfnExport disesuaikan untuk menerima param 'date'.
-     */
+    /** Export */
     public function export(Request $request)
     {
+        // Param
         $date = $request->query('date');
         $shift = $request->query('shift');
 
+        // Nama
         $filename = sprintf('jsh_gfn_%s.xlsx', now()->format('Ymd_His'));
 
-        return Excel::download(new JshGfnExport(date: $request->query('date'), shift: $request->query('shift')), $filename);
-
+        // Unduh
+        return Excel::download(new JshGfnExport(date: $date, shift: $shift), $filename);
     }
 
-    /**
-     * Susun tampilan untuk kombinasi (gfn_date, shift) tertentu.
-     */
+    /** Susun */
     private function setDisplayForLatest($gfnDate, $shift): array
     {
-        // Ambil detail terbaru utk kombinasi ini
+        // Detail
         $rows = JshGfn::query()
             ->whereDate('gfn_date', $gfnDate)
             ->where('shift', $shift)
@@ -217,7 +229,7 @@ class JshGfnPageController extends Controller
             ->get()
             ->keyBy('mesh');
 
-        // Susun sesuai urutan mesh & isi default jika kosong
+        // Urut
         $ordered = collect();
         foreach ($this->meshes as $i => $mesh) {
             $r = $rows->get($mesh);
@@ -234,13 +246,14 @@ class JshGfnPageController extends Controller
             }
         }
 
-        // Ambil rekap terbaru untuk kombinasi yang sama
+        // Rekap
         $recap = TotalGfn::query()
             ->whereDate('gfn_date', $gfnDate)
             ->where('shift', $shift)
             ->orderByDesc('created_at')
             ->first();
 
+        // Tampil
         $displayRecap = $recap ? [
             'gfn_date' => $recap->gfn_date,
             'shift' => $recap->shift,
@@ -255,6 +268,7 @@ class JshGfnPageController extends Controller
             'total_percentage_index' => (float) ($recap->total_percentage_index ?? $ordered->sum('percentage_index')),
         ] : null;
 
+        // Kembali
         return [$ordered, $displayRecap];
     }
 }
