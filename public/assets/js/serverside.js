@@ -1,7 +1,7 @@
 $(function () {
     // Guard check
-    if (!window.serversideRoutes) {
-        console.error("serversideRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts').");
+    if (!window.greensandRoutes) {
+        console.error("greensandRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts').");
         return;
     }
 
@@ -147,8 +147,8 @@ $(function () {
         errorHandler.clear();
         const id = $(this).data("id");
         formManager.reset();
-        
-        $.get(`${serversideRoutes.base}/${id}`)
+
+        $.get(`${greensandRoutes.base}/${id}`)
             .done(res => {
                 formManager.fill(res.data);
                 $("#modal-greensand").modal("show");
@@ -176,8 +176,8 @@ $(function () {
 
         $("#gsSubmitBtn").prop("disabled", true);
         const req = mode === "edit" 
-            ? $.post(`${serversideRoutes.base}/${id}`, formData + "&_method=PUT")
-            : $.post(serversideRoutes.store, formData);
+            ? $.post(`${greensandRoutes.base}/${id}`, formData + "&_method=PUT")
+            : $.post(greensandRoutes.store, formData);
 
         req.done(() => {
             $("#modal-greensand").modal("hide");
@@ -204,8 +204,8 @@ $(function () {
 
     $("#confirmDeleteYes").off("click").on("click", function () {
         if (!pendingDeleteId) return;
-        
-        $.post(`${serversideRoutes.base}/${pendingDeleteId}`, { _method: "DELETE" })
+
+        $.post(`${greensandRoutes.base}/${pendingDeleteId}`, { _method: "DELETE" })
             .done(() => {
                 $("#confirmDeleteModal").modal("hide");
                 reloadAll();
@@ -256,9 +256,9 @@ $(function () {
     // Summary management
     const summaryManager = {
         load() {
-            if (!window.serversideRoutes.summary) return;
-            
-            $.get(window.serversideRoutes.summary, {
+            if (!window.greensandRoutes.summary) return;
+
+            $.get(window.greensandRoutes.summary, {
                 date: $("#filterDate").val() || "",
                 shift: $("#shiftSelect").val() || "",
                 keyword: helpers.getKeyword()
@@ -351,7 +351,7 @@ $(function () {
     }
 
     // Initialize DataTables
-    instances.mm1 = makeDt($("#dt-mm1"), serversideRoutes.mm1);
+    instances.mm1 = makeDt($("#dt-mm1"), greensandRoutes.mm1);
 
     // Seed active tab from DOM
     const href = ($(".nav-tabs .nav-link.active").attr("href") || "#mm1").toLowerCase();
@@ -362,8 +362,8 @@ $(function () {
         const href = ($(e.target).attr("href") || "").toLowerCase();
         window.__GS_ACTIVE_TAB__ = href === "#mm2" ? "mm2" : href === "#all" ? "all" : "mm1";
 
-        if (href === "#mm2" && !instances.mm2) instances.mm2 = makeDt($("#dt-mm2"), serversideRoutes.mm2);
-        if (href === "#all" && !instances.all) instances.all = makeDt($("#dt-all"), serversideRoutes.all);
+        if (href === "#mm2" && !instances.mm2) instances.mm2 = makeDt($("#dt-mm2"), greensandRoutes.mm2);
+        if (href === "#all" && !instances.all) instances.all = makeDt($("#dt-all"), greensandRoutes.all);
 
         $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
 
@@ -382,13 +382,13 @@ $(function () {
         e.preventDefault();
         const tab = helpers.getActiveTab();
         const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
-        
-        if (!window.serversideRoutes?.export) {
+
+        if (!window.greensandRoutes?.export) {
             console.error('Export route missing. Pastikan di Blade: route("greensand.export")');
             return;
         }
         
-        const u = new URL(window.serversideRoutes.export, window.location.origin);
+        const u = new URL(window.greensandRoutes.export, window.location.origin);
         u.searchParams.set("date", $("#filterDate").val() || "");
         u.searchParams.set("shift", $("#shiftSelect").val() || "");
         u.searchParams.set("keyword", helpers.getKeyword());

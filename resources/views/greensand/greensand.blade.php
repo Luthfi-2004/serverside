@@ -95,7 +95,7 @@
                                 </button>
                             </div>
 
-                            @include('serverside.modal')
+                            @include('greensand.modal')
 
                             <ul class="nav nav-tabs" role="tablist">
                                 <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#mm1" role="tab">MM
@@ -109,21 +109,21 @@
                             <div class="tab-content p-3 border border-top-0">
                                 <div class="tab-pane fade show active" id="mm1" role="tabpanel">
                                     <table id="dt-mm1" class="table table-bordered w-100 text-center">
-                                        @includeWhen(true, 'serverside._thead')
+                                        @includeWhen(true, 'greensand._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
 
                                 <div class="tab-pane fade" id="mm2" role="tabpanel">
                                     <table id="dt-mm2" class="table table-bordered w-100 text-center">
-                                        @includeWhen(true, 'serverside._thead')
+                                        @includeWhen(true, 'greensand._thead')
                                         <tbody></tbody>
                                     </table>
                                 </div>
 
                                 <div class="tab-pane fade" id="all" role="tabpanel">
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
-                                        @includeWhen(true, 'serverside._thead')
+                                        @includeWhen(true, 'greensand._thead')
                                         <tbody></tbody>
                                         <tfoot>
                                             <tr class="gs-summary-row">
@@ -196,14 +196,14 @@
         });
     </script>
     <script>
-        window.serversideRoutes = {
-            mm1: "{{ route('serverside.data.mm1') }}",
-            mm2: "{{ route('serverside.data.mm2') }}",
-            all: "{{ route('serverside.data.all') }}",
-            store: "{{ route('serverside.processes.store') }}",
-            base: "{{ url('serverside/processes') }}",
+        window.greensandRoutes = {
+            mm1: "{{ route('greensand.data.mm1') }}",
+            mm2: "{{ route('greensand.data.mm2') }}",
+            all: "{{ route('greensand.data.all') }}",
+            store: "{{ route('greensand.processes.store') }}",
+            base: "{{ url('greensand/processes') }}",
             export: "{{ route('greensand.export') }}",
-            summary: "{{ route('serverside.summary') }}",
+            summary: "{{ route('greensand.summary') }}",
         };
     </script>
     <script src="{{ asset('assets/js/serverside.js') }}" defer></script>

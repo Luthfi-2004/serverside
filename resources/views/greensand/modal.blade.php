@@ -261,11 +261,12 @@
 
             <!-- footer -->
             <div class="modal-footer d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary mr-2" data-dismiss="modal">
-                    <i class="ri-close-line"></i> Cancel
+                <button type="button" class="btn btn-outline-secondary mr-2 d-flex align-items-center"
+                    data-dismiss="modal">
+                    <i class="ri-close-line me-1"></i> Cancel
                 </button>
-                <button type="submit" class="btn btn-success" id="gsSubmitBtn">
-                    <i class="ri-checkbox-circle-line"></i> Submit
+                <button type="submit" class="btn btn-success mr-2 d-flex align-items-center" id="gsSubmitBtn">
+                    <i class="ri-checkbox-circle-line me-1"></i> Submit
                 </button>
             </div>
 

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('processes', function (Blueprint $table) {
+        Schema::create('tb_greensand_jsh', function (Blueprint $table) {
             $table->id();
             $table->timestamp('date')->nullable();
             $table->enum('shift', ['D', 'S', 'N'])->nullable();
@@ -61,6 +61,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('processes');
+        Schema::dropIfExists('tb_greensand_jsh');
     }
 };

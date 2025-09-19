@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Process extends Model
+class GreensandJsh extends Model
 {
+    protected $table = 'tb_greensand_jsh';
+
     protected $fillable = [
         'date',
         'shift',
@@ -43,10 +45,13 @@ class Process extends Model
         'bc11_moist',
         'bc9_temp',
         'bc10_temp',
-        'bc11_temp'
+        'bc11_temp',
     ];
 
     protected $casts = [
         'date' => 'datetime',
+        'mix_start' => 'datetime:H:i',
+        'mix_finish' => 'datetime:H:i',
+        'rs_time' => 'datetime:H:i',
     ];
 }
