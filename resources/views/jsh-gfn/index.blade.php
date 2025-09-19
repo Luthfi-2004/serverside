@@ -50,9 +50,9 @@
                                         <select class="form-control select2" name="shift"
                                             data-placeholder="-- Select Shift --" autocomplete="off">
                                             <option value=""></option>
-                                            <option value="D" @selected(($filters['shift'] ?? '') === 'D')>Day</option>
-                                            <option value="S" @selected(($filters['shift'] ?? '') === 'S')>Swing</option>
-                                            <option value="N" @selected(($filters['shift'] ?? '') === 'N')>Night</option>
+                                            <option value="D" @selected(($filters['shift'] ?? '') === 'D')>D</option>
+                                            <option value="S" @selected(($filters['shift'] ?? '') === 'S')>S</option>
+                                            <option value="N" @selected(($filters['shift'] ?? '') === 'N')>N</option>
                                         </select>
                                     </div>
 
