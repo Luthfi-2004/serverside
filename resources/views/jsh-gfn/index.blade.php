@@ -18,9 +18,11 @@
                     </div>
 
                     @if(session('status'))
-                    <div class="alert alert-success">{{ session('status') }}</div> @endif
+                        <div class="alert alert-success">{{ session('status') }}</div>
+                    @endif
                     @if($errors->any())
-                    <div class="alert alert-danger mb-2">{{ $errors->first() }}</div> @endif
+                        <div class="alert alert-danger mb-2">{{ $errors->first() }}</div>
+                    @endif
 
                     @php $isOpen = true; @endphp
                     <div class="card mb-3">
@@ -75,7 +77,7 @@
                         </div>
                     </div>
 
-                   
+
                     <div class="card shadow-sm">
                         <div class="card-body">
 
@@ -97,7 +99,7 @@
                                 @endif
                             </div>
 
-          
+                            {{-- Tabel detail mesh --}}
                             <div class="table-responsive">
                                 <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                                     <thead class="bg-dark text-white text-center">
@@ -143,45 +145,65 @@
                                 </table>
                             </div>
 
-               
-                            <div class="table-responsive mt-4">
-                                <table class="table table-bordered table-striped nowrap w-auto">
-                                    <thead class="bg-dark text-white text-center">
-                                        <tr>
-                                            <td>Nilai GFN (Σ %Index / 100)</td>
-                                            <td><b>{{ isset($displayRecap) ? number_format($displayRecap['nilai_gfn'], 2, ',', '.') : '-' }}</b>
-                                            </td>
-                                            <th>JUDGE</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>% MESH 140 (STD : 3.5 ~ 8.0 %)</td>
-                                            <td><b>{{ isset($displayRecap) ? number_format($displayRecap['mesh_total140'], 2, ',', '.') : '-' }}</b>
-                                            </td>
-                                            <td>{{ $displayRecap['judge_mesh_140'] ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Σ MESH 50, 70 & 100 (Min 64 %)</td>
-                                            <td><b>{{ isset($displayRecap) ? number_format($displayRecap['mesh_total70'], 2, ',', '.') : '-' }}</b>
-                                            </td>
-                                            <td>{{ $displayRecap['judge_mesh_70'] ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>% MESH 280 + PAN (STD : 0.00 ~ 1.40 %)</td>
-                                            <td><b>{{ isset($displayRecap) ? number_format($displayRecap['meshpan'], 2, ',', '.') : '-' }}</b>
-                                            </td>
-                                            <td>{{ $displayRecap['judge_meshpan'] ?? '-' }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            {{-- === Nilai GFN + Line Chart sejajar (tinggi sama + text center) === --}}
+                            <div class="row mt-4">
+                                {{-- Kiri: Tabel Nilai GFN --}}
+                                <div class="col-lg-6 d-flex flex-column">
+                                    <div class="table-responsive flex-grow-1" style="height:300px; overflow:auto;">
+                                        <table class="table table-bordered table-striped mb-0 w-100 h-100 text-center">
+                                            <thead class="bg-dark text-white">
+                                                <tr>
+                                                    <td>Nilai GFN (Σ %Index / 100)</td>
+                                                    <td>
+                                                        <b>{{ isset($displayRecap) ? number_format($displayRecap['nilai_gfn'], 2, ',', '.') : '-' }}</b>
+                                                    </td>
+                                                    <th>JUDGE</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>% MESH 140 (STD : 3.5 ~ 8.0 %)</td>
+                                                    <td>
+                                                        <b>{{ isset($displayRecap) ? number_format($displayRecap['mesh_total140'], 2, ',', '.') : '-' }}</b>
+                                                    </td>
+                                                    <td>{{ $displayRecap['judge_mesh_140'] ?? '-' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Σ MESH 50, 70 & 100 (Min 64 %)</td>
+                                                    <td>
+                                                        <b>{{ isset($displayRecap) ? number_format($displayRecap['mesh_total70'], 2, ',', '.') : '-' }}</b>
+                                                    </td>
+                                                    <td>{{ $displayRecap['judge_mesh_70'] ?? '-' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>% MESH 280 + PAN (STD : 0.00 ~ 1.40 %)</td>
+                                                    <td>
+                                                        <b>{{ isset($displayRecap) ? number_format($displayRecap['meshpan'], 2, ',', '.') : '-' }}</b>
+                                                    </td>
+                                                    <td>{{ $displayRecap['judge_meshpan'] ?? '-' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {{-- Kanan: Line chart % per Mesh --}}
+                                <div class="col-lg-6">
+                                    <div class="card h-100">
+                                        <div class="card-body d-flex flex-column">
+                                            <h4 class="card-title mb-3">% per Mesh (Line)</h4>
+                                            <div id="gfn-line" class="flot-charts flot-charts-height"
+                                                style="height:300px; flex:1 1 auto;"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                            {{-- === End sejajar === --}}
+
+
 
                         </div>
                     </div>
-     
-
-
 
                     @include('jsh-gfn._form', ['meshes' => $meshes, 'indices' => $indices])
                 </div>
@@ -209,8 +231,7 @@
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light " data-dismiss="modal">Cancel</button>
-
+                    <button type="button" class="btn btn-light mr-2" data-dismiss="modal">Cancel</button>
 
                     <form id="deleteForm" action="{{ route('jshgfn.deleteToday') }}" method="POST" class="m-0 p-0">
                         @csrf
@@ -225,11 +246,33 @@
     </div>
 
     @push('scripts')
+        {{-- Bridge data ke JS tanpa @json/map --}}
+        @php
+            $__rows = [];
+            if (!empty($displayRows)) {
+                foreach ($displayRows as $r) {
+                    $__rows[] = [
+                        'mesh' => $r->mesh,
+                        'percentage' => round(($r->percentage ?? 0), 2),
+                        'percentage_index' => round(($r->percentage_index ?? 0), 1),
+                        'index' => ($r->index ?? 0),
+                    ];
+                }
+            }
+            $__recap = $displayRecap ?? null;
+        @endphp
+
+        <script>
+            window.gfnChartData = {
+                rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
+                recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+            };
+        </script>
+
         @if(session('open_modal'))
             <script>window.openModalGFN = true;</script>
         @endif
         <script src="{{ asset('assets/js/jshgfn.js') }}"></script>
     @endpush
-
 
 @endsection

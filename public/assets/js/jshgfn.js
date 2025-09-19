@@ -61,7 +61,7 @@
     if(sh){ $gs.val(sh).trigger('change'); }
   }
 
-  // fold
+  // fold icon
   if($){
     var $c=$("#filterCollapse"),$i=$("#filterIcon"),$h=$("#filterHeader");
     function ico(o){ if(!$i.length)return; $i.removeClass("ri-add-line ri-subtract-line").addClass(o?"ri-subtract-line":"ri-add-line"); }
@@ -71,7 +71,7 @@
   // fmt
   function fmt(n,d){ if(d===void 0)d=2; if(!isFinite(n))n=0; return Number(n).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d}) }
 
-  // calc
+  // kalkulasi tabel input di modal
   function recalc(){
     var tb=document.getElementById('gfnBody'); if(!tb)return;
     var rows=tb.querySelectorAll('tr[data-row]'),tg=0;
@@ -93,23 +93,73 @@
     if(elTPI)elTPI.textContent=fmt(tpi,1);
   }
 
-  // listen
+  // === CHART: hanya Line (% per Mesh) ===
+  function renderGFNCharts() {
+    if (!window.jQuery || !$.plot) return;
+
+    var $line = $('#gfn-line');
+    if (!$line.length) return;
+
+    var dataObj = window.gfnChartData || {};
+    var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
+    if (!rows.length) { $line.empty(); return; }
+
+    var ticks = [];
+    var lineData = [];
+
+    for (var i = 0; i < rows.length; i++) {
+      var r   = rows[i] || {};
+      var x   = i + 1; // 1..n
+      var pct = parseFloat(r.percentage) || 0;
+
+      ticks.push([x, String(r.mesh || '-')]);
+      lineData.push([x, pct]);
+    }
+
+    try {
+      $.plot($line, [
+        { data: lineData, label: '%', lines: { show: true }, points: { show: true } }
+      ], {
+        xaxis: { ticks: ticks },
+        yaxis: { min: 0 },
+        grid: { hoverable: true, clickable: true, borderWidth: 1 },
+        tooltip: true,
+        tooltipOpts: { content: '%y.2%%' }
+      });
+    } catch (e) {
+      // silent
+    }
+  }
+
+  // Re-plot saat resize (flot.resize biasanya cukup, ini tambahan)
+  var _resizeTimer = null;
+  function onWinResize(){
+    if (_resizeTimer) clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(renderGFNCharts, 150);
+  }
+
+  // listeners
   document.addEventListener('input',function(e){ if(e.target&&e.target.classList.contains('gfn-gram'))recalc(); });
 
   // modal-flag
   if(window.openModalGFN){ $(function(){ $('#modal-greensand').modal('show'); recalc(); }); }
 
-  // dom
+  // DOM ready
   document.addEventListener('DOMContentLoaded',function(){
     s2(); dp(); seedFilter();
     var b=document.getElementById('btn-add-greensand');
     if(b&&window.jQuery){ b.addEventListener('click',function(){ setTimeout(function(){ var el=document.getElementById('modal-greensand'); if(el)jQuery(el).modal('show'); },30); }); }
+
+    // render chart saat data sudah di-bridge dari Blade
+    if (window.gfnChartData) {
+      if ($) { $(renderGFNCharts); } else { renderGFNCharts(); }
+      if (window.addEventListener) window.addEventListener('resize', onWinResize);
+    }
   });
 
-  // modal-show (JANGAN re-init select2 disini biar gak dobel)
+  // modal-show (jangan re-init select2 disini biar gak dobel)
   if($){
     $(document).on('shown.bs.modal','#modal-greensand',function(){
-      // hanya sync + pastikan datepicker modal punya container & update
       if($.fn.datepicker && $('#gfnDate').data('datepicker')==null){
         $('#gfnDate').datepicker({format:'yyyy-mm-dd',autoclose:true,orientation:'bottom',container:'#modal-greensand'});
       }
@@ -120,7 +170,7 @@
     });
   }
 
-  // del
+  // delete confirm
   if($){
     $(document).on('click','.btn-delete-gs',function(){
       var d=$(this).data('gfn-date'), s=$(this).data('shift');
