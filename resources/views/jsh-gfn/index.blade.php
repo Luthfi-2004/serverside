@@ -137,7 +137,7 @@
                                                 </th>
                                                 <th colspan="2">{{ $displayRecap['judge_overall'] ?? '' }}</th>
                                                 <th class="bg-secondary text-white">
-                                                    {{ number_format($displayRecap['total_pi'] ?? 0, 1, ',', '.') }}
+                                                    {{ number_format($displayRecap['total_percentage_index'] ?? 0, 1, ',', '.') }}
                                                 </th>
                                             </tr>
                                         @endif
@@ -186,22 +186,16 @@
                                         </table>
                                     </div>
                                 </div>
-
-                                {{-- Kanan: Line chart % per Mesh --}}
                                 <div class="col-lg-6">
                                     <div class="card h-100">
                                         <div class="card-body d-flex flex-column">
-                                            <h4 class="card-title mb-3">% per Mesh (Line)</h4>
+                                            <h4 class="card-title mb-3 text-center">Grafik GFN Green Sand</h4>
                                             <div id="gfn-line" class="flot-charts flot-charts-height"
                                                 style="height:300px; flex:1 1 auto;"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {{-- === End sejajar === --}}
-
-
-
                         </div>
                     </div>
 
@@ -246,7 +240,6 @@
     </div>
 
     @push('scripts')
-        {{-- Bridge data ke JS tanpa @json/map --}}
         @php
             $__rows = [];
             if (!empty($displayRows)) {
