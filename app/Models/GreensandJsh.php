@@ -15,6 +15,8 @@ class GreensandJsh extends Model
         'mix_ke',
         'mix_start',
         'mix_finish',
+
+        // MM Sample
         'mm_p',
         'mm_c',
         'mm_gt',
@@ -29,15 +31,21 @@ class GreensandJsh extends Model
         'mm_cb_weight',
         'mm_tp50_weight',
         'mm_ssi',
+
+        // Additive
         'add_m3',
         'add_vsd',
         'add_sc',
+
+        // BC Sample
         'bc12_cb',
         'bc12_m',
         'bc11_ac',
         'bc11_vsd',
         'bc16_cb',
         'bc16_m',
+
+        // Return Sand
         'rs_time',
         'rs_type',
         'bc9_moist',
@@ -46,12 +54,23 @@ class GreensandJsh extends Model
         'bc9_temp',
         'bc10_temp',
         'bc11_temp',
+
+        // Moulding Data 
+        'add_water_mm',
+        'add_water_mm_2',
+        'temp_sand_mm_1',
+        'rcs_pick_up',
+        'total_flask',
+        'rcs_avg',
+        'add_bentonite_ma',
+        'total_sand',
     ];
 
     protected $casts = [
         'date' => 'datetime',
-        'mix_start' => 'datetime:H:i',
-        'mix_finish' => 'datetime:H:i',
-        'rs_time' => 'datetime:H:i',
+        'mix_ke' => 'integer',
+        'mix_start' => 'string',
+        'mix_finish' => 'string',
+        'rs_time' => 'string',
     ];
 }

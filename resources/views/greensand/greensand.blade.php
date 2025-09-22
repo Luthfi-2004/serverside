@@ -127,7 +127,7 @@
                                         <tbody></tbody>
                                         <tfoot>
                                             <tr class="gs-summary-row">
-                                                @for ($i = 0; $i < 38; $i++)
+                                                @for ($i = 0; $i < 46; $i++)
                                                     <th></th>
                                                 @endfor
                                             </tr>

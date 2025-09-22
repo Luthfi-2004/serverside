@@ -11,8 +11,10 @@
         <th colspan="3" class="text-center">Additive</th>
         <th colspan="6" class="text-center">BC Sample</th>
         <th colspan="8" class="text-center">Return Sand</th>
+        <th colspan="8" class="text-center">Moulding Data</th>
     </tr>
     <tr>
+        <!-- MM Sample -->
         <th class="text-center" style="min-width:120px;">P</th>
         <th class="text-center" style="min-width:120px;">C</th>
         <th class="text-center" style="min-width:120px;">G.T</th>
@@ -27,15 +29,21 @@
         <th class="text-center" style="min-width:120px;">CB weight</th>
         <th class="text-center" style="min-width:120px;">TP 50 weight</th>
         <th class="text-center" style="min-width:120px;">SSI</th>
+
+        <!-- Additive -->
         <th class="text-center" style="min-width:120px;">M3</th>
         <th class="text-center" style="min-width:120px;">VSD</th>
         <th class="text-center" style="min-width:120px;">SC</th>
+
+        <!-- BC Sample -->
         <th class="text-center" style="min-width:120px;">BC12 CB</th>
         <th class="text-center" style="min-width:120px;">BC12 M</th>
         <th class="text-center" style="min-width:120px;">BC11 AC</th>
         <th class="text-center" style="min-width:120px;">BC11 VSD</th>
         <th class="text-center" style="min-width:120px;">BC16 CB</th>
         <th class="text-center" style="min-width:120px;">BC16 M</th>
+
+        <!-- Return Sand -->
         <th class="text-center" style="min-width:120px;">RS Time</th>
         <th class="text-center" style="min-width:120px;">Type</th>
         <th class="text-center" style="min-width:120px;">Moist BC9</th>
@@ -44,5 +52,15 @@
         <th class="text-center" style="min-width:120px;">Temp BC9</th>
         <th class="text-center" style="min-width:120px;">Temp BC10</th>
         <th class="text-center" style="min-width:120px;">Temp BC11</th>
+
+        <!-- Moulding Data -->
+        <th class="text-center" style="min-width:120px;">Add Water MM1</th>
+        <th class="text-center" style="min-width:120px;">Add Water MM2</th>
+        <th class="text-center" style="min-width:120px;">Temp Sand MM1</th>
+        <th class="text-center" style="min-width:120px;">RCS Pick Up</th>
+        <th class="text-center" style="min-width:120px;">Total Flask</th>
+        <th class="text-center" style="min-width:120px;">RCS Avg</th>
+        <th class="text-center" style="min-width:120px;">Add Bentonite MA</th>
+        <th class="text-center" style="min-width:120px;">Total Sand</th>
     </tr>
 </thead>
