@@ -8,48 +8,59 @@
 
         <!-- Dashboard -->
         <li class="{{ request()->routeIs('dashboard') ? 'mm-active' : '' }}">
-          <a href="{{ route('dashboard') }}"
-             class="waves-effect {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+          <a href="{{ route('dashboard') }}" class="waves-effect {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="ri-dashboard-line"></i>
             <span>Dashboard</span>
           </a>
         </li>
 
-        <!-- Greensand Parent -->
-        <li class="{{ request()->routeIs('greensand.*') || request()->routeIs('jshgfn.*') ? 'mm-active' : '' }}">
+        <!-- Judul grup -->
+        <li class="menu-title">Green Sand</li>
+
+        <!-- JSH LINE -->
+        <li>
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
-            <span>Greensand</span>
+            <span>JSH LINE</span>
           </a>
           <ul class="sub-menu" aria-expanded="false">
             <li class="{{ request()->routeIs('greensand.index') ? 'mm-active' : '' }}">
               <a href="{{ route('greensand.index') }}"
-                 class="{{ request()->routeIs('greensand.index') ? 'active' : '' }}">
-                Green Sand Daily Check
+                class="{{ request()->routeIs('greensand.index') ? 'active' : '' }}">
+                Daily Check
               </a>
             </li>
             <li class="{{ request()->routeIs('jshgfn.*') ? 'mm-active' : '' }}">
-              <a href="{{ route('jshgfn.index') }}"
-                 class="{{ request()->routeIs('jshgfn.*') ? 'active' : '' }}">
-                Green Sand GFN 
+              <a href="{{ route('jshgfn.index') }}" class="{{ request()->routeIs('jshgfn.*') ? 'active' : '' }}">
+                GFN
               </a>
             </li>
           </ul>
         </li>
+        <!-- END JSH LINE -->
 
-        <!-- ====== MENU BARU (UI aja) ====== -->
-        <li>
-          <a href="javascript:void(0);" class="has-arrow waves-effect">
-            <i class="ri-apps-line"></i>
-            <span>Menu Baru</span>
-          </a>
-          <ul class="sub-menu" aria-expanded="false">
-            <li><a href="javascript:void(0);">Submenu 1</a></li>
-            <li><a href="javascript:void(0);">Submenu 2</a></li>
-            <li><a href="javascript:void(0);">Submenu 3</a></li>
-          </ul>
-        </li>
-        <!-- ====== END MENU BARU ====== -->
+       <!-- ACE LINE -->
+<li class="{{ request()->routeIs('ace.*') ? 'mm-active' : '' }}">
+  <a href="javascript:void(0);" class="has-arrow waves-effect">
+    <i class="ri-flask-line"></i>
+    <span>ACE LINE</span>
+  </a>
+  <ul class="sub-menu" aria-expanded="false">
+    <li class="{{ request()->routeIs('ace.index') ? 'mm-active' : '' }}">
+      <a href="{{ route('ace.index') }}" class="{{ request()->routeIs('ace.index') ? 'active' : '' }}">
+        Daily Check
+      </a>
+    </li>
+    {{-- siapkan nanti kalau ada modul GFN untuk ACE --}}
+    {{-- <li class="{{ request()->routeIs('acegfn.*') ? 'mm-active' : '' }}">
+      <a href="{{ route('acegfn.index') }}" class="{{ request()->routeIs('acegfn.*') ? 'active' : '' }}">
+        GFN
+      </a>
+    </li> --}}
+  </ul>
+</li>
+<!-- END ACE LINE -->
+
 
       </ul>
     </div>

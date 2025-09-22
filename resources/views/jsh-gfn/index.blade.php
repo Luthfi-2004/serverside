@@ -38,13 +38,20 @@
                             <div class="card-body">
                                 <form id="filterForm" class="row align-items-end" method="GET"
                                     action="{{ route('jshgfn.index') }}">
-                                    <div class="col-xl-6 col-lg-4 mb-2">
-                                        <label for="fDate" class="form-label mb-1">Date</label>
-                                        <input id="fDate" type="text" name="date" class="form-control gs-input"
-                                            value="{{ $filters['date'] ?? '' }}" autocomplete="off"
-                                            placeholder="YYYY-MM-DD">
+                                    <div class="col-xl-6 col-lg-4">
+                                        <div class="form-group mb-2">
+                                            <label for="fDate" class="form-label mb-1">Date</label>
+                                            <div class="input-group">
+                                                <input id="fDate" type="text" name="date" class="form-control gs-input"
+                                                    value="{{ $filters['date'] ?? '' }}" autocomplete="off"
+                                                    placeholder="YYYY-MM-DD" data-provide="datepicker"
+                                                    data-date-format="yyyy-mm-dd" data-date-autoclose="true">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-
                                     <div class="col-xl-6 col-lg-4 mb-2">
                                         <label class="form-label mb-1">Shift</label>
                                         <select class="form-control select2" name="shift"
