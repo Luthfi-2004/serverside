@@ -4,87 +4,90 @@
 
     // guard
     if (!window.aceRoutes) {
-        console.error("aceRoutes missing. Define it in Blade before loading ace.js");
+        console.error(
+            "aceRoutes missing. Define it in Blade before loading ace.js"
+        );
         return;
     }
 
-    // -------- dates --------
-    // today Y-M-D
+    // ===== helpers =====
+
+    // robust parse: support "yyyy-mm-dd" OR "dd-mm-yyyy"
+    function normalizeFilterDate(s) {
+        if (!s || typeof s !== "string") return "";
+        // yyyy-mm-dd
+        var m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (m1) return s;
+        // dd-mm-yyyy -> yyyy-mm-dd
+        var m2 = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
+        if (m2) return [m2[3], m2[2], m2[1]].join("-");
+        return "";
+    }
+
+    // today (yyyy-mm-dd)
     function todayYmd() {
         var d = new Date();
-        var y = d.getFullYear();
-        var m = String(d.getMonth() + 1).padStart(2, "0");
         var dd = String(d.getDate()).padStart(2, "0");
-        return y + "-" + m + "-" + dd;
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var yyyy = d.getFullYear();
+        return yyyy + "-" + mm + "-" + dd;
     }
 
-    // normalize: accept "yyyy-mm-dd" OR "dd-mm-yyyy" → return "yyyy-mm-dd"
-    function normalizeYmd(s) {
-        if (!s || typeof s !== "string") return "";
-        var p = s.split("-");
-        if (p.length !== 3) return s;
-        // if starts with yyyy
-        if (p[0].length === 4) return s;
-        // assume dd-mm-yyyy
-        if (p[2].length === 4) return [p[2], p[1], p[0]].join("-");
-        return s;
-    }
-
-    // -------- time --------
-    function toHm(s) {
-        if (!s) return "";
-        var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
-        if (m) return m[1] + ":" + m[2];
-        return String(s).substring(0, 5);
-    }
-    function nowHm() {
-        var d = new Date();
-        var h = String(d.getHours()).padStart(2, "0");
-        var m = String(d.getMinutes()).padStart(2, "0");
-        return h + ":" + m;
-    }
-
-    // -------- shift --------
+    // shift
     function detectShiftByNow() {
         var hh = new Date().getHours();
         if (hh >= 6 && hh < 16) return "D";
         if (hh >= 16 && hh < 22) return "S";
         return "N";
     }
-    function shiftLabel(v) {
-        if (v === "D") return "D (06–16)";
-        if (v === "S") return "S (16–22)";
-        if (v === "N") return "N (22–06)";
-        return "";
-    }
 
-    // -------- render helpers --------
+    // format number or dash
     function fmt(v) {
         if (v === null || v === undefined || v === "") return "-";
         if (typeof v === "number") return v.toFixed(2);
         return v;
     }
+
+    // integer (tanpa .00)
     function fmtInt(v) {
         if (v === null || v === undefined || v === "") return "-";
         var n = parseInt(v, 10);
         return isNaN(n) ? "-" : n;
     }
 
-    // reload
+    // "HH:MM" dari "HH:MM" / "HH:MM:SS"
+    function toHm(s) {
+        if (!s) return "";
+        var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
+        if (m) return m[1] + ":" + m[2];
+        return String(s).substring(0, 5);
+    }
+
+    // "YYYY-MM-DD HH:MM" dari ISO/SQL datetime
+    function toYmdHm(s) {
+        if (!s) return "-";
+        // cocokkan "yyyy-mm-ddThh:mm" atau "yyyy-mm-dd hh:mm"
+        var m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(String(s));
+        if (m) return m[1] + " " + m[2];
+        // fallback: potong aman
+        return String(s).replace("T", " ").substring(0, 16);
+    }
+
+    // reload datatable
     function reloadTable() {
         if (window.aceTable) window.aceTable.ajax.reload(null, false);
     }
 
-    // filters
+    // filters (pakai yyyy-mm-dd)
     function currentFilters() {
         return {
-            date: normalizeYmd($("#filterDate").val()),
+            date: normalizeFilterDate($("#filterDate").val()),
             shift: $("#shiftSelect").val() || "",
             product_type_id: $("#productSelect").val() || "",
         };
     }
 
-    // fill
+    // ===== form fill =====
     function fillForm(row) {
         $("#ace_id").val(row.id || "");
         $("#ace_mode").val(row.id ? "update" : "create");
@@ -96,10 +99,29 @@
         $("#mFinish").val(toHm(row.sample_finish || ""));
 
         var fields = [
-            "p","c","gt","cb_lab","moisture","machine_no","bakunetsu","ac","tc","vsd","ig",
-            "cb_weight","tp50_weight","ssi",
-            "dw29_vas","dw29_debu","dw31_vas","dw31_id","dw31_moldex","dw31_sc",
-            "bc13_cb","bc13_c","bc13_m",
+            "p",
+            "c",
+            "gt",
+            "cb_lab",
+            "moisture",
+            "machine_no",
+            "bakunetsu",
+            "ac",
+            "tc",
+            "vsd",
+            "ig",
+            "cb_weight",
+            "tp50_weight",
+            "ssi",
+            "dw29_vas",
+            "dw29_debu",
+            "dw31_vas",
+            "dw31_id",
+            "dw31_moldex",
+            "dw31_sc",
+            "bc13_cb",
+            "bc13_c",
+            "bc13_m",
         ];
         fields.forEach(function (f) {
             $("#m_" + f).val(row[f] != null ? row[f] : "");
@@ -111,34 +133,40 @@
         return new FormData(document.getElementById("aceForm"));
     }
 
-    // submitbtn
+    // submit button state
     function setSubmitting(btn, on) {
         var $btn = $(btn);
         if (on) {
             $btn.prop("disabled", true).data("orig", $btn.html());
-            $btn.html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
+            $btn.html(
+                '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
+            );
         } else {
             $btn.prop("disabled", false).html($btn.data("orig") || "Submit");
         }
     }
 
-    // alert
+    // alerts
     function showAlert(msg) {
-        $("#aceFormAlert").removeClass("d-none").text(msg || "Validation error");
+        $("#aceFormAlert")
+            .removeClass("d-none")
+            .text(msg || "Validation error");
     }
     function clearAlert() {
         $("#aceFormAlert").addClass("d-none").empty();
     }
 
-    // init defaults
+    // ===== defaults =====
     (function initDefaultFilters() {
         var $fDate = $("#filterDate");
         var $fShift = $("#shiftSelect");
-        if (!$fDate.val()) $fDate.val(todayYmd()).trigger("change"); // YYYY-MM-DD
+        if (!$fDate.val()) $fDate.val(todayYmd()).trigger("change");
         if (!$fShift.val()) $fShift.val(detectShiftByNow()).trigger("change");
     })();
 
-    // columns
+    // ===== columns =====
+    // Catatan kolom Date: kita coba pakai created_at / updated_at jika ada,
+    // supaya bisa tampil "tanggal + jam submit". Fallback ke row.date.
     var columns = [
         {
             data: null,
@@ -149,18 +177,40 @@
                 var id = row.id || "";
                 return [
                     '<div class="btn-group btn-group-sm" role="group">',
-                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="', id, '"><i class="fas fa-edit"></i></button>',
-                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="', id, '"><i class="fas fa-trash"></i></button>',
+                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="',
+                    id,
+                    '"><i class="fas fa-edit"></i></button>',
+                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="',
+                    id,
+                    '"><i class="fas fa-trash"></i></button>',
                     "</div>",
                 ].join("");
             },
         },
         { data: "number", render: fmtInt },
-        { data: "date", render: function (v) { return v ? v.substring(0, 10) : "-"; } },
+        {
+            data: "date", // penting: biarkan 'date' untuk server-side
+            render: function (v, __, row) {
+                var dt = row.created_at || row.updated_at || v || "";
+                if (/[ T]\d{2}:\d{2}/.test(String(dt))) return toYmdHm(dt);
+                return dt ? String(dt).substring(0, 10) : "-";
+            },
+        },
+
         { data: "shift" },
         { data: "product_type_name", defaultContent: "-" },
-        { data: "sample_start", render: function (v){ return v ? toHm(v) : "-"; } },
-        { data: "sample_finish", render: function (v){ return v ? toHm(v) : "-"; } },
+        {
+            data: "sample_start",
+            render: function (v) {
+                return v ? toHm(v) : "-";
+            },
+        },
+        {
+            data: "sample_finish",
+            render: function (v) {
+                return v ? toHm(v) : "-";
+            },
+        },
         { data: "p", render: fmt },
         { data: "c", render: fmt },
         { data: "gt", render: fmt },
@@ -187,7 +237,7 @@
         { data: "bc13_m", render: fmt },
     ];
 
-    // table
+    // ===== DataTable init =====
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -196,7 +246,7 @@
         scrollX: true,
         scrollCollapse: true,
         pageLength: 25,
-        order: [[2, "desc"]],
+        order: [[2, "desc"]], // urut by "Date" kolom index 2
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -211,41 +261,38 @@
             },
         },
         columns: columns,
-        columnDefs: [{ targets: "_all", className: "align-middle text-center" }],
+        columnDefs: [
+            { targets: "_all", className: "align-middle text-center" },
+        ],
         drawCallback: function () {
             if (aceRoutes.summary) loadSummary();
         },
     });
 
-    // actions
+    // ===== actions =====
     $("#btnSearch").on("click", reloadTable);
 
-    // refresh
     $("#btnRefresh").on("click", function () {
-        $("#filterDate").val(todayYmd()); // YYYY-MM-DD
+        $("#filterDate").val(todayYmd());
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
         $("#productSelect").val("").trigger("change");
         reloadTable();
     });
 
-    // export
     $("#btnExport").on("click", function () {
         if (!aceRoutes.export) return;
         var q = $.param(currentFilters());
         window.location.href = aceRoutes.export + (q ? "?" + q : "");
     });
 
-    // create (open modal)
+    // add
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         $("#aceForm")[0].reset();
         $("#ace_mode").val("create");
         $("#ace_id").val("");
         clearAlert();
-
-        $("#mDate").val(todayYmd());                // YYYY-MM-DD
-        $("#mShift").val(detectShiftByNow());       // D/S/N by time
-        $("#mStart").val(nowHm());                  // current HH:MM
-        $("#mFinish").val(nowHm());                 // current HH:MM
+        $("#mDate").val(todayYmd());
+        $("#mShift").val(detectShiftByNow());
     });
 
     // edit
@@ -273,13 +320,14 @@
         $("#confirmDeleteModal").modal("show");
     });
 
-    // confirm
     $("#confirmDeleteYes").on("click", function () {
         if (!deleteId) return;
         $.ajax({
             url: aceRoutes.base + "/" + deleteId,
             type: "DELETE",
-            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
         })
             .done(function () {
                 $("#confirmDeleteModal").modal("hide");
@@ -295,10 +343,11 @@
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         clearAlert();
+
         var mode = $("#ace_mode").val();
         var id = $("#ace_id").val();
 
-        // ensure HH:MM
+        // pastikan time HH:MM
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
 
@@ -308,6 +357,7 @@
             url = aceRoutes.base + "/" + id;
             method = "POST";
         }
+
         var fd = collectForm();
         if (mode === "update") fd.append("_method", "PUT");
 
@@ -320,7 +370,9 @@
             data: fd,
             processData: false,
             contentType: false,
-            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
         })
             .done(function () {
                 $("#modal-ace").modal("hide");
@@ -328,7 +380,8 @@
             })
             .fail(function (xhr) {
                 var msg = "Save failed";
-                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                if (xhr.responseJSON && xhr.responseJSON.message)
+                    msg = xhr.responseJSON.message;
                 showAlert(msg);
                 console.error(xhr.responseText || xhr.statusText);
             })
@@ -346,8 +399,13 @@
                 var $row = $tfoot.find("tr.ace-summary-row");
                 if (!$row.length) return;
 
-                var hasVals = res && Array.isArray(res.values) && res.values.length > 0;
-                if (!hasVals) { $tfoot.addClass("d-none"); return; }
+                var hasVals =
+                    res && Array.isArray(res.values) && res.values.length > 0;
+                if (!hasVals) {
+                    $tfoot.addClass("d-none");
+                    return;
+                }
+
                 $tfoot.removeClass("d-none");
 
                 var tds = $row.find("td");
@@ -359,7 +417,9 @@
                 var vals = res.values || [];
                 for (var i = 2; i < tds.length; i++) {
                     var v = vals[i - 2];
-                    $(tds[i]).text(v !== undefined && v !== null && v !== "" ? v : "");
+                    $(tds[i]).text(
+                        v !== undefined && v !== null && v !== "" ? v : ""
+                    );
                 }
             })
             .fail(function (xhr) {

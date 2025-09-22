@@ -32,8 +32,8 @@
                                             <label>Process Date</label>
                                             <div class="input-group">
                                                 <input type="text" class="form-control" id="filterDate"
-                                                    data-provide="datepicker" data-date-format="dd-mm-yyyy"
-                                                    data-date-autoclose="true" autocomplete="off">
+                                                    data-provide="datepicker" data-date-format="yyyy-mm-dd"
+                                                    data-date-autoclose="true" autocomplete="off" placeholder="YYYY-MM-DD">
                                                 <div class="input-group-append">
                                                     <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
                                                 </div>
