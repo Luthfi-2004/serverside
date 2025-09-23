@@ -248,6 +248,10 @@
       rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!},
       recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}
     };
+    // >>> aceRoutes buat JS duplicate-check
+    window.aceRoutes = {
+      gfnExists: "{{ route('acelinegfn.check-exists') }}"
+    };
   </script>
   @if(session('open_modal'))
     <script>window.openModalGFN = true;</script>

@@ -152,9 +152,8 @@
                                 </table>
                             </div>
 
-                            {{-- === Nilai GFN + Line Chart sejajar (tinggi sama + text center) === --}}
+                            {{-- Nilai GFN + Chart --}}
                             <div class="row mt-4">
-                                {{-- Kiri: Tabel Nilai GFN --}}
                                 <div class="col-lg-6 d-flex flex-column">
                                     <div class="table-responsive flex-grow-1" style="height:300px; overflow:auto;">
                                         <table class="table table-bordered table-striped mb-0 w-100 h-100 text-center">
@@ -215,6 +214,7 @@
     </div>
     </div>
 
+    {{-- Modal Delete --}}
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -267,11 +267,16 @@
                 rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
                 recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
             };
+            // >>> routes untuk duplicate-check (dipakai jshgfn.js)
+            window.jshRoutes = {
+                gfnExists: "{{ route('jshgfn.check-exists') }}"
+            };
         </script>
 
         @if(session('open_modal'))
             <script>window.openModalGFN = true;</script>
         @endif
+
         <script src="{{ asset('assets/js/jshgfn.js') }}"></script>
     @endpush
 

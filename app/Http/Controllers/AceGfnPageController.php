@@ -78,6 +78,23 @@ class AceGfnPageController extends Controller
             return back()->withErrors($validator)->withInput()->with('open_modal', true);
         }
 
+        // === HARD GUARD: tolak kalau tanggal+shift sudah ada di total (anti dobel set) ===
+        $date  = $request->input('gfn_date');
+        $shift = $request->input('shift');
+
+        $dupe = AceTotalGfn::query()
+            ->whereDate('gfn_date', $date)
+            ->where('shift', $shift)
+            ->exists();
+
+        if ($dupe) {
+            return back()
+                ->withErrors(['gfn_date' => "Data untuk tanggal {$date} (shift {$shift}) sudah ada. Hapus dulu jika ingin input ulang."])
+                ->withInput()
+                ->with('open_modal', true);
+        }
+        // === END HARD GUARD ===
+
         $grams = array_map(
             fn($v) => ($v === null || $v === '') ? 0.0 : (float) $v,
             $request->input('grams', [])
@@ -97,10 +114,10 @@ class AceGfnPageController extends Controller
 
         for ($i = 0; $i < 10; $i++) {
             $g = $grams[$i];
-            $pct   = $totalGram > 0 ? ($g / $totalGram) * 100 : 0.0;
+            $pct    = $totalGram > 0 ? ($g / $totalGram) * 100 : 0.0;
             $pctIdx = $pct * $this->indices[$i];
 
-            $percentages[$i] = round($pct, 2);
+            $percentages[$i]       = round($pct, 2);
             $percentageIndices[$i] = round($pctIdx, 1);
             $sumPI += $percentageIndices[$i];
         }
@@ -182,6 +199,24 @@ class AceGfnPageController extends Controller
         $filename = sprintf('aceline_gfn_%s.xlsx', now()->format('Ymd_His'));
 
         return Excel::download(new AceGfnExport(date: $date, shift: $shift), $filename);
+    }
+
+    /** JSON: cek duplikat untuk tanggal (+shift) */
+    public function checkExists(Request $r)
+    {
+        $date  = $r->query('date');   // YYYY-MM-DD
+        $shift = $r->query('shift');  // D/S/N
+
+        if (!$date) {
+            return response()->json(['exists' => false, 'reason' => 'missing_date']);
+        }
+
+        $exists = AceTotalGfn::query()
+            ->whereDate('gfn_date', $date)
+            ->when($shift, fn($q) => $q->where('shift', $shift))
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
     }
 
     /** Helper tampilan */
