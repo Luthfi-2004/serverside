@@ -11,7 +11,6 @@ class AceLineController extends Controller
 {
     /* ========= Helpers ========= */
 
-    // Parse tanggal bebas jadi Y-m-d
     private function ymd(?string $s): ?string
     {
         if (!$s)
@@ -23,16 +22,15 @@ class AceLineController extends Controller
         }
     }
 
-    // Shift berdasarkan jam Asia/Jakarta
     private function detectShift(?Carbon $now = null): string
     {
         $now = $now ? $now->copy() : Carbon::now('Asia/Jakarta');
         $h = (int) $now->format('H');
         if ($h >= 6 && $h < 16)
-            return 'D';   // 06-16
+            return 'D';
         if ($h >= 16 && $h < 22)
-            return 'S';  // 16-22
-        return 'N';                            // 22-06
+            return 'S';
+        return 'N';
     }
 
     private function rules(): array
@@ -60,6 +58,7 @@ class AceLineController extends Controller
             'bc13_cb',
             'bc13_c',
             'bc13_m',
+            'no_mix',
         ];
 
         $rules = [
@@ -73,10 +72,8 @@ class AceLineController extends Controller
             'sample_finish' => ['nullable', 'date_format:H:i'],
             'machine_no' => ['nullable', 'string', 'max:50'],
         ];
-
-        foreach ($numeric as $f) {
+        foreach ($numeric as $f)
             $rules[$f] = ['nullable', 'numeric'];
-        }
         return $rules;
     }
 
@@ -92,7 +89,6 @@ class AceLineController extends Controller
             'sample_start',
             'sample_finish',
             'machine_no',
-            // MM Sample
             'p',
             'c',
             'gt',
@@ -106,22 +102,18 @@ class AceLineController extends Controller
             'cb_weight',
             'tp50_weight',
             'ssi',
-            // Additive Additional
             'dw29_vas',
             'dw29_debu',
             'dw31_vas',
             'dw31_id',
             'dw31_moldex',
             'dw31_sc',
-            // BC13
             'bc13_cb',
             'bc13_c',
             'bc13_m',
         ]);
-
-        if (!empty($data['date'])) {
+        if (!empty($data['date']))
             $data['date'] = $this->ymd($data['date']);
-        }
         return $data;
     }
 
@@ -131,15 +123,12 @@ class AceLineController extends Controller
     {
         $q = AceLine::query();
 
-        if ($d = $this->ymd($request->get('date'))) {
+        if ($d = $this->ymd($request->get('date')))
             $q->whereDate('date', $d);
-        }
-        if ($s = $request->get('shift')) {
+        if ($s = $request->get('shift'))
             $q->where('shift', $s);
-        }
-        if ($pt = $request->get('product_type_id')) {
+        if ($pt = $request->get('product_type_id'))
             $q->where('product_type_id', $pt);
-        }
 
         return DataTables::of($q)
             ->filter(function ($builder) use ($request) {
@@ -151,9 +140,7 @@ class AceLineController extends Controller
                     });
                 }
             })
-            ->editColumn('date', function (AceLine $r) {
-                return $r->date ? Carbon::parse($r->date)->format('Y-m-d') : null;
-            })
+            ->editColumn('date', fn(AceLine $r) => $r->date ? Carbon::parse($r->date)->format('Y-m-d') : null)
             ->make(true);
     }
 
@@ -162,35 +149,25 @@ class AceLineController extends Controller
     public function store(Request $request)
     {
         $request->validate($this->rules());
-
-        // Default date/shift kalau kosong
         $data = $this->fillable($request);
-        if (empty($data['date'])) {
-            $data['date'] = Carbon::now('Asia/Jakarta')->format('Y-m-d');
-        }
-        if (empty($data['shift'])) {
-            $data['shift'] = $this->detectShift();
-        }
 
-        // Auto numbering per tanggal (reset kalau semua data tanggal tsb sudah terhapus)
+        if (empty($data['date']))
+            $data['date'] = Carbon::now('Asia/Jakarta')->format('Y-m-d');
+        if (empty($data['shift']))
+            $data['shift'] = $this->detectShift();
+
         if (empty($data['number'])) {
             $max = AceLine::whereDate('date', $data['date'])->max('number');
             $data['number'] = ($max ?? 0) + 1;
         }
 
         $row = AceLine::create($data);
-
-        return response()->json([
-            'ok' => true,
-            'id' => $row->id,
-            'message' => 'Saved',
-        ]);
+        return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Saved']);
     }
 
     public function show($id)
     {
-        $row = AceLine::findOrFail($id);
-        return response()->json($row);
+        return response()->json(AceLine::findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -199,8 +176,6 @@ class AceLineController extends Controller
         $row = AceLine::findOrFail($id);
 
         $data = $this->fillable($request);
-
-        // Jangan ubah number/date/shift kalau tidak dikirim (biar edit beneran edit)
         if (!array_key_exists('number', $data))
             unset($data['number']);
         if (!array_key_exists('date', $data))
@@ -209,12 +184,7 @@ class AceLineController extends Controller
             unset($data['shift']);
 
         $row->update($data);
-
-        return response()->json([
-            'ok' => true,
-            'id' => $row->id,
-            'message' => 'Updated',
-        ]);
+        return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Updated']);
     }
 
     public function destroy($id)
@@ -223,92 +193,137 @@ class AceLineController extends Controller
         return response()->json(['ok' => true, 'message' => 'Deleted']);
     }
 
-    /* ========= Summary Footer (sesuai kolom table saat ini) =========
-     * Urutan kolom (tanpa "Action"):
-     * No, Date, Shift, Type, Start, Finish,
-     * P,C,G.T,Cb Lab,Moisture,Nomor Mesin,Bakunetsu,AC,TC,VSD,IG,CB Weight,TP 50 Weight,SSI,
-     * DW29_VAS,DW29_Debu,DW31_VAS,DW31_ID,DW31_Moldex,DW31_SC,
-     * NO Mix,BC13_CB,BC13_C,BC13_M
-     * Hanya numeric di-AVG; text/waktu dikosongkan.
-     */
+    /* ========= SUMMARY (MIN / MAX / AVG / JUDGE) ========= */
     public function summary(Request $request)
     {
         $q = AceLine::query();
-
-        if ($d = $this->ymd($request->get('date'))) {
+        if ($d = $this->ymd($request->get('date')))
             $q->whereDate('date', $d);
-        }
-        if ($s = $request->get('shift')) {
+        if ($s = $request->get('shift'))
             $q->where('shift', $s);
-        }
-        if ($pt = $request->get('product_type_id')) {
+        if ($pt = $request->get('product_type_id'))
             $q->where('product_type_id', $pt);
-        }
 
-        $agg = $q->selectRaw("
-            COUNT(*) as cnt,
-            AVG(number) as number,
-            -- times/text dibiarkan kosong di footer
-            AVG(p) as p, AVG(c) as c, AVG(gt) as gt,
-            AVG(cb_lab) as cb_lab, AVG(moisture) as moisture,
-            AVG(bakunetsu) as bakunetsu, AVG(ac) as ac, AVG(tc) as tc,
-            AVG(vsd) as vsd, AVG(ig) as ig,
-            AVG(cb_weight) as cb_weight, AVG(tp50_weight) as tp50_weight,
-            AVG(ssi) as ssi,
-            AVG(dw29_vas) as dw29_vas, AVG(dw29_debu) as dw29_debu,
-            AVG(dw31_vas) as dw31_vas, AVG(dw31_id) as dw31_id,
-            AVG(dw31_moldex) as dw31_moldex, AVG(dw31_sc) as dw31_sc,
-            AVG(no_mix) as no_mix,
-            AVG(bc13_cb) as bc13_cb, AVG(bc13_c) as bc13_c, AVG(bc13_m) as bc13_m
-        ")->first();
-
-        $fmt = function ($v) {
-            return is_null($v) ? '' : number_format((float) $v, 2, '.', '');
-        };
-
-        $values = [
-            // No
-            $fmt($agg->number),
-            // Date, Shift, Type
-            '',
-            '',
-            '',
-            // Start, Finish
-            '',
-            '',
-            // MM Sample (numeric; machine_no text → kosong)
-            $fmt($agg->p),
-            $fmt($agg->c),
-            $fmt($agg->gt),
-            $fmt($agg->cb_lab),
-            $fmt($agg->moisture),
-            '', // machine_no
-            $fmt($agg->bakunetsu),
-            $fmt($agg->ac),
-            $fmt($agg->tc),
-            $fmt($agg->vsd),
-            $fmt($agg->ig),
-            $fmt($agg->cb_weight),
-            $fmt($agg->tp50_weight),
-            $fmt($agg->ssi),
-            // Additive Additional
-            $fmt($agg->dw29_vas),
-            $fmt($agg->dw29_debu),
-            $fmt($agg->dw31_vas),
-            $fmt($agg->dw31_id),
-            $fmt($agg->dw31_moldex),
-            $fmt($agg->dw31_sc),
-            // BC13
-            $fmt($agg->no_mix),
-            $fmt($agg->bc13_cb),
-            $fmt($agg->bc13_c),
-            $fmt($agg->bc13_m),
+        // Kolom numeric yang dihitung (urut sesuai tabel, kecuali machine_no (text) dan number (biar nggak muncul di footer))
+        $numericCols = [
+            'p',
+            'c',
+            'gt',
+            'cb_lab',
+            'moisture',
+            'bakunetsu',
+            'ac',
+            'tc',
+            'vsd',
+            'ig',
+            'cb_weight',
+            'tp50_weight',
+            'ssi',
+            'dw29_vas',
+            'dw29_debu',
+            'dw31_vas',
+            'dw31_id',
+            'dw31_moldex',
+            'dw31_sc',
+            'no_mix',
+            'bc13_cb',
+            'bc13_c',
+            'bc13_m',
         ];
 
+        // Build SELECT agregat: AVG/MIN/MAX + COUNT(bukan null) utk deteksi "ada data"
+        $parts = [];
+        foreach ($numericCols as $c) {
+            $parts[] = "AVG($c) as avg_$c";
+            $parts[] = "MIN($c) as min_$c";
+            $parts[] = "MAX($c) as max_$c";
+            $parts[] = "COUNT($c) as cnt_$c";
+        }
+        $agg = $q->selectRaw(implode(', ', $parts))->first();
+
+        $fmt2 = fn($v) => is_null($v) ? '' : number_format((float) $v, 2, '.', '');
+
+        // Susun object keyed (biar JS aman dan nggak geser)
+        $rowMin = [];
+        $rowMax = [];
+        $rowAvg = [];
+        $present = []; // ada data pada kolom tsb?
+
+        foreach ($numericCols as $name) {
+            $rowMin[$name] = $fmt2($agg?->{"min_$name"});
+            $rowMax[$name] = $fmt2($agg?->{"max_$name"});
+            $rowAvg[$name] = $fmt2($agg?->{"avg_$name"});
+            $present[$name] = (int) ($agg?->{"cnt_$name"} ?? 0) > 0;
+        }
+
+        /* ====== JUDGE RULES (pakai AVG) ====== */
+        $judgeBase = 'avg_'; // bisa diganti 'min_' / 'max_' kalau mau
+        // SPEC
+        $spec = [
+            'p' => ['min' => 150, 'max' => 240],
+            'c' => ['min' => 16, 'max' => 21],
+            'gt' => ['min' => 400, 'max' => 700],
+            'cb_lab' => ['min' => 33, 'max' => 43],
+            'moisture' => ['min' => 3, 'max' => 4],
+            'bakunetsu' => ['max' => 80],                 // max only
+            'ac' => ['min' => 8, 'max' => 11],
+            'tc' => ['min' => 10, 'max' => 16],
+            'vsd' => ['min' => 0.2, 'max' => 0.7],
+            'ig' => ['min' => 2, 'max' => 3],
+            'cb_weight' => ['min' => 169, 'max' => 181],
+            'ssi' => ['min' => 90],                 // min only
+            // kolom lain tidak dinilai → judge kosong
+        ];
+
+        $judgeVal = function ($val, array $rule): string {
+            if ($val === null)
+                return '';             // <— kosong kalau belum ada data
+            if (isset($rule['min']) && $val < $rule['min'])
+                return 'NG';
+            if (isset($rule['max']) && $val > $rule['max'])
+                return 'NG';
+            return 'OK';
+        };
+
+        $rowJudge = [];
+        $okFlags = [];
+
+        foreach ($numericCols as $name) {
+            // Hanya nilai yang ada spec-nya yang dinilai; lainnya kosong
+            if (!array_key_exists($name, $spec)) {
+                $rowJudge[$name] = '';
+                continue;
+            }
+
+            // Kalau kolom ini belum ada data sama sekali → kosong (bukan NG)
+            if (!$present[$name]) {
+                $rowJudge[$name] = '';
+                continue;
+            }
+
+            $val = $agg?->{$judgeBase . $name};
+            $j = $judgeVal(is_null($val) ? null : (float) $val, $spec[$name]);
+            $rowJudge[$name] = $j;
+
+            // hitung overall hanya dari kolom yang dinilai & ada data
+            if ($j !== '')
+                $okFlags[] = ($j === 'OK');
+        }
+
+        $overall = count($okFlags) ? (array_sum($okFlags) === count($okFlags) ? 'OK' : 'NG') : '—';
+
         return response()->json([
-            'label' => 'TOTAL (' . $agg->cnt . ' rows)',
-            'values' => $values,
-            'count' => (int) ($agg->cnt ?? 0),
+            // object keyed by field (aman buat JS, nggak tergantung jumlah kolom di depan)
+            'rows' => [
+                'min' => $rowMin,
+                'max' => $rowMax,
+                'avg' => $rowAvg,
+                'judge' => $rowJudge,
+            ],
+            // info tambahan untuk JS (opsional): mana kolom yang ada datanya
+            'present' => $present,
+            // label keseluruhan
+            'overall' => $overall,
         ]);
     }
 

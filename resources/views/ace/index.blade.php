@@ -60,8 +60,6 @@
                                             <select id="productSelect" class="form-control select2"
                                                 data-placeholder="All type" style="width:100%;">
                                                 <option value=""></option>
-                                                {{-- @foreach($products as $p) <option value="{{ $p->id }}">{{ $p->name }}
-                                                </option> @endforeach --}}
                                             </select>
                                         </div>
                                     </div>
@@ -105,13 +103,9 @@
                                     <table id="dt-ace" class="table table-bordered w-100 text-center">
                                         @include('ace._thead')
                                         <tbody></tbody>
-                                        <tfoot class="d-none">
-                                            <tr class="ace-summary-row">
-                                                @for ($i = 0; $i < 31; $i++)
-                                                    <th></th>
-                                                @endfor
-                                            </tr>
-                                        </tfoot>
+
+                                        {{-- FOOTER dibangun dinamis via JS supaya jumlah kolom selalu pas --}}
+                                        <tfoot class="d-none" id="ace-foot"></tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -146,67 +140,82 @@
                 </div>
             </div>
         </div>
+    </div>
 @endsection
 
-    @push('styles')
-        <style>
-            #dt-ace thead th {
-                white-space: nowrap;
-            }
+@push('styles')
+    <style>
+        #dt-ace thead th {
+            white-space: nowrap;
+        }
 
-            #dt-ace th,
-            #dt-ace td {
-                text-align: center;
-                vertical-align: middle;
-            }
+        #dt-ace th,
+        #dt-ace td {
+            vertical-align: middle;
+            text-align: center;
+        }
 
-            #dt-ace tfoot .ace-summary-row:first-child td {
-                border-top: 2px solid #333 !important;
-            }
+        /* FOOTER compact */
+        #dt-ace tfoot td {
+            border: 1px solid #dee2e6 !important;
+            background: #fff;
+            font-size: 12.5px;
+            padding: 4px 6px;
+            line-height: 1.1;
+            height: 28px;
+        }
 
-            #dt-ace tfoot .ace-summary-row td {
-                background: #fff;
-                font-size: .95rem;
-                text-align: center;
-            }
+        /* setiap baris footer ada border-top tipis */
+        #dt-ace tfoot tr td {
+            border-top: 1px solid #dee2e6 !important;
+        }
 
-            #dt-ace tfoot .ace-summary-row td:first-child {
-                text-align: left;
-                white-space: nowrap;
-            }
-        </style>
-    @endpush
+        /* sel label merged (Action..Finish) */
+        #dt-ace tfoot .ace-foot-label {
+            text-align: center !important;
+            font-weight: 600;
+            color: #4a5568;
+        }
 
-    @push('scripts')
-        <script>
-            $(function () {
-                $('#shiftSelect, #productSelect').select2();
+        /* bold line persis di atas MIN */
+        #dt-ace tfoot .ace-summary-min td {
+            border-top: 3px solid #2f2f2f !important;
+        }
 
-                // pakai yyyy-mm-dd
-                $('#filterDate').datepicker({
-                    format: 'yyyy-mm-dd',
-                    autoclose: true,
-                    orientation: 'bottom'
-                });
+        /* warna OK/NG di JUDGE */
+        #dt-ace tfoot td.j-ok {
+            color: #2e7d32;
+            font-weight: 600;
+        }
 
-                // toggle filter body
-                $('#filterHeader').on('click', function () {
-                    $('#filterCollapse').slideToggle(120);
-                    $('#filterIcon').toggleClass('ri-subtract-line ri-add-line');
-                });
+        #dt-ace tfoot td.j-ng {
+            color: #c62828;
+            font-weight: 600;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script>
+        $(function () {
+            $('#shiftSelect,#productSelect').select2();
+            $('#filterDate').datepicker({ format: 'yyyy-mm-dd', autoclose: true, orientation: 'bottom' });
+            $('#filterHeader').on('click', function () {
+                $('#filterCollapse').slideToggle(120);
+                $('#filterIcon').toggleClass('ri-subtract-line ri-add-line');
             });
-        </script>
+        });
+    </script>
 
-        <script>
-            window.aceRoutes = {
-                data: "{{ route('ace.data') }}",           // server-side data endpoint
-                store: "{{ route('ace.store') }}",          // create/update
-                base: "{{ url('ace') }}",                  // base url for show/delete
-                export: "{{ route('ace.export') }}",         // export endpoint
-                summary: "{{ route('ace.summary') }}",        // footer summary
-            };
-        </script>
+    <script>
+        window.aceRoutes = {
+            data: "{{ route('ace.data') }}",
+            store: "{{ route('ace.store') }}",
+            base: "{{ url('ace') }}",
+            export: "{{ route('ace.export') }}",
+            summary: "{{ route('ace.summary') }}",
+        };
+    </script>
 
-        {{-- kalau kamu pakai file js global seperti serverside.js, tinggal load di sini --}}
-        <script src="{{ asset('assets/js/ace.js') }}" defer></script>
-    @endpush
+    <script src="{{ asset('assets/js/ace.js') }}" defer></script>
+@endpush

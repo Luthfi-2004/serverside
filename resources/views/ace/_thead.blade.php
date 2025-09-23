@@ -30,17 +30,17 @@
     <th class="text-center" style="min-width:120px;">SSI</th>
 
     {{-- Additive Additional --}}
-    <th class="text-center" style="min-width:120px;">DW29_VAS</th>
-    <th class="text-center" style="min-width:120px;">DW29_Debu</th>
-    <th class="text-center" style="min-width:120px;">DW31_VAS</th>
-    <th class="text-center" style="min-width:120px;">DW31_ID</th>
-    <th class="text-center" style="min-width:120px;">DW31_Moldex</th>
-    <th class="text-center" style="min-width:120px;">DW31_SC</th>
+    <th class="text-center" style="min-width:120px;">DW29 VAS</th>
+    <th class="text-center" style="min-width:120px;">DW29 Debu</th>
+    <th class="text-center" style="min-width:120px;">DW31 VAS</th>
+    <th class="text-center" style="min-width:120px;">DW31 ID</th>
+    <th class="text-center" style="min-width:120px;">DW31 Moldex</th>
+    <th class="text-center" style="min-width:120px;">DW31 SC</th>
 
     {{-- Pengecekan BC13 --}}
     <th class="text-center" style="min-width:120px;">NO Mix</th>
-    <th class="text-center" style="min-width:120px;">BC13_CB</th>
-    <th class="text-center" style="min-width:120px;">BC13_C</th>
-    <th class="text-center" style="min-width:120px;">BC13_M</th>
+    <th class="text-center" style="min-width:120px;">BC13 CB</th>
+    <th class="text-center" style="min-width:120px;">BC13 C</th>
+    <th class="text-center" style="min-width:120px;">BC13 M</th>
   </tr>
 </thead>

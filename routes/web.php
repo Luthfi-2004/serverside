@@ -31,16 +31,21 @@ Route::prefix('greensand')->name('greensand.')->group(function () {
 });
 
 /* --- ACE LINE --- */
-/* Halaman utama (Daily Check) – saat ini direct ke Blade, nanti gampang diganti ke controller index */
 Route::view('/ace', 'ace.index')->name('ace.index');
-
 Route::prefix('ace')->name('ace.')->group(function () {
-    Route::get('/data',   [AceLineController::class, 'data'])->name('data');   // <— INI YANG DIBUTUHKAN
-    Route::post('/',      [AceLineController::class, 'store'])->name('store');
-    Route::get('/{id}',   [AceLineController::class, 'show'])->name('show');
-    Route::put('/{id}',   [AceLineController::class, 'update'])->name('update');
-    Route::delete('/{id}',[AceLineController::class, 'destroy'])->name('destroy');
-
+    Route::get('/data',    [AceLineController::class, 'data'])->name('data');
     Route::get('/export',  [AceLineController::class, 'export'])->name('export');
-    Route::get('/summary', [AceLineController::class, 'summary'])->name('summary');
+    Route::get('/summary', [AceLineController::class, 'summary'])->name('summary'); // ✅ cukup ini saja
+    Route::post('/',       [AceLineController::class, 'store'])->name('store');
+    Route::get('/{id}',    [AceLineController::class, 'show'])->whereNumber('id')->name('show');
+    Route::put('/{id}',    [AceLineController::class, 'update'])->whereNumber('id')->name('update');
+    Route::delete('/{id}', [AceLineController::class, 'destroy'])->whereNumber('id')->name('destroy');
+});
+
+/* --- GFN ACE LINE --- */
+Route::prefix('aceline-gfn')->name('acelinegfn.')->group(function () {
+    Route::get('/',              [\App\Http\Controllers\AceGfnPageController::class, 'index'])->name('index');
+    Route::post('/store',        [\App\Http\Controllers\AceGfnPageController::class, 'store'])->name('store');
+    Route::post('/delete-today', [\App\Http\Controllers\AceGfnPageController::class, 'deleteTodaySet'])->name('deleteToday');
+    Route::get('/export',        [\App\Http\Controllers\AceGfnPageController::class, 'export'])->name('export');
 });

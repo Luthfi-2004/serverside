@@ -1,8 +1,6 @@
 // public/assets/js/ace.js
 (function () {
     var $ = window.jQuery;
-
-    // guard
     if (!window.aceRoutes) {
         console.error(
             "aceRoutes missing. Define it in Blade before loading ace.js"
@@ -10,75 +8,53 @@
         return;
     }
 
-    // ===== helpers =====
-
-    // robust parse: support "yyyy-mm-dd" OR "dd-mm-yyyy"
+    /* =========== helpers =========== */
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
-        // yyyy-mm-dd
-        var m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-        if (m1) return s;
-        // dd-mm-yyyy -> yyyy-mm-dd
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (m) return s;
         var m2 = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
-        if (m2) return [m2[3], m2[2], m2[1]].join("-");
-        return "";
+        return m2 ? [m2[3], m2[2], m2[1]].join("-") : "";
     }
-
-    // today (yyyy-mm-dd)
     function todayYmd() {
         var d = new Date();
-        var dd = String(d.getDate()).padStart(2, "0");
-        var mm = String(d.getMonth() + 1).padStart(2, "0");
-        var yyyy = d.getFullYear();
-        return yyyy + "-" + mm + "-" + dd;
+        return (
+            d.getFullYear() +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
     }
-
-    // shift
     function detectShiftByNow() {
-        var hh = new Date().getHours();
-        if (hh >= 6 && hh < 16) return "D";
-        if (hh >= 16 && hh < 22) return "S";
-        return "N";
+        var h = new Date().getHours();
+        return h >= 6 && h < 16 ? "D" : h >= 16 && h < 22 ? "S" : "N";
     }
-
-    // format number or dash
     function fmt(v) {
         if (v === null || v === undefined || v === "") return "-";
         if (typeof v === "number") return v.toFixed(2);
         return v;
     }
-
-    // integer (tanpa .00)
     function fmtInt(v) {
         if (v === null || v === undefined || v === "") return "-";
         var n = parseInt(v, 10);
         return isNaN(n) ? "-" : n;
     }
-
-    // "HH:MM" dari "HH:MM" / "HH:MM:SS"
     function toHm(s) {
         if (!s) return "";
         var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
-        if (m) return m[1] + ":" + m[2];
-        return String(s).substring(0, 5);
+        return m ? m[1] + ":" + m[2] : String(s).substring(0, 5);
     }
-
-    // "YYYY-MM-DD HH:MM" dari ISO/SQL datetime
     function toYmdHm(s) {
         if (!s) return "-";
-        // cocokkan "yyyy-mm-ddThh:mm" atau "yyyy-mm-dd hh:mm"
         var m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(String(s));
-        if (m) return m[1] + " " + m[2];
-        // fallback: potong aman
-        return String(s).replace("T", " ").substring(0, 16);
+        return m
+            ? m[1] + " " + m[2]
+            : String(s).replace("T", " ").substring(0, 16);
     }
-
-    // reload datatable
     function reloadTable() {
         if (window.aceTable) window.aceTable.ajax.reload(null, false);
     }
-
-    // filters (pakai yyyy-mm-dd)
     function currentFilters() {
         return {
             date: normalizeFilterDate($("#filterDate").val()),
@@ -86,8 +62,13 @@
             product_type_id: $("#productSelect").val() || "",
         };
     }
+    function isEmptyVal(x) {
+        if (x === null || x === undefined) return true;
+        var s = String(x).trim();
+        return s === "" || s === "-" || s === "–";
+    }
 
-    // ===== form fill =====
+    /* =========== form =========== */
     function fillForm(row) {
         $("#ace_id").val(row.id || "");
         $("#ace_mode").val(row.id ? "update" : "create");
@@ -97,8 +78,7 @@
         $("#mNoMix").val(row.no_mix || "");
         $("#mStart").val(toHm(row.sample_start || ""));
         $("#mFinish").val(toHm(row.sample_finish || ""));
-
-        var fields = [
+        [
             "p",
             "c",
             "gt",
@@ -122,31 +102,25 @@
             "bc13_cb",
             "bc13_c",
             "bc13_m",
-        ];
-        fields.forEach(function (f) {
+        ].forEach(function (f) {
             $("#m_" + f).val(row[f] != null ? row[f] : "");
         });
     }
-
-    // formdata
     function collectForm() {
         return new FormData(document.getElementById("aceForm"));
     }
-
-    // submit button state
     function setSubmitting(btn, on) {
-        var $btn = $(btn);
+        var $b = $(btn);
         if (on) {
-            $btn.prop("disabled", true).data("orig", $btn.html());
-            $btn.html(
-                '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
-            );
+            $b.prop("disabled", true)
+                .data("orig", $b.html())
+                .html(
+                    '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
+                );
         } else {
-            $btn.prop("disabled", false).html($btn.data("orig") || "Submit");
+            $b.prop("disabled", false).html($b.data("orig") || "Submit");
         }
     }
-
-    // alerts
     function showAlert(msg) {
         $("#aceFormAlert")
             .removeClass("d-none")
@@ -156,17 +130,14 @@
         $("#aceFormAlert").addClass("d-none").empty();
     }
 
-    // ===== defaults =====
-    (function initDefaultFilters() {
-        var $fDate = $("#filterDate");
-        var $fShift = $("#shiftSelect");
-        if (!$fDate.val()) $fDate.val(todayYmd()).trigger("change");
-        if (!$fShift.val()) $fShift.val(detectShiftByNow()).trigger("change");
+    (function () {
+        var $d = $("#filterDate"),
+            $s = $("#shiftSelect");
+        if (!$d.val()) $d.val(todayYmd()).trigger("change");
+        if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // ===== columns =====
-    // Catatan kolom Date: kita coba pakai created_at / updated_at jika ada,
-    // supaya bisa tampil "tanggal + jam submit". Fallback ke row.date.
+    /* =========== columns =========== */
     var columns = [
         {
             data: null,
@@ -189,14 +160,16 @@
         },
         { data: "number", render: fmtInt },
         {
-            data: "date", // penting: biarkan 'date' untuk server-side
+            data: "date",
             render: function (v, __, row) {
                 var dt = row.created_at || row.updated_at || v || "";
-                if (/[ T]\d{2}:\d{2}/.test(String(dt))) return toYmdHm(dt);
-                return dt ? String(dt).substring(0, 10) : "-";
+                return /[ T]\d{2}:\d{2}/.test(String(dt))
+                    ? toYmdHm(dt)
+                    : dt
+                    ? String(dt).substring(0, 10)
+                    : "-";
             },
         },
-
         { data: "shift" },
         { data: "product_type_name", defaultContent: "-" },
         {
@@ -237,7 +210,199 @@
         { data: "bc13_m", render: fmt },
     ];
 
-    // ===== DataTable init =====
+    /* =========== footer summary (stabil & anti-geser) =========== */
+    var START_DATA_COL = 7; // kolom P mulai index 7 (Action..Finish = 0..6)
+
+    // KEY_ORDER otomatis mengikuti konfigurasi kolom dari index START_DATA_COL ke akhir
+    function getKeyOrder() {
+        var order = [];
+        for (var i = START_DATA_COL; i < columns.length; i++) {
+            var k = columns[i] && columns[i].data;
+            if (typeof k === "string") order.push(k);
+        }
+        return order;
+    }
+
+    function ensureFooterRows() {
+        var $t = $("#dt-ace"),
+            $tfoot = $t.find("tfoot");
+        if (!$tfoot.length) $tfoot = $("<tfoot/>").appendTo($t);
+        $tfoot.empty();
+        var totalCols = $t.find("thead th").length;
+        ["MIN", "MAX", "AVG", "JUDGE"].forEach(function (L) {
+            var $tr = $("<tr/>").addClass(
+                "ace-summary-row ace-summary-" + L.toLowerCase()
+            );
+            $tr.append(
+                $("<td/>")
+                    .addClass("ace-foot-label")
+                    .attr("colspan", START_DATA_COL)
+                    .text(L)
+            );
+            for (var i = START_DATA_COL; i < totalCols; i++)
+                $tr.append($("<td/>"));
+            $tfoot.append($tr);
+        });
+        $tfoot.removeClass("d-none");
+    }
+
+    // Normalisasi rows.{min,max,avg,judge} jadi object keyed by field-name
+    function normalizeOne(kind, raw, keyOrder) {
+        var out = {};
+        if (!raw) return out;
+
+        // Jika array: bisa absolut (panjang = total kolom) atau relatif (mulai dari P)
+        if (Array.isArray(raw)) {
+            // relatif: panjang = keyOrder.length
+            if (raw.length === keyOrder.length) {
+                for (var i = 0; i < keyOrder.length; i++)
+                    out[keyOrder[i]] = raw[i];
+            } else {
+                // fallback: map secukupnya dari awal keyOrder
+                for (var j = 0; j < Math.min(raw.length, keyOrder.length); j++)
+                    out[keyOrder[j]] = raw[j];
+            }
+            return out;
+        }
+
+        // Jika object: ambil hanya key yang ada di keyOrder
+        if (typeof raw === "object") {
+            keyOrder.forEach(function (k) {
+                if (k in raw) out[k] = raw[k];
+            });
+            return out;
+        }
+
+        return out;
+    }
+
+    function normalizeRows(rows, keyOrder) {
+        rows = rows || {};
+        return {
+            min: normalizeOne("min", rows.min, keyOrder),
+            max: normalizeOne("max", rows.max, keyOrder),
+            avg: normalizeOne("avg", rows.avg, keyOrder),
+            judge: normalizeOne("judge", rows.judge, keyOrder),
+        };
+    }
+
+    // Build mask untuk kolom yang sudah punya data (supaya JUDGE kosong kalau belum diisi)
+    function buildJudgeMask(rowsObj, present, keyOrder) {
+        var mask = {};
+        keyOrder.forEach(function (k) {
+            if (present && typeof present[k] !== "undefined") {
+                mask[k] = !!present[k];
+            } else {
+                var has =
+                    (rowsObj.min && !isEmptyVal(rowsObj.min[k])) ||
+                    (rowsObj.max && !isEmptyVal(rowsObj.max[k])) ||
+                    (rowsObj.avg && !isEmptyVal(rowsObj.avg[k]));
+                mask[k] = !!has;
+            }
+        });
+        return mask;
+    }
+
+    function renderFooterKeyed(
+        $row,
+        objValues,
+        label,
+        overall,
+        judgeMask,
+        keyOrder
+    ) {
+        var tds = $row.find("td");
+        if (!tds.length) return;
+        if (label) {
+            var txt = label;
+            if ($row.hasClass("ace-summary-judge") && overall)
+                txt += " (OVERALL: " + overall + ")";
+            $(tds[0]).text(txt);
+        }
+        if ($row.hasClass("ace-summary-judge")) tds.removeClass("j-ok j-ng");
+
+        // clear isi dulu
+        for (var i = 1; i < tds.length; i++) $(tds[i]).html("");
+
+        // render sesuai urutan keyOrder → cell ke- (1 + index)
+        keyOrder.forEach(function (k, idx) {
+            var cell = tds[1 + idx];
+            if (!cell) return;
+            var v =
+                objValues && Object.prototype.hasOwnProperty.call(objValues, k)
+                    ? objValues[k]
+                    : "";
+            if (
+                $row.hasClass("ace-summary-judge") &&
+                judgeMask &&
+                judgeMask[k] === false
+            ) {
+                v = ""; // belum ada data → kosong
+            }
+            $(cell).html(v);
+            if ($row.hasClass("ace-summary-judge")) {
+                if (v === "OK" || /text-success/.test(String(v)))
+                    $(cell).addClass("j-ok");
+                else if (v === "NG" || /text-danger/.test(String(v)))
+                    $(cell).addClass("j-ng");
+            }
+        });
+    }
+
+    function loadSummary() {
+        if (!aceRoutes.summary) return;
+        ensureFooterRows();
+
+        $.get(aceRoutes.summary, currentFilters())
+            .done(function (res) {
+                var $tfoot = $("#dt-ace tfoot");
+                var keyOrder = getKeyOrder();
+
+                // kalau server nggak kirim rows sama sekali, tetap tampil labelnya (kosong)
+                var norm = normalizeRows(res && res.rows, keyOrder);
+                var mask = buildJudgeMask(norm, res && res.present, keyOrder);
+
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-min"),
+                    norm.min,
+                    "MIN",
+                    null,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-max"),
+                    norm.max,
+                    "MAX",
+                    null,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-avg"),
+                    norm.avg,
+                    "AVG",
+                    null,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-judge"),
+                    norm.judge,
+                    "JUDGE",
+                    null,
+                    null,
+                    keyOrder
+                );
+            })
+            .fail(function () {
+                $("#dt-ace tfoot").removeClass(
+                    "d-none"
+                ); /* tetap tampilin label */
+            });
+    }
+
+    /* =========== DataTable init =========== */
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -246,7 +411,7 @@
         scrollX: true,
         scrollCollapse: true,
         pageLength: 25,
-        order: [[2, "desc"]], // urut by "Date" kolom index 2
+        order: [[2, "desc"]],
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -264,28 +429,28 @@
         columnDefs: [
             { targets: "_all", className: "align-middle text-center" },
         ],
+        initComplete: function () {
+            ensureFooterRows();
+        },
         drawCallback: function () {
-            if (aceRoutes.summary) loadSummary();
+            loadSummary();
         },
     });
 
-    // ===== actions =====
+    /* =========== actions =========== */
     $("#btnSearch").on("click", reloadTable);
-
     $("#btnRefresh").on("click", function () {
         $("#filterDate").val(todayYmd());
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
         $("#productSelect").val("").trigger("change");
         reloadTable();
     });
-
     $("#btnExport").on("click", function () {
         if (!aceRoutes.export) return;
         var q = $.param(currentFilters());
         window.location.href = aceRoutes.export + (q ? "?" + q : "");
     });
 
-    // add
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         $("#aceForm")[0].reset();
         $("#ace_mode").val("create");
@@ -295,7 +460,6 @@
         $("#mShift").val(detectShiftByNow());
     });
 
-    // edit
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
@@ -313,13 +477,11 @@
             });
     });
 
-    // delete
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
         $("#confirmDeleteModal").modal("show");
     });
-
     $("#confirmDeleteYes").on("click", function () {
         if (!deleteId) return;
         $.ajax({
@@ -339,31 +501,23 @@
             });
     });
 
-    // submit
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         clearAlert();
-
-        var mode = $("#ace_mode").val();
-        var id = $("#ace_id").val();
-
-        // pastikan time HH:MM
+        var mode = $("#ace_mode").val(),
+            id = $("#ace_id").val();
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
-
-        var url = aceRoutes.store;
-        var method = "POST";
+        var url = aceRoutes.store,
+            method = "POST";
         if (mode === "update" && id) {
             url = aceRoutes.base + "/" + id;
             method = "POST";
         }
-
         var fd = collectForm();
         if (mode === "update") fd.append("_method", "PUT");
-
         var $btn = $("#aceSubmitBtn");
         setSubmitting($btn, true);
-
         $.ajax({
             url: url,
             type: method,
@@ -389,44 +543,4 @@
                 setSubmitting($btn, false);
             });
     });
-
-    // summary
-    function loadSummary() {
-        if (!aceRoutes.summary) return;
-        $.get(aceRoutes.summary, currentFilters())
-            .done(function (res) {
-                var $tfoot = $("#dt-ace tfoot");
-                var $row = $tfoot.find("tr.ace-summary-row");
-                if (!$row.length) return;
-
-                var hasVals =
-                    res && Array.isArray(res.values) && res.values.length > 0;
-                if (!hasVals) {
-                    $tfoot.addClass("d-none");
-                    return;
-                }
-
-                $tfoot.removeClass("d-none");
-
-                var tds = $row.find("td");
-                if (!tds.length) return;
-
-                $(tds[0]).text("");
-                $(tds[1]).text(res.label || "TOTAL");
-
-                var vals = res.values || [];
-                for (var i = 2; i < tds.length; i++) {
-                    var v = vals[i - 2];
-                    $(tds[i]).text(
-                        v !== undefined && v !== null && v !== "" ? v : ""
-                    );
-                }
-            })
-            .fail(function (xhr) {
-                $("#dt-ace tfoot").addClass("d-none");
-                console.warn("summary load failed", xhr.status);
-            });
-    }
-
-    // done
 })();

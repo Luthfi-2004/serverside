@@ -39,8 +39,8 @@
         </li>
         <!-- END JSH LINE -->
 
-       <!-- ACE LINE -->
-<li class="{{ request()->routeIs('ace.*') ? 'mm-active' : '' }}">
+ <!-- ACE LINE -->
+<li class="{{ request()->routeIs('ace.*') || request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
   <a href="javascript:void(0);" class="has-arrow waves-effect">
     <i class="ri-flask-line"></i>
     <span>ACE LINE</span>
@@ -51,15 +51,15 @@
         Daily Check
       </a>
     </li>
-    {{-- siapkan nanti kalau ada modul GFN untuk ACE --}}
-    {{-- <li class="{{ request()->routeIs('acegfn.*') ? 'mm-active' : '' }}">
-      <a href="{{ route('acegfn.index') }}" class="{{ request()->routeIs('acegfn.*') ? 'active' : '' }}">
+    <li class="{{ request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
+      <a href="{{ route('acelinegfn.index') }}" class="{{ request()->routeIs('acelinegfn.*') ? 'active' : '' }}">
         GFN
       </a>
-    </li> --}}
+    </li>
   </ul>
 </li>
 <!-- END ACE LINE -->
+
 
 
       </ul>
