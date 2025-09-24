@@ -142,7 +142,22 @@ class AceLineController extends Controller
                     });
                 }
             })
-            ->editColumn('date', fn(AceLine $r) => $r->date ? Carbon::parse($r->date)->format('Y-m-d') : null)
+            ->editColumn('date', function(AceLine $r) {
+                // Gunakan timezone Jakarta untuk konsistensi
+                if ($r->date) {
+                    return Carbon::parse($r->date)->format('Y-m-d');
+                }
+                // Jika tidak ada date, gunakan created_at dengan timezone Jakarta
+                return $r->created_at ? 
+                    Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i') : 
+                    null;
+            })
+            ->addColumn('created_time', function(AceLine $r) {
+                // Tambah kolom khusus untuk waktu submit dengan timezone Jakarta
+                return $r->created_at ? 
+                    Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') : 
+                    null;
+            })
             ->make(true);
     }
 
@@ -168,7 +183,17 @@ class AceLineController extends Controller
 
     public function show($id)
     {
-        return response()->json(AceLine::findOrFail($id));
+        $row = AceLine::findOrFail($id);
+        
+        // Format waktu untuk form editing
+        if ($row->sample_start) {
+            $row->sample_start = Carbon::parse($row->sample_start)->format('H:i');
+        }
+        if ($row->sample_finish) {
+            $row->sample_finish = Carbon::parse($row->sample_finish)->format('H:i');
+        }
+        
+        return response()->json($row);
     }
 
     public function update(Request $request, $id)

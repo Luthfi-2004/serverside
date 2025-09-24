@@ -1,4 +1,4 @@
-// ace
+// ace.js - Fixed version
 (function () {
     var $ = window.jQuery;
     if (!window.aceRoutes) {
@@ -16,6 +16,7 @@
         var m2 = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
         return m2 ? [m2[3], m2[2], m2[1]].join("-") : "";
     }
+    
     function todayYmd() {
         var d = new Date();
         return (
@@ -26,32 +27,61 @@
             String(d.getDate()).padStart(2, "0")
         );
     }
+    
     function detectShiftByNow() {
         var h = new Date().getHours();
         return h >= 6 && h < 16 ? "D" : h >= 16 && h < 22 ? "S" : "N";
     }
+    
     function fmt(v) {
         if (v === null || v === undefined || v === "") return "-";
         if (typeof v === "number") return v.toFixed(2);
         return v;
     }
+    
     function fmtInt(v) {
         if (v === null || v === undefined || v === "") return "-";
         var n = parseInt(v, 10);
         return isNaN(n) ? "-" : n;
     }
+    
     function toHm(s) {
         if (!s) return "";
         var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
         return m ? m[1] + ":" + m[2] : String(s).substring(0, 5);
     }
-    function toYmdHm(s) {
-        if (!s) return "-";
-        var m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(String(s));
-        return m
-            ? m[1] + " " + m[2]
-            : String(s).replace("T", " ").substring(0, 16);
+    
+    // Function untuk format tanggal dan waktu yang konsisten dengan timezone Jakarta
+    function formatDateTimeColumn(v, type, row) {
+        if (!v) return "-";
+        
+        // Jika ada created_time yang sudah diformat dari server, gunakan itu
+        if (row.created_time) {
+            var dt = new Date(row.created_time + '+07:00'); // Pastikan timezone Jakarta
+            var dateStr = dt.getFullYear() + '-' + 
+                         String(dt.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(dt.getDate()).padStart(2, '0');
+            var timeStr = String(dt.getHours()).padStart(2, '0') + ':' + 
+                         String(dt.getMinutes()).padStart(2, '0');
+            return dateStr + ' ' + timeStr;
+        }
+        
+        // Fallback ke value asli jika tidak ada created_time
+        if (typeof v === 'string' && v.includes('T')) {
+            var dt = new Date(v);
+            // Adjust ke timezone Jakarta (+7 GMT)
+            dt.setHours(dt.getHours() + 7);
+            var dateStr = dt.getFullYear() + '-' + 
+                         String(dt.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(dt.getDate()).padStart(2, '0');
+            var timeStr = String(dt.getHours()).padStart(2, '0') + ':' + 
+                         String(dt.getMinutes()).padStart(2, '0');
+            return dateStr + ' ' + timeStr;
+        }
+        
+        return String(v).substring(0, 16);
     }
+    
     function currentFilters() {
         return {
             date: normalizeFilterDate($("#filterDate").val()),
@@ -59,12 +89,14 @@
             product_type_id: $("#productSelect").val() || "",
         };
     }
+    
     function isEmptyVal(x) {
         if (x === null || x === undefined) return true;
         var s = String(x).trim();
         return s === "" || s === "-" || s === "–";
     }
 
+    // Initialize filters with current date and shift
     (function initFilters() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
@@ -72,7 +104,7 @@
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // kolom
+    // Define columns
     var columns = [
         {
             data: null,
@@ -97,14 +129,7 @@
         { data: "number", render: fmtInt, defaultContent: "" },
         {
             data: "date",
-            render: function (v, __, row) {
-                var dt = row.created_at || row.updated_at || v || "";
-                return /[ T]\d{2}:\d{2}/.test(String(dt))
-                    ? toYmdHm(dt)
-                    : dt
-                    ? String(dt).substring(0, 10)
-                    : "-";
-            },
+            render: formatDateTimeColumn,
             defaultContent: "",
         },
         { data: "shift", defaultContent: "" },
@@ -149,7 +174,7 @@
         { data: "bc13_m", render: fmt, defaultContent: "" },
     ];
 
-    // footer
+    // Footer related functions
     var START_DATA_COL = 7; 
 
     function getKeyOrder() {
@@ -160,13 +185,13 @@
         }
         return order;
     }
+    
     function totalColumnCount() {
         return Array.isArray(columns)
             ? columns.length
             : $("#dt-ace thead th").length;
     }
 
-    // struktur
     function buildFooterStructureOnce() {
         var $t = $("#dt-ace"),
             $tfoot = $t.find("tfoot");
@@ -195,7 +220,6 @@
         return $tfoot;
     }
 
-    // defender
     var footObserver = null;
     function ensureFooterAttached() {
         var $t = $("#dt-ace");
@@ -217,7 +241,6 @@
         return $tfoot;
     }
 
-    // adaptasi
     function adaptSummaryResponse(res, keyOrder) {
         var out = { min: {}, max: {}, avg: {}, judge: {} };
         if (res && Array.isArray(res.summary)) {
@@ -258,7 +281,6 @@
         return out;
     }
 
-    // masker
     function buildJudgeMask(rowsObj, present, keyOrder) {
         var mask = {};
         keyOrder.forEach(function (k) {
@@ -275,7 +297,6 @@
         return mask;
     }
 
-    // render
     function renderFooterKeyed(
         $row,
         objValues,
@@ -307,7 +328,6 @@
         });
     }
 
-    // summary
     function fillSummaryIntoFooter() {
         if (!aceRoutes.summary) return;
         var $tfoot = ensureFooterAttached();
@@ -359,7 +379,7 @@
             });
     }
 
-    // datatable
+    // Initialize DataTable
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -397,7 +417,7 @@
         },
     });
 
-    // actions
+    // Table actions
     function reloadTable() {
         if (window.aceTable) window.aceTable.ajax.reload(null, false);
     }
@@ -415,6 +435,7 @@
         window.location.href = aceRoutes.export + (q ? "?" + q : "");
     });
 
+    // Modal actions
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         $("#aceForm")[0].reset();
         $("#ace_mode").val("create");
@@ -424,6 +445,7 @@
         $("#aceFormAlert").addClass("d-none").empty();
     });
 
+    // Edit action
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
@@ -441,6 +463,7 @@
             });
     });
 
+    // Delete action
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
@@ -465,26 +488,33 @@
             });
     });
 
+    // Form submission
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         var mode = $("#ace_mode").val(),
             id = $("#ace_id").val();
+        
+        // Normalize time inputs
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
+        
         var url = aceRoutes.store,
             method = "POST";
         if (mode === "update" && id) {
             url = aceRoutes.base + "/" + id;
             method = "POST";
         }
+        
         var fd = new FormData(this);
         if (mode === "update") fd.append("_method", "PUT");
+        
         var $btn = $("#aceSubmitBtn");
         $btn.prop("disabled", true)
             .data("orig", $btn.html())
             .html(
                 '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
             );
+        
         $.ajax({
             url: url,
             type: method,
@@ -512,4 +542,27 @@
                 );
             });
     });
+
+    // Function to fill form for editing
+    function fillForm(data) {
+        if (!data) return;
+        
+        // Fill basic fields
+        Object.keys(data).forEach(function(key) {
+            var $field = $("#m_" + key);
+            if ($field.length) {
+                $field.val(data[key]);
+            }
+        });
+        
+        // Handle specific fields
+        $("#mProductName").val(data.product_type_name || "");
+        $("#mStart").val(data.sample_start || "");
+        $("#mFinish").val(data.sample_finish || "");
+        $("#mNoMix").val(data.no_mix || "");
+        
+        // Set date and shift from data
+        if (data.date) $("#mDate").val(data.date);
+        if (data.shift) $("#mShift").val(data.shift);
+    }
 })();

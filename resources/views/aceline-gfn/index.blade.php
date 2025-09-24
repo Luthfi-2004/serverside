@@ -243,6 +243,6 @@
 @if(session('open_modal'))
 <script>window.openModalGFN = true;</script>
 @endif
-<script src="{{ asset('assets/js/aceline-gfn.js') }}"></script>
+<script src="{{ asset('assets/js/gfn-aceline.js') }}"></script>
 @endpush
 @endsection
