@@ -206,5 +206,5 @@
             summary: "{{ route('greensand.summary') }}",
         };
     </script>
-    <script src="{{ asset('assets/js/serverside.js') }}" defer></script>
+    <script src="{{ asset('assets/js/greensand.js') }}" defer></script>
 @endpush

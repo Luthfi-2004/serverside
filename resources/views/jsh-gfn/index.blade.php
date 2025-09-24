@@ -277,7 +277,7 @@
             <script>window.openModalGFN = true;</script>
         @endif
 
-        <script src="{{ asset('assets/js/jshgfn.js') }}"></script>
+        <script src="{{ asset('assets/js/jsh-gfn.js') }}"></script>
     @endpush
 
 @endsection
