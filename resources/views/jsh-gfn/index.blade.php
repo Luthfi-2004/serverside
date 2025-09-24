@@ -62,7 +62,6 @@
                                             <option value="N" @selected(($filters['shift'] ?? '') === 'N')>N</option>
                                         </select>
                                     </div>
-
                                     <div class="col-xl-6 col-lg-12 mt-2">
                                         <div class="d-flex flex-wrap">
                                             <button type="submit" class="btn btn-primary btn-sm mr-2 mb-2">
@@ -79,23 +78,18 @@
                                         </div>
                                     </div>
                                 </form>
-
                             </div>
                         </div>
                     </div>
 
-
                     <div class="card shadow-sm">
                         <div class="card-body">
-
-                            {{-- Tombol aksi --}}
                             <div class="d-flex align-items-center flex-wrap">
                                 <button id="btn-add-greensand" type="button"
                                     class="btn btn-success btn-sm btn-add-gs mr-2 mb-2" data-toggle="modal"
                                     data-target="#modal-greensand">
                                     <i class="ri-add-line"></i> Add Data
                                 </button>
-
                                 @if(!empty($displayRecap))
                                     <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs"
                                         data-toggle="modal" data-target="#confirmDeleteModal"
@@ -106,7 +100,6 @@
                                 @endif
                             </div>
 
-                            {{-- Tabel detail mesh --}}
                             <div class="table-responsive">
                                 <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                                     <thead class="bg-dark text-white text-center">
@@ -135,7 +128,6 @@
                                                     terakhir.</td>
                                             </tr>
                                         @endforelse
-
                                         @if(!empty($displayRecap))
                                             <tr>
                                                 <th colspan="2" class="bg-dark text-white">TOTAL</th>
@@ -152,7 +144,6 @@
                                 </table>
                             </div>
 
-                            {{-- Nilai GFN + Chart --}}
                             <div class="row mt-4">
                                 <div class="col-lg-6 d-flex flex-column">
                                     <div class="table-responsive flex-grow-1" style="height:300px; overflow:auto;">
@@ -208,13 +199,9 @@
                     @include('jsh-gfn._form', ['meshes' => $meshes, 'indices' => $indices])
                 </div>
             </div>
-
         </div>
     </div>
-    </div>
-    </div>
 
-    {{-- Modal Delete --}}
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteTitle"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -233,14 +220,12 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light mr-2" data-dismiss="modal">Cancel</button>
-
                     <form id="deleteForm" action="{{ route('jshgfn.deleteToday') }}" method="POST" class="m-0 p-0">
                         @csrf
                         <input type="hidden" name="gfn_date" id="delDate">
                         <input type="hidden" name="shift" id="delShift">
                         <button type="submit" class="btn btn-danger" id="confirmDeleteYes">Yes, Delete</button>
                     </form>
-
                 </div>
             </div>
         </div>
@@ -261,23 +246,18 @@
             }
             $__recap = $displayRecap ?? null;
         @endphp
-
         <script>
             window.gfnChartData = {
                 rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
                 recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
             };
-            // >>> routes untuk duplicate-check (dipakai jshgfn.js)
             window.jshRoutes = {
                 gfnExists: "{{ route('jshgfn.check-exists') }}"
             };
         </script>
-
         @if(session('open_modal'))
             <script>window.openModalGFN = true;</script>
         @endif
-
         <script src="{{ asset('assets/js/jsh-gfn.js') }}"></script>
     @endpush
-
 @endsection

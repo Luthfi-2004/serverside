@@ -13,12 +13,9 @@ class GreensandController extends Controller
     {
         $start = $this->toYmd($request->input('start_date'));
         $end = $this->toYmd($request->input('end_date'));
-        $shift = $request->input('shift');                     // 'D'|'S'|'N'|null
-        $keyword = $request->input('keyword');                   // string|null
-        $mm = $this->normalizeMm($request->input('mm'));    // 'MM1'|'MM2'|null
-
-        // DEBUG sementara: lihat apa yg diterima controller
-        // \Log::info('EXPORT params', compact('start','end','shift','keyword','mm'));
+        $shift = $request->input('shift');
+        $keyword = $request->input('keyword');
+        $mm = $this->normalizeMm($request->input('mm'));
 
         return Excel::download(
             new GreensandExportFull($start, $end, $shift, $keyword, $mm),
@@ -30,16 +27,19 @@ class GreensandController extends Controller
     {
         if (!$val)
             return null;
+
         try {
             return Carbon::createFromFormat('d-m-Y', $val)->toDateString();
         } catch (\Throwable $e) {
         }
+
         foreach (['Y-m-d', 'd/m/Y', 'm/d/Y'] as $fmt) {
             try {
                 return Carbon::createFromFormat($fmt, $val)->toDateString();
             } catch (\Throwable $e) {
             }
         }
+
         try {
             return Carbon::parse($val)->toDateString();
         } catch (\Throwable $e) {

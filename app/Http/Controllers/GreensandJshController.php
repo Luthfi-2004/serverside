@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 class GreensandJshController extends Controller
 {
-    // endpoint
     public function dataMM1(Request $request)
     {
         return $this->makeResponse($request, 'MM1');
@@ -27,19 +26,15 @@ class GreensandJshController extends Controller
         return $this->makeResponse($request, null);
     }
 
-    // summary (min/max/avg + judge OK/NG)
     public function summaryAll(Request $request)
     {
         $q = GreensandJsh::query();
 
-        // filter date & shift
         $d = $request->filled('date') ? $this->toYmd($request->date) : null;
-        if ($d) {
+        if ($d)
             $q->whereDate('date', $d);
-        }
-        if ($request->filled('shift')) {
+        if ($request->filled('shift'))
             $q->where('shift', $request->shift);
-        }
         if ($request->filled('keyword')) {
             $kw = $request->keyword;
             $q->where(function ($x) use ($kw) {
@@ -48,7 +43,6 @@ class GreensandJshController extends Controller
             });
         }
 
-        // kolom numerik untuk summary
         $fields = [
             'mm_p',
             'mm_c',
@@ -81,7 +75,6 @@ class GreensandJshController extends Controller
             'bc11_temp',
         ];
 
-        // spec range hardcode (isi sesuai standar kamu)
         $spec = [
             'mm_p' => ['min' => 220, 'max' => 260],
             'mm_c' => ['min' => 13.5, 'max' => 17.5],
@@ -99,7 +92,6 @@ class GreensandJshController extends Controller
             'mm_ssi' => ['min' => 85, 'max' => 95],
         ];
 
-        // agregasi min/max/avg
         $agg = [];
         foreach ($fields as $f) {
             $agg[] = DB::raw("MIN($f) as min_$f");
@@ -116,7 +108,7 @@ class GreensandJshController extends Controller
             $judge = null;
 
             if ($avg !== null && isset($spec[$f])) {
-                $judge = ($avg >= $spec[$f]['min'] && $avg <= $spec[$f]['max']) ? "OK" : "NG";
+                $judge = ($avg >= $spec[$f]['min'] && $avg <= $spec[$f]['max']) ? 'OK' : 'NG';
             }
 
             $result[] = [
@@ -132,29 +124,21 @@ class GreensandJshController extends Controller
         return response()->json(['summary' => $result]);
     }
 
-    // datatables
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
             $q = GreensandJsh::query();
 
-            // mm filter
-            if ($mmFilter) {
+            if ($mmFilter)
                 $q->where('mm', $mmFilter);
-            }
 
-            // single date filter (exact day)
             $d = $request->filled('date') ? $this->toYmd($request->date) : null;
-            if ($d) {
+            if ($d)
                 $q->whereDate('date', $d);
-            }
 
-            // shift
-            if ($request->filled('shift')) {
+            if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
-            }
 
-            // keyword
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
@@ -163,7 +147,6 @@ class GreensandJshController extends Controller
                 });
             }
 
-            // select
             $q->select([
                 'id',
                 'date',
@@ -203,8 +186,6 @@ class GreensandJshController extends Controller
                 'bc9_temp',
                 'bc10_temp',
                 'bc11_temp',
-
-                // === Moulding Data (8 kolom baru) ===
                 'add_water_mm',
                 'add_water_mm_2',
                 'temp_sand_mm_1',
@@ -253,21 +234,18 @@ class GreensandJshController extends Controller
         }
     }
 
-    // create
     public function store(Request $request)
     {
         $in = $request->all();
         $v = $this->validator($in, 'store');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
-        }
 
         $mm = $this->normalizeMm($in['mm'] ?? null);
         $shift = $in['shift'];
         $day = $this->toYmd($in['date'] ?? null) ?: now('Asia/Jakarta')->toDateString();
         $mixKe = (int) ($in['mix_ke'] ?? 0);
 
-        // unik per hari + shift + mm + mix_ke
         if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, null)) {
             return response()->json([
                 'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
@@ -280,28 +258,25 @@ class GreensandJshController extends Controller
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
 
-    // read
     public function show($id)
     {
         $row = GreensandJsh::findOrFail($id);
         return response()->json(['data' => $row]);
     }
 
-    // update 
     public function update(Request $request, $id)
     {
         $row = GreensandJsh::findOrFail($id);
         $in = $request->all();
 
         $v = $this->validator($in, 'update');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
-        }
 
         $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
-        $shift = $row->shift; // lock shift on update
+        $shift = $row->shift;
         $mixKe = isset($in['mix_ke']) ? (int) $in['mix_ke'] : (int) $row->mix_ke;
-        $day = $this->dayString($row->date); // lock date (day part)
+        $day = $this->dayString($row->date);
 
         if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, (int) $row->id)) {
             return response()->json([
@@ -315,7 +290,6 @@ class GreensandJshController extends Controller
         return response()->json(['message' => 'Updated']);
     }
 
-    // delete
     public function destroy($id)
     {
         $row = GreensandJsh::findOrFail($id);
@@ -323,7 +297,6 @@ class GreensandJshController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    // --- helpers ---
     private function normalizeMm($val): ?string
     {
         if ($val === null || $val === '')
@@ -365,9 +338,9 @@ class GreensandJshController extends Controller
             ->where('mm', $mm)
             ->where('mix_ke', $mixKe);
 
-        if ($ignoreId) {
+        if ($ignoreId)
             $q->where('id', '!=', $ignoreId);
-        }
+
         return $q->exists();
     }
 
@@ -388,11 +361,15 @@ class GreensandJshController extends Controller
         }
     }
 
-    private function mapRequestToModel(array $in, ?GreensandJsh $existing = null, ?string $dayYmd = null, bool $lockDate = false, bool $lockShift = false): array
-    {
+    private function mapRequestToModel(
+        array $in,
+        ?GreensandJsh $existing = null,
+        ?string $dayYmd = null,
+        bool $lockDate = false,
+        bool $lockShift = false
+    ): array {
         $mm = $this->normalizeMm($in['mm'] ?? ($existing->mm ?? null));
 
-        // date
         if ($existing && $lockDate) {
             try {
                 $dateTime = $existing->date instanceof \DateTimeInterface
@@ -407,7 +384,6 @@ class GreensandJshController extends Controller
             $dateTime = "{$day} {$timeNow}";
         }
 
-        // shift
         $shiftVal = $lockShift
             ? ($existing->shift ?? null)
             : ($in['shift'] ?? ($existing->shift ?? null));
@@ -419,8 +395,6 @@ class GreensandJshController extends Controller
             'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
             'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),
             'mix_finish' => $in['mix_finish'] ?? ($existing->mix_finish ?? null),
-
-            // MM Sample
             'mm_p' => $in['mm_p'] ?? ($existing->mm_p ?? null),
             'mm_c' => $in['mm_c'] ?? ($existing->mm_c ?? null),
             'mm_gt' => $in['mm_gt'] ?? ($existing->mm_gt ?? null),
@@ -435,21 +409,15 @@ class GreensandJshController extends Controller
             'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
             'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
             'mm_ssi' => $in['mm_ssi'] ?? ($existing->mm_ssi ?? null),
-
-            // Additive
             'add_m3' => $in['add_m3'] ?? ($existing->add_m3 ?? null),
             'add_vsd' => $in['add_vsd'] ?? ($existing->add_vsd ?? null),
             'add_sc' => $in['add_sc'] ?? ($existing->add_sc ?? null),
-
-            // BC Sample
             'bc12_cb' => $in['bc12_cb'] ?? ($existing->bc12_cb ?? null),
             'bc12_m' => $in['bc12_m'] ?? ($existing->bc12_m ?? null),
             'bc11_ac' => $in['bc11_ac'] ?? ($existing->bc11_ac ?? null),
             'bc11_vsd' => $in['bc11_vsd'] ?? ($existing->bc11_vsd ?? null),
             'bc16_cb' => $in['bc16_cb'] ?? ($existing->bc16_cb ?? null),
             'bc16_m' => $in['bc16_m'] ?? ($existing->bc16_m ?? null),
-
-            // Return Sand
             'rs_time' => $in['rs_time'] ?? ($existing->rs_time ?? null),
             'rs_type' => $in['rs_type'] ?? ($existing->rs_type ?? null),
             'bc9_moist' => $in['bc9_moist'] ?? ($existing->bc9_moist ?? null),
@@ -458,8 +426,6 @@ class GreensandJshController extends Controller
             'bc9_temp' => $in['bc9_temp'] ?? ($existing->bc9_temp ?? null),
             'bc10_temp' => $in['bc10_temp'] ?? ($existing->bc10_temp ?? null),
             'bc11_temp' => $in['bc11_temp'] ?? ($existing->bc11_temp ?? null),
-
-            // === Moulding Data (8 kolom baru) ===
             'add_water_mm' => $in['add_water_mm'] ?? ($existing->add_water_mm ?? null),
             'add_water_mm_2' => $in['add_water_mm_2'] ?? ($existing->add_water_mm_2 ?? null),
             'temp_sand_mm_1' => $in['temp_sand_mm_1'] ?? ($existing->temp_sand_mm_1 ?? null),
@@ -469,6 +435,5 @@ class GreensandJshController extends Controller
             'add_bentonite_ma' => $in['add_bentonite_ma'] ?? ($existing->add_bentonite_ma ?? null),
             'total_sand' => $in['total_sand'] ?? ($existing->total_sand ?? null),
         ];
-
     }
 }

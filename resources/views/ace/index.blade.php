@@ -103,15 +103,12 @@
                                     <table id="dt-ace" class="table table-bordered w-100 text-center">
                                         @include('ace._thead')
                                         <tbody></tbody>
-
-                                        {{-- FOOTER dibangun dinamis via JS supaya jumlah kolom selalu pas --}}
                                         <tfoot class="d-none" id="ace-foot"></tfoot>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Confirm Delete --}}
                         <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
                             aria-labelledby="confirmDeleteTitle" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -137,6 +134,7 @@
                         </div>
 
                     </div>
+
                 </div>
             </div>
         </div>
@@ -145,34 +143,37 @@
 
 @push('styles')
     <style>
-      /* HEADER ACE */
-#dt-ace thead th {
-  white-space: nowrap;
-  text-align: center;
-  vertical-align: middle;
-  min-width: 120px;
-}
+        #dt-ace thead th {
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 120px;
+        }
 
-/* FOOTER ACE (pakai class existing: .ace-summary-row) */
-#dt-ace tfoot .ace-summary-row:first-child td {
-  border-top: 2px solid #333 !important;   /* samain tebalnya dgn greensand */
-}
+        #dt-ace tfoot .ace-summary-row:first-child td {
+            border-top: 2px solid #333 !important;
+        }
 
-#dt-ace tfoot .ace-summary-row td {
-  background: #fff;
-  font-size: .95rem;        /* samain ukuran font */
-  line-height: 1.25;        /* samain line-height */
-  padding: .5rem .75rem;    /* samain padding */
-  height: auto !important;  /* override tinggi fixed yg lama */
-  text-align: center;
-  vertical-align: middle;
-  border-top: 1px solid #dee2e6 !important;
-}
+        #dt-ace tfoot .ace-summary-row td {
+            background: #fff;
+            font-size: .95rem;
+            line-height: 1.25;
+            padding: .5rem .75rem;
+            height: auto !important;
+            text-align: center;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6 !important;
+        }
 
-/* warna judge */
-#dt-ace tfoot td.j-ok { color: #2e7d32; font-weight: 600; }
-#dt-ace tfoot td.j-ng { color: #c62828; font-weight: 600; }
+        #dt-ace tfoot td.j-ok {
+            color: #2e7d32;
+            font-weight: 600;
+        }
 
+        #dt-ace tfoot td.j-ng {
+            color: #c62828;
+            font-weight: 600;
+        }
     </style>
 @endpush
 
@@ -187,16 +188,14 @@
             });
         });
     </script>
-
     <script>
         window.aceRoutes = {
             data: "{{ route('ace.data') }}",
             store: "{{ route('ace.store') }}",
             base: "{{ url('ace') }}",
             export: "{{ route('ace.export') }}",
-            summary: "{{ route('ace.summary') }}",
+            summary: "{{ route('ace.summary') }}"
         };
     </script>
-
     <script src="{{ asset('assets/js/ace.js') }}" defer></script>
 @endpush

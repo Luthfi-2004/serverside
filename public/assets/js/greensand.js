@@ -1,5 +1,5 @@
 $(function () {
-    // Guard check
+    // guard
     if (!window.greensandRoutes) {
         console.error(
             "greensandRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -7,14 +7,14 @@ $(function () {
         return;
     }
 
-    // CSRF setup
+    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // Helper functions
+    // helpers
     const helpers = {
         detectShiftByNow() {
             const hh = new Date().getHours();
@@ -41,12 +41,12 @@ $(function () {
         getKeyword: () => $("#keywordInput").val() || "",
     };
 
-    // Global variables
+    // globals
     window.__GS_ACTIVE_TAB__ = "mm1";
     let pendingDeleteId = null;
     const instances = { mm1: null, mm2: null, all: null };
 
-    // UI handlers
+    // ui
     $("#filterHeader")
         .off("click")
         .on("click", function () {
@@ -54,7 +54,7 @@ $(function () {
             $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
         });
 
-    // Error handling
+    // error
     const errorHandler = {
         clear() {
             $("#gsForm .form-control, #gsForm .custom-select").removeClass(
@@ -121,7 +121,7 @@ $(function () {
         },
     };
 
-    // Form management
+    // form
     const formManager = {
         reset() {
             $("#gsForm")[0]?.reset();
@@ -170,7 +170,6 @@ $(function () {
             $("#mix_finish").val(helpers.pickTime(data.mix_finish));
             $("#rs_time").val(helpers.pickTime(data.rs_time));
 
-            // Fill all other fields (termasuk 8 kolom moulding)
             const fields = [
                 "mm_p",
                 "mm_c",
@@ -202,7 +201,6 @@ $(function () {
                 "bc9_temp",
                 "bc10_temp",
                 "bc11_temp",
-                // Moulding
                 "add_water_mm",
                 "add_water_mm_2",
                 "temp_sand_mm_1",
@@ -216,7 +214,7 @@ $(function () {
         },
     };
 
-    // CRUD operations
+    // crud
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -230,7 +228,6 @@ $(function () {
             errorHandler.clear();
             const id = $(this).data("id");
             formManager.reset();
-
             $.get(`${greensandRoutes.base}/${id}`)
                 .done((res) => {
                     formManager.fill(res.data);
@@ -301,7 +298,7 @@ $(function () {
                 });
         });
 
-    // Delete operations
+    // delete
     $(document)
         .off("click", ".btn-delete-gs")
         .on("click", ".btn-delete-gs", function () {
@@ -313,7 +310,6 @@ $(function () {
         .off("click")
         .on("click", function () {
             if (!pendingDeleteId) return;
-
             $.post(`${greensandRoutes.base}/${pendingDeleteId}`, {
                 _method: "DELETE",
             })
@@ -340,7 +336,7 @@ $(function () {
                 });
         });
 
-    // Filter and search setup
+    // filter
     $("#filterDate").datepicker({
         format: "dd-mm-yyyy",
         autoclose: true,
@@ -352,7 +348,6 @@ $(function () {
         .on("keydown", (e) => {
             if (e.key === "Enter") $("#btnSearch").trigger("click");
         });
-
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
@@ -362,7 +357,7 @@ $(function () {
             reloadAll();
         });
 
-    // DataTable columns configuration
+    // columns
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -402,7 +397,7 @@ $(function () {
         { data: "bc9_temp", name: "bc9_temp" },
         { data: "bc10_temp", name: "bc10_temp" },
         { data: "bc11_temp", name: "bc11_temp" },
-        // Moulding Data (8 kolom)
+        // moulding
         { data: "add_water_mm", name: "add_water_mm" },
         { data: "add_water_mm_2", name: "add_water_mm_2" },
         { data: "temp_sand_mm_1", name: "temp_sand_mm_1" },
@@ -413,13 +408,13 @@ $(function () {
         { data: "total_sand", name: "total_sand" },
     ];
 
-    // Tambahkan defaultContent untuk cegah warning tn/4 saat key tidak ada di JSON
+    // defaults
     const baseColumnsWithDefaults = baseColumns.map((c) => ({
         ...c,
         defaultContent: "",
     }));
 
-    // Summary management (tfoot dibuat setelah init)
+    // summary
     const summaryManager = {
         load() {
             if (!window.greensandRoutes.summary) return;
@@ -442,7 +437,7 @@ $(function () {
         render(summary) {
             const $tfoot = this.ensureTfoot();
 
-            // index tidak berubah, karena 8 kolom baru ditambahkan di belakang
+            // index
             const colIndex = {
                 mm_p: 7,
                 mm_c: 8,
@@ -476,8 +471,8 @@ $(function () {
             };
 
             const makeRow = (label, valuesMap) => {
+                // merge
                 let tds = `<td class="text-center font-weight-bold" colspan="7">${label}</td>`;
-                // ↑ merge 7 kolom pertama (action, date, shift, mm, mix_ke, mix_start, mix_finish)
                 for (let i = 7; i < baseColumns.length; i++) {
                     const val = valuesMap?.[i] ?? "";
                     tds += `<td class="text-center">${val}</td>`;
@@ -506,15 +501,13 @@ $(function () {
                 makeRow("MAX", rows.max) +
                 makeRow("AVG", rows.avg) +
                 makeRow("JUDGE", rows.judge);
-
             $tfoot.html(html);
-
-            // kasih styling ke semua cell summary row
+            // style
             $tfoot.find("td").addClass("text-center");
         },
     };
 
-    // DataTable creation
+    // datatable
     function makeDt($el, url) {
         const isAll = $el.attr("id") === "dt-all";
         return $el.DataTable({
@@ -568,23 +561,24 @@ $(function () {
                         }
                         prevMM = mmText;
                     });
-                    summaryManager.load(); // <— ensure tfoot dibuat setelah init
+                    // tfoot
+                    summaryManager.load();
                 }
             },
         });
     }
 
-    // Initialize DataTables
+    // init-dt
     instances.mm1 = makeDt($("#dt-mm1"), greensandRoutes.mm1);
 
-    // Seed active tab from DOM
+    // seed
     const href = (
         $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
     ).toLowerCase();
     window.__GS_ACTIVE_TAB__ =
         href === "#mm2" ? "mm2" : href === "#all" ? "all" : "mm1";
 
-    // Tab switching
+    // tabs
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
@@ -604,7 +598,7 @@ $(function () {
             if (href === "#all") setTimeout(() => summaryManager.load(), 100);
         });
 
-    // Global reload function
+    // reload
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
@@ -614,7 +608,7 @@ $(function () {
     }
     window.reloadAll = reloadAll;
 
-    // Export functionality
+    // export
     $(document)
         .off("click", "#btnExport")
         .on("click", "#btnExport", function (e) {
@@ -640,7 +634,7 @@ $(function () {
             window.location.href = u.toString();
         });
 
-    // Initialize
+    // init
     $("#filterDate").datepicker("setDate", helpers.todayDdMmYyyy());
     $("#shiftSelect").val(helpers.detectShiftByNow()).trigger("change");
     reloadAll();

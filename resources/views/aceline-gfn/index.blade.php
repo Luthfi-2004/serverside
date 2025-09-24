@@ -26,8 +26,7 @@
 
         @php $isOpen = true; @endphp
         <div class="card mb-3">
-          <div id="filterHeader"
-               class="card-header bg-light d-flex justify-content-between align-items-center cursor-pointer"
+          <div id="filterHeader" class="card-header bg-light d-flex justify-content-between align-items-center cursor-pointer"
                data-toggle="collapse" data-target="#filterCollapse"
                aria-expanded="{{ $isOpen ? 'true' : 'false' }}" aria-controls="filterCollapse">
             <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line align-middle mr-1"></i> Filter Data</h5>
@@ -35,8 +34,7 @@
           </div>
           <div id="filterCollapse" class="collapse {{ $isOpen ? 'show' : '' }}">
             <div class="card-body">
-              <form id="filterForm" class="row align-items-end" method="GET"
-                    action="{{ route('acelinegfn.index') }}">
+              <form id="filterForm" class="row align-items-end" method="GET" action="{{ route('acelinegfn.index') }}">
                 <div class="col-xl-6 col-lg-4">
                   <div class="form-group mb-2">
                     <label for="fDate" class="form-label mb-1">Date</label>
@@ -53,22 +51,19 @@
                 </div>
                 <div class="col-xl-6 col-lg-4 mb-2">
                   <label class="form-label mb-1">Shift</label>
-                  <select class="form-control select2" name="shift"
-                          data-placeholder="-- Select Shift --" autocomplete="off">
+                  <select class="form-control select2" name="shift" data-placeholder="-- Select Shift --" autocomplete="off">
                     <option value=""></option>
                     <option value="D" @selected(($filters['shift'] ?? '') === 'D')>D</option>
                     <option value="S" @selected(($filters['shift'] ?? '') === 'S')>S</option>
                     <option value="N" @selected(($filters['shift'] ?? '') === 'N')>N</option>
                   </select>
                 </div>
-
                 <div class="col-xl-6 col-lg-12 mt-2">
                   <div class="d-flex flex-wrap">
                     <button type="submit" class="btn btn-primary btn-sm mr-2 mb-2">
                       <i class="ri-search-line mr-1"></i> Search
                     </button>
-                    <a href="{{ route('acelinegfn.index') }}"
-                       class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                    <a href="{{ route('acelinegfn.index') }}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
                       <i class="ri-refresh-line mr-1"></i> Refresh Filter
                     </a>
                     <a class="btn btn-outline-success btn-sm mb-2"
@@ -84,15 +79,11 @@
 
         <div class="card shadow-sm">
           <div class="card-body">
-
-            {{-- Tombol aksi --}}
             <div class="d-flex align-items-center flex-wrap">
-              <button id="btn-add-greensand" type="button"
-                      class="btn btn-success btn-sm mr-2 mb-2"
+              <button id="btn-add-greensand" type="button" class="btn btn-success btn-sm mr-2 mb-2"
                       data-toggle="modal" data-target="#modal-greensand">
                 <i class="ri-add-line"></i> Add Data
               </button>
-
               @if(!empty($displayRecap))
                 <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs"
                         data-toggle="modal" data-target="#confirmDeleteModal"
@@ -103,7 +94,6 @@
               @endif
             </div>
 
-            {{-- Tabel detail mesh --}}
             <div class="table-responsive">
               <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                 <thead class="bg-dark text-white text-center">
@@ -131,7 +121,6 @@
                       <td colspan="6" class="text-center text-muted">Belum ada data dalam 24 jam terakhir.</td>
                     </tr>
                   @endforelse
-
                   @if(!empty($displayRecap))
                     <tr>
                       <th colspan="2" class="bg-dark text-white">TOTAL</th>
@@ -148,7 +137,6 @@
               </table>
             </div>
 
-            {{-- Nilai GFN + Line Chart --}}
             <div class="row mt-4">
               <div class="col-lg-6 d-flex flex-column">
                 <div class="table-responsive flex-grow-1" style="height:300px; overflow:auto;">
@@ -186,22 +174,22 @@
                 <div class="card h-100">
                   <div class="card-body d-flex flex-column">
                     <h4 class="card-title mb-3 text-center">Grafik GFN ACE LINE</h4>
-                    <div id="gfn-line" class="flot-charts flot-charts-height"
-                         style="height:300px; flex:1 1 auto;"></div>
+                    <div id="gfn-line" class="flot-charts flot-charts-height" style="height:300px; flex:1 1 auto;"></div>
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
         @include('aceline-gfn._form', ['meshes' => $meshes, 'indices' => $indices])
+
       </div>
     </div>
   </div>
 </div>
 
-{{-- Modal Delete --}}
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0">
@@ -229,33 +217,32 @@
 </div>
 
 @push('scripts')
-  @php
-    $__rows = [];
-    if (!empty($displayRows)) {
-      foreach ($displayRows as $r) {
-        $__rows[] = [
-          'mesh' => $r->mesh,
-          'percentage' => round(($r->percentage ?? 0), 2),
-          'percentage_index' => round(($r->percentage_index ?? 0), 1),
-          'index' => ($r->index ?? 0),
-        ];
-      }
+@php
+  $__rows = [];
+  if (!empty($displayRows)) {
+    foreach ($displayRows as $r) {
+      $__rows[] = [
+        'mesh' => $r->mesh,
+        'percentage' => round(($r->percentage ?? 0), 2),
+        'percentage_index' => round(($r->percentage_index ?? 0), 1),
+        'index' => ($r->index ?? 0),
+      ];
     }
-    $__recap = $displayRecap ?? null;
-  @endphp
-  <script>
-    window.gfnChartData = {
-      rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!},
-      recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}
-    };
-    // >>> aceRoutes buat JS duplicate-check
-    window.aceRoutes = {
-      gfnExists: "{{ route('acelinegfn.check-exists') }}"
-    };
-  </script>
-  @if(session('open_modal'))
-    <script>window.openModalGFN = true;</script>
-  @endif
-  <script src="{{ asset('assets/js/aceline-gfn.js') }}"></script>
+  }
+  $__recap = $displayRecap ?? null;
+@endphp
+<script>
+  window.gfnChartData = {
+    rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!},
+    recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}
+  };
+  window.aceRoutes = {
+    gfnExists: "{{ route('acelinegfn.check-exists') }}"
+  };
+</script>
+@if(session('open_modal'))
+<script>window.openModalGFN = true;</script>
+@endif
+<script src="{{ asset('assets/js/aceline-gfn.js') }}"></script>
 @endpush
 @endsection

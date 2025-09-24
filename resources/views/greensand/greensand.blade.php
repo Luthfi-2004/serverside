@@ -125,7 +125,6 @@
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'greensand._thead')
                                         <tbody></tbody>
-                                        {{-- TFOOT dibikin dinamis via JS (hindari scrollFoot ekstra) --}}
                                     </table>
                                 </div>
                             </div>
@@ -161,33 +160,37 @@
 
 @push('styles')
     <style>
-/* HEADER Greensand */
-#dt-all thead th {
-  white-space: nowrap;
-  text-align: center;
-  vertical-align: middle;
-  min-width: 120px;
-}
+        #dt-all thead th {
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 120px;
+        }
 
-/* FOOTER Greensand (pakai class existing: .gs-summary-row) */
-#dt-all tfoot .gs-summary-row:first-child td {
-  border-top: 2px solid #333 !important;   /* garis tebal di baris summary pertama */
-}
+        #dt-all tfoot .gs-summary-row:first-child td {
+            border-top: 2px solid #333 !important;
+        }
 
-#dt-all tfoot .gs-summary-row td {
-  background: #fff;
-  font-size: .95rem;        /* sama dengan ACE */
-  line-height: 1.25;        /* konsisten */
-  padding: .5rem .75rem;    /* konsisten dengan Bootstrap */
-  height: auto !important;  /* jangan kunci tinggi */
-  text-align: center;
-  vertical-align: middle;
-  border-top: 1px solid #dee2e6 !important; /* border tipis antar summary row */
-}
+        #dt-all tfoot .gs-summary-row td {
+            background: #fff;
+            font-size: .95rem;
+            line-height: 1.25;
+            padding: .5rem .75rem;
+            height: auto !important;
+            text-align: center;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6 !important;
+        }
 
-/* warna judge */
-#dt-all tfoot td.j-ok { color: #2e7d32; font-weight: 600; }
-#dt-all tfoot td.j-ng { color: #c62828; font-weight: 600; }
+        #dt-all tfoot td.j-ok {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        #dt-all tfoot td.j-ng {
+            color: #c62828;
+            font-weight: 600;
+        }
     </style>
 @endpush
 
@@ -210,7 +213,7 @@
             store: "{{ route('greensand.processes.store') }}",
             base: "{{ url('greensand/processes') }}",
             export: "{{ route('greensand.export') }}",
-            summary: "{{ route('greensand.summary') }}",
+            summary: "{{ route('greensand.summary') }}"
         };
     </script>
     <script src="{{ asset('assets/js/greensand.js') }}" defer></script>

@@ -9,8 +9,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class AceLineController extends Controller
 {
-    /* ========= Helpers ========= */
-
     private function ymd(?string $s): ?string
     {
         if (!$s)
@@ -72,8 +70,11 @@ class AceLineController extends Controller
             'sample_finish' => ['nullable', 'date_format:H:i'],
             'machine_no' => ['nullable', 'string', 'max:50'],
         ];
-        foreach ($numeric as $f)
+
+        foreach ($numeric as $f) {
             $rules[$f] = ['nullable', 'numeric'];
+        }
+
         return $rules;
     }
 
@@ -112,12 +113,13 @@ class AceLineController extends Controller
             'bc13_c',
             'bc13_m',
         ]);
-        if (!empty($data['date']))
+
+        if (!empty($data['date'])) {
             $data['date'] = $this->ymd($data['date']);
+        }
+
         return $data;
     }
-
-    /* ========= DataTables ========= */
 
     public function data(Request $request)
     {
@@ -144,8 +146,6 @@ class AceLineController extends Controller
             ->make(true);
     }
 
-    /* ========= CRUD ========= */
-
     public function store(Request $request)
     {
         $request->validate($this->rules());
@@ -162,6 +162,7 @@ class AceLineController extends Controller
         }
 
         $row = AceLine::create($data);
+
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Saved']);
     }
 
@@ -184,6 +185,7 @@ class AceLineController extends Controller
             unset($data['shift']);
 
         $row->update($data);
+
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Updated']);
     }
 
@@ -193,7 +195,6 @@ class AceLineController extends Controller
         return response()->json(['ok' => true, 'message' => 'Deleted']);
     }
 
-    /* ========= SUMMARY (MIN / MAX / AVG / JUDGE) ========= */
     public function summary(Request $request)
     {
         $q = AceLine::query();
@@ -204,7 +205,6 @@ class AceLineController extends Controller
         if ($pt = $request->get('product_type_id'))
             $q->where('product_type_id', $pt);
 
-        // Kolom numeric yang dihitung (urut sesuai tabel, kecuali machine_no (text) dan number (biar nggak muncul di footer))
         $numericCols = [
             'p',
             'c',
@@ -231,7 +231,6 @@ class AceLineController extends Controller
             'bc13_m',
         ];
 
-        // Build SELECT agregat: AVG/MIN/MAX + COUNT(bukan null) utk deteksi "ada data"
         $parts = [];
         foreach ($numericCols as $c) {
             $parts[] = "AVG($c) as avg_$c";
@@ -243,11 +242,10 @@ class AceLineController extends Controller
 
         $fmt2 = fn($v) => is_null($v) ? '' : number_format((float) $v, 2, '.', '');
 
-        // Susun object keyed (biar JS aman dan nggak geser)
         $rowMin = [];
         $rowMax = [];
         $rowAvg = [];
-        $present = []; // ada data pada kolom tsb?
+        $present = [];
 
         foreach ($numericCols as $name) {
             $rowMin[$name] = $fmt2($agg?->{"min_$name"});
@@ -256,28 +254,24 @@ class AceLineController extends Controller
             $present[$name] = (int) ($agg?->{"cnt_$name"} ?? 0) > 0;
         }
 
-        /* ====== JUDGE RULES (pakai AVG) ====== */
-        $judgeBase = 'avg_'; // bisa diganti 'min_' / 'max_' kalau mau
-        // SPEC
         $spec = [
             'p' => ['min' => 150, 'max' => 240],
             'c' => ['min' => 16, 'max' => 21],
             'gt' => ['min' => 400, 'max' => 700],
             'cb_lab' => ['min' => 33, 'max' => 43],
             'moisture' => ['min' => 3, 'max' => 4],
-            'bakunetsu' => ['max' => 80],                 // max only
+            'bakunetsu' => ['max' => 80],
             'ac' => ['min' => 8, 'max' => 11],
             'tc' => ['min' => 10, 'max' => 16],
             'vsd' => ['min' => 0.2, 'max' => 0.7],
             'ig' => ['min' => 2, 'max' => 3],
             'cb_weight' => ['min' => 169, 'max' => 181],
-            'ssi' => ['min' => 90],                 // min only
-            // kolom lain tidak dinilai → judge kosong
+            'ssi' => ['min' => 90],
         ];
 
         $judgeVal = function ($val, array $rule): string {
             if ($val === null)
-                return '';             // <— kosong kalau belum ada data
+                return '';
             if (isset($rule['min']) && $val < $rule['min'])
                 return 'NG';
             if (isset($rule['max']) && $val > $rule['max'])
@@ -289,23 +283,17 @@ class AceLineController extends Controller
         $okFlags = [];
 
         foreach ($numericCols as $name) {
-            // Hanya nilai yang ada spec-nya yang dinilai; lainnya kosong
             if (!array_key_exists($name, $spec)) {
                 $rowJudge[$name] = '';
                 continue;
             }
-
-            // Kalau kolom ini belum ada data sama sekali → kosong (bukan NG)
             if (!$present[$name]) {
                 $rowJudge[$name] = '';
                 continue;
             }
-
-            $val = $agg?->{$judgeBase . $name};
+            $val = $agg?->{"avg_{$name}"};
             $j = $judgeVal(is_null($val) ? null : (float) $val, $spec[$name]);
             $rowJudge[$name] = $j;
-
-            // hitung overall hanya dari kolom yang dinilai & ada data
             if ($j !== '')
                 $okFlags[] = ($j === 'OK');
         }
@@ -313,21 +301,17 @@ class AceLineController extends Controller
         $overall = count($okFlags) ? (array_sum($okFlags) === count($okFlags) ? 'OK' : 'NG') : '—';
 
         return response()->json([
-            // object keyed by field (aman buat JS, nggak tergantung jumlah kolom di depan)
             'rows' => [
                 'min' => $rowMin,
                 'max' => $rowMax,
                 'avg' => $rowAvg,
                 'judge' => $rowJudge,
             ],
-            // info tambahan untuk JS (opsional): mana kolom yang ada datanya
             'present' => $present,
-            // label keseluruhan
             'overall' => $overall,
         ]);
     }
 
-    /* ========= Export (stub) ========= */
     public function export(Request $request)
     {
         return response()->json([

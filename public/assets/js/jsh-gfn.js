@@ -2,17 +2,25 @@
     var $ = window.jQuery;
 
     // util
-    function pad(n) { return String(n).padStart(2, "0"); }
+    function pad(n) {
+        return String(n).padStart(2, "0");
+    }
     function today() {
         var d = new Date();
-        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+        return (
+            d.getFullYear() +
+            "-" +
+            pad(d.getMonth() + 1) +
+            "-" +
+            pad(d.getDate())
+        );
     }
     function autoShift() {
         var h = new Date().getHours();
         return h >= 6 && h < 17 ? "D" : h >= 22 || h < 6 ? "N" : "S";
     }
 
-    // Select2
+    // select2
     function s2() {
         if (!$ || !$.fn.select2) return;
         $(".select2").select2({
@@ -24,11 +32,16 @@
         });
     }
 
-    // Datepicker
+    // datepicker
     function dp() {
         if (!$ || !$.fn.datepicker) return;
         var $f = $("#fDate");
-        if ($f.length) $f.datepicker({ format: "yyyy-mm-dd", autoclose: true, orientation: "bottom" });
+        if ($f.length)
+            $f.datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true,
+                orientation: "bottom",
+            });
         var $g = $("#gfnDate");
         if ($g.length) {
             $g.datepicker({
@@ -40,7 +53,7 @@
         }
     }
 
-    // seed filter
+    // seeding
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
@@ -53,7 +66,7 @@
         }
     }
 
-    // sync modal dari filter
+    // sinkron
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
@@ -68,46 +81,70 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
-    // fold icon
+    // ikon
     if ($) {
-        var $c = $("#filterCollapse"), $i = $("#filterIcon"), $h = $("#filterHeader");
+        var $c = $("#filterCollapse"),
+            $i = $("#filterIcon"),
+            $h = $("#filterHeader");
         function ico(o) {
             if (!$i.length) return;
-            $i.removeClass("ri-add-line ri-subtract-line").addClass(o ? "ri-subtract-line" : "ri-add-line");
+            $i.removeClass("ri-add-line ri-subtract-line").addClass(
+                o ? "ri-subtract-line" : "ri-add-line"
+            );
         }
         if ($c.length) {
             ico($c.hasClass("show"));
-            $c.on("shown.bs.collapse", function () { ico(true); });
-            $c.on("hidden.bs.collapse", function () { ico(false); });
+            $c.on("shown.bs.collapse", function () {
+                ico(true);
+            });
+            $c.on("hidden.bs.collapse", function () {
+                ico(false);
+            });
             $h.on("click", function () {});
         }
     }
 
-    // format number
+    // format
     function fmt(n, d) {
         if (d === void 0) d = 2;
         if (!isFinite(n)) n = 0;
-        return Number(n).toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
+        return Number(n).toLocaleString("id-ID", {
+            minimumFractionDigits: d,
+            maximumFractionDigits: d,
+        });
     }
 
-    // kalkulasi tabel input di modal
+    // hitung
     function recalc() {
         var tb = document.getElementById("gfnBody");
         if (!tb) return;
-        var rows = tb.querySelectorAll("tr[data-row]"), tg = 0;
+        var rows = tb.querySelectorAll("tr[data-row]"),
+            tg = 0;
         rows.forEach(function (tr) {
-            var g = parseFloat((tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0");
+            var g = parseFloat(
+                (tr.querySelector(".gfn-gram") &&
+                    tr.querySelector(".gfn-gram").value) ||
+                    "0"
+            );
             if (!isNaN(g)) tg += g;
         });
-        var tp = 0, tpi = 0;
+        var tp = 0,
+            tpi = 0;
         rows.forEach(function (tr) {
             var idx = parseFloat(tr.dataset.index || "0");
-            var g = parseFloat((tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0");
-            var p = tg > 0 ? (g / tg) * 100 : 0, pi = p * idx;
-            var cP = tr.querySelector(".gfn-percent"), cPI = tr.querySelector(".gfn-percent-index");
+            var g = parseFloat(
+                (tr.querySelector(".gfn-gram") &&
+                    tr.querySelector(".gfn-gram").value) ||
+                    "0"
+            );
+            var p = tg > 0 ? (g / tg) * 100 : 0,
+                pi = p * idx;
+            var cP = tr.querySelector(".gfn-percent"),
+                cPI = tr.querySelector(".gfn-percent-index");
             if (cP) cP.textContent = fmt(p, 2);
             if (cPI) cPI.textContent = fmt(pi, 1);
-            tp += p; tpi += pi;
+            tp += p;
+            tpi += pi;
         });
         var elTG = document.getElementById("gfn-total-gram");
         var elTP = document.getElementById("gfn-total-percent");
@@ -117,17 +154,21 @@
         if (elTPI) elTPI.textContent = fmt(tpi, 1);
     }
 
-    // CHART
+    // chart
     function renderGFNCharts() {
         if (!window.jQuery || !$.plot) return;
-        var $line = $('#gfn-line');
+        var $line = $("#gfn-line");
         if (!$line.length) return;
 
         var dataObj = window.gfnChartData || {};
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
-        if (!rows.length) { $line.empty(); return; }
+        if (!rows.length) {
+            $line.empty();
+            return;
+        }
 
-        var ticks = [], lineData = [];
+        var ticks = [],
+            lineData = [];
         for (var i = 0; i < rows.length; i++) {
             var x = i + 1;
             var pct = parseFloat(rows[i]?.percentage) || 0;
@@ -137,28 +178,47 @@
 
         var plot;
         try {
-            plot = $.plot($line, [
-                { data: lineData, label: '%', lines: { show: true, lineWidth: 2 }, points: { show: true, radius: 3 } }
-            ], {
-                xaxis: { ticks: ticks },
-                yaxis: { min: 0 },
-                grid: { hoverable: true, clickable: true, borderWidth: 1, labelMargin: 10 },
-                tooltip: true,
-                tooltipOpts: { content: 'No %x: %y.2%%', defaultTheme: false }
-            });
-        } catch (e) { return; }
+            plot = $.plot(
+                $line,
+                [
+                    {
+                        data: lineData,
+                        label: "%",
+                        lines: { show: true, lineWidth: 2 },
+                        points: { show: true, radius: 3 },
+                    },
+                ],
+                {
+                    xaxis: { ticks: ticks },
+                    yaxis: { min: 0 },
+                    grid: {
+                        hoverable: true,
+                        clickable: true,
+                        borderWidth: 1,
+                        labelMargin: 10,
+                    },
+                    tooltip: true,
+                    tooltipOpts: {
+                        content: "No %x: %y.2%%",
+                        defaultTheme: false,
+                    },
+                }
+            );
+        } catch (e) {
+            return;
+        }
 
         try {
-            var ctx = plot.getCanvas().getContext('2d');
+            var ctx = plot.getCanvas().getContext("2d");
             var s = plot.getData()[0] || { data: [] };
             ctx.save();
-            ctx.font = '12px Arial, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
+            ctx.font = "12px Arial, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
             for (var j = 0; j < s.data.length; j++) {
                 var pt = s.data[j];
                 var o = plot.pointOffset({ x: pt[0], y: pt[1] });
-                ctx.fillText(pt[1].toFixed(2) + '%', o.left, o.top - 6);
+                ctx.fillText(pt[1].toFixed(2) + "%", o.left, o.top - 6);
             }
             ctx.restore();
         } catch (_) {}
@@ -171,17 +231,20 @@
         _resizeTimer = setTimeout(renderGFNCharts, 150);
     }
 
-    // input listener
+    // input
     document.addEventListener("input", function (e) {
         if (e.target && e.target.classList.contains("gfn-gram")) recalc();
     });
 
-    // modal-flag
+    // autoload
     if (window.openModalGFN) {
-        $(function () { $("#modal-greensand").modal("show"); recalc(); });
+        $(function () {
+            $("#modal-greensand").modal("show");
+            recalc();
+        });
     }
 
-    // === DUPLICATE GUARD (tanggal [+shift]) ===
+    // duplikat
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
@@ -200,27 +263,42 @@
     }
     function showWarn(msg) {
         var host = ensureWarnHost();
-        if (host) { host.textContent = msg || "Data sudah ada."; host.classList.remove("d-none"); }
-        else { alert(msg || "Data sudah ada."); }
+        if (host) {
+            host.textContent = msg || "Data sudah ada.";
+            host.classList.remove("d-none");
+        } else {
+            alert(msg || "Data sudah ada.");
+        }
     }
     function hideWarn() {
         var host = document.getElementById("gfnDupAlert");
         if (host) host.classList.add("d-none");
     }
     async function checkDuplicate(date, shift) {
-        if (!(window.jshRoutes && jshRoutes.gfnExists)) return false; // fallback: jangan blokir
-        var url = jshRoutes.gfnExists + "?date=" + encodeURIComponent(date || "") + (shift ? "&shift=" + encodeURIComponent(shift) : "");
+        if (!(window.jshRoutes && jshRoutes.gfnExists)) return false;
+        var url =
+            jshRoutes.gfnExists +
+            "?date=" +
+            encodeURIComponent(date || "") +
+            (shift ? "&shift=" + encodeURIComponent(shift) : "");
         try {
-            var res = await fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" });
+            var res = await fetch(url, {
+                headers: { Accept: "application/json" },
+                credentials: "same-origin",
+            });
             if (!res.ok) return false;
             var j = await res.json();
             return !!(j.exists || j.found || j.duplicate || j.data_exists);
-        } catch (_) { return false; }
+        } catch (_) {
+            return false;
+        }
     }
 
-    // DOM ready
+    // ready
     document.addEventListener("DOMContentLoaded", function () {
-        s2(); dp(); seedFilter();
+        s2();
+        dp();
+        seedFilter();
 
         var b = document.getElementById("btn-add-greensand");
         if (b && window.jQuery) {
@@ -233,32 +311,39 @@
         }
 
         if (window.gfnChartData) {
-            if ($) { $(renderGFNCharts); } else { renderGFNCharts(); }
-            if (window.addEventListener) window.addEventListener("resize", onWinResize);
+            if ($) {
+                $(renderGFNCharts);
+            } else {
+                renderGFNCharts();
+            }
+            if (window.addEventListener)
+                window.addEventListener("resize", onWinResize);
         }
 
-        // intercept submit form modal
         if ($) {
             $(document).on("submit", "#form-greensand", async function (e) {
                 hideWarn();
                 var $form = $(this);
                 var d = ($form.find("#gfnDate").val() || "").trim();
                 var s = ($form.find('select[name="shift"]').val() || "").trim();
-
-                if (!d) return; // biar server validasi
-
-                e.preventDefault(); // tahan dulu
+                if (!d) return;
+                e.preventDefault();
                 var dup = await checkDuplicate(d, s);
                 if (dup) {
-                    showWarn("Data untuk tanggal " + d + (s ? " (shift " + s + ")" : "") + " sudah ada. Hapus data tersebut dulu sebelum input ulang.");
+                    showWarn(
+                        "Data untuk tanggal " +
+                            d +
+                            (s ? " (shift " + s + ")" : "") +
+                            " sudah ada. Hapus data tersebut dulu sebelum input ulang."
+                    );
                     return;
                 }
-                this.submit(); // aman, lanjut submit
+                this.submit();
             });
         }
     });
 
-    // modal-show
+    // modal
     if ($) {
         $(document).on("shown.bs.modal", "#modal-greensand", function () {
             if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
@@ -270,9 +355,11 @@
                 });
             }
             syncModalFromFilter();
-            var $gd = $("#gfnDate"), $gs = $('select[name="shift"]');
+            var $gd = $("#gfnDate"),
+                $gs = $('select[name="shift"]');
             if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
-                $gd.val(today()); if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
+                $gd.val(today());
+                if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
             }
             if ($gs.length && (!$gs.val() || !$gs.val().trim())) {
                 $gs.val(autoShift()).trigger("change");
@@ -280,10 +367,11 @@
         });
     }
 
-    // delete confirm
+    // hapus
     if ($) {
         $(document).on("click", ".btn-delete-gs", function () {
-            var d = $(this).data("gfn-date"), s = $(this).data("shift");
+            var d = $(this).data("gfn-date"),
+                s = $(this).data("shift");
             $("#delDateText").text(d || "—");
             $("#delShiftText").text(s || "—");
             $("#delDate").val(d || "");

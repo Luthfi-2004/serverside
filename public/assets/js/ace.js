@@ -1,12 +1,14 @@
-// public/assets/js/ace.js
+// ace
 (function () {
     var $ = window.jQuery;
     if (!window.aceRoutes) {
-        console.error("aceRoutes missing. Define it in Blade before loading ace.js");
+        console.error(
+            "aceRoutes missing. Define it in Blade before loading ace.js"
+        );
         return;
     }
 
-    /* ================= helpers ================= */
+    // helpers
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
         var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -16,19 +18,39 @@
     }
     function todayYmd() {
         var d = new Date();
-        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        return (
+            d.getFullYear() +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(d.getDate()).padStart(2, "0")
+        );
     }
     function detectShiftByNow() {
         var h = new Date().getHours();
         return h >= 6 && h < 16 ? "D" : h >= 16 && h < 22 ? "S" : "N";
     }
-    function fmt(v) { if (v === null || v === undefined || v === "") return "-"; if (typeof v === "number") return v.toFixed(2); return v; }
-    function fmtInt(v) { if (v === null || v === undefined || v === "") return "-"; var n = parseInt(v, 10); return isNaN(n) ? "-" : n; }
-    function toHm(s) { if (!s) return ""; var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s)); return m ? m[1] + ":" + m[2] : String(s).substring(0, 5); }
+    function fmt(v) {
+        if (v === null || v === undefined || v === "") return "-";
+        if (typeof v === "number") return v.toFixed(2);
+        return v;
+    }
+    function fmtInt(v) {
+        if (v === null || v === undefined || v === "") return "-";
+        var n = parseInt(v, 10);
+        return isNaN(n) ? "-" : n;
+    }
+    function toHm(s) {
+        if (!s) return "";
+        var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
+        return m ? m[1] + ":" + m[2] : String(s).substring(0, 5);
+    }
     function toYmdHm(s) {
         if (!s) return "-";
         var m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/.exec(String(s));
-        return m ? m[1] + " " + m[2] : String(s).replace("T", " ").substring(0, 16);
+        return m
+            ? m[1] + " " + m[2]
+            : String(s).replace("T", " ").substring(0, 16);
     }
     function currentFilters() {
         return {
@@ -44,39 +66,63 @@
     }
 
     (function initFilters() {
-        var $d = $("#filterDate"), $s = $("#shiftSelect");
+        var $d = $("#filterDate"),
+            $s = $("#shiftSelect");
         if (!$d.val()) $d.val(todayYmd()).trigger("change");
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    /* ================= columns ================= */
+    // kolom
     var columns = [
         {
-            data: null, orderable: false, searchable: false, width: 80,
+            data: null,
+            orderable: false,
+            searchable: false,
+            width: 80,
             render: function (_, __, row) {
                 var id = row.id || "";
                 return [
                     '<div class="btn-group btn-group-sm" role="group">',
-                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="', id, '"><i class="fas fa-edit"></i></button>',
-                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="', id, '"><i class="fas fa-trash"></i></button>',
+                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="',
+                    id,
+                    '"><i class="fas fa-edit"></i></button>',
+                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="',
+                    id,
+                    '"><i class="fas fa-trash"></i></button>',
                     "</div>",
                 ].join("");
             },
-            defaultContent: ""
+            defaultContent: "",
         },
         { data: "number", render: fmtInt, defaultContent: "" },
         {
             data: "date",
             render: function (v, __, row) {
                 var dt = row.created_at || row.updated_at || v || "";
-                return /[ T]\d{2}:\d{2}/.test(String(dt)) ? toYmdHm(dt) : (dt ? String(dt).substring(0, 10) : "-");
+                return /[ T]\d{2}:\d{2}/.test(String(dt))
+                    ? toYmdHm(dt)
+                    : dt
+                    ? String(dt).substring(0, 10)
+                    : "-";
             },
-            defaultContent: ""
+            defaultContent: "",
         },
         { data: "shift", defaultContent: "" },
         { data: "product_type_name", defaultContent: "-" },
-        { data: "sample_start", render: function (v) { return v ? toHm(v) : "-"; }, defaultContent: "" },
-        { data: "sample_finish", render: function (v) { return v ? toHm(v) : "-"; }, defaultContent: "" },
+        {
+            data: "sample_start",
+            render: function (v) {
+                return v ? toHm(v) : "-";
+            },
+            defaultContent: "",
+        },
+        {
+            data: "sample_finish",
+            render: function (v) {
+                return v ? toHm(v) : "-";
+            },
+            defaultContent: "",
+        },
         { data: "p", render: fmt, defaultContent: "" },
         { data: "c", render: fmt, defaultContent: "" },
         { data: "gt", render: fmt, defaultContent: "" },
@@ -103,8 +149,8 @@
         { data: "bc13_m", render: fmt, defaultContent: "" },
     ];
 
-    /* ================= footer summary (ala Greensand, super-stabil) ================= */
-    var START_DATA_COL = 7; // 0..6 = Action, Number, Date, Shift, Product, Start, Finish
+    // footer
+    var START_DATA_COL = 7; 
 
     function getKeyOrder() {
         var order = [];
@@ -115,11 +161,15 @@
         return order;
     }
     function totalColumnCount() {
-        return Array.isArray(columns) ? columns.length : $("#dt-ace thead th").length;
+        return Array.isArray(columns)
+            ? columns.length
+            : $("#dt-ace thead th").length;
     }
 
+    // struktur
     function buildFooterStructureOnce() {
-        var $t = $("#dt-ace"), $tfoot = $t.find("tfoot");
+        var $t = $("#dt-ace"),
+            $tfoot = $t.find("tfoot");
         if (!$tfoot.length) $tfoot = $("<tfoot/>").appendTo($t);
         if ($tfoot.find("tr.ace-summary-row").length) {
             $tfoot.removeClass("d-none");
@@ -128,16 +178,24 @@
         var totalCols = totalColumnCount();
         $tfoot.empty();
         ["MIN", "MAX", "AVG", "JUDGE"].forEach(function (L) {
-            var $tr = $("<tr/>").addClass("ace-summary-row ace-summary-" + L.toLowerCase());
-            $tr.append($("<td/>").addClass("ace-foot-label").attr("colspan", START_DATA_COL).text(L));
-            for (var i = START_DATA_COL; i < totalCols; i++) $tr.append($("<td/>"));
+            var $tr = $("<tr/>").addClass(
+                "ace-summary-row ace-summary-" + L.toLowerCase()
+            );
+            $tr.append(
+                $("<td/>")
+                    .addClass("ace-foot-label")
+                    .attr("colspan", START_DATA_COL)
+                    .text(L)
+            );
+            for (var i = START_DATA_COL; i < totalCols; i++)
+                $tr.append($("<td/>"));
             $tfoot.append($tr);
         });
         $tfoot.removeClass("d-none");
         return $tfoot;
     }
 
-    // Defender: kalau ada lib yang mindahin/melepas tfoot saat redraw, pasang lagi.
+    // defender
     var footObserver = null;
     function ensureFooterAttached() {
         var $t = $("#dt-ace");
@@ -159,17 +217,20 @@
         return $tfoot;
     }
 
+    // adaptasi
     function adaptSummaryResponse(res, keyOrder) {
         var out = { min: {}, max: {}, avg: {}, judge: {} };
         if (res && Array.isArray(res.summary)) {
             var map = {};
-            res.summary.forEach(function (s) { if (s && s.field) map[s.field] = s; });
+            res.summary.forEach(function (s) {
+                if (s && s.field) map[s.field] = s;
+            });
             keyOrder.forEach(function (k) {
                 var s = map[k] || {};
-                out.min[k]   = (s.min   != null ? s.min   : "");
-                out.max[k]   = (s.max   != null ? s.max   : "");
-                out.avg[k]   = (s.avg   != null ? s.avg   : "");
-                out.judge[k] = (s.judge != null ? s.judge : "");
+                out.min[k] = s.min != null ? s.min : "";
+                out.max[k] = s.max != null ? s.max : "";
+                out.avg[k] = s.avg != null ? s.avg : "";
+                out.judge[k] = s.judge != null ? s.judge : "";
             });
             return out;
         }
@@ -177,23 +238,27 @@
             var obj = {};
             if (!raw) return obj;
             if (Array.isArray(raw)) {
-                for (var i = 0; i < Math.min(raw.length, keyOrder.length); i++) obj[keyOrder[i]] = raw[i];
+                for (var i = 0; i < Math.min(raw.length, keyOrder.length); i++)
+                    obj[keyOrder[i]] = raw[i];
                 return obj;
             }
             if (typeof raw === "object") {
-                keyOrder.forEach(function (k) { if (k in raw) obj[k] = raw[k]; });
+                keyOrder.forEach(function (k) {
+                    if (k in raw) obj[k] = raw[k];
+                });
                 return obj;
             }
             return obj;
         }
         var rows = (res && res.rows) || {};
-        out.min   = pickKeys(rows.min);
-        out.max   = pickKeys(rows.max);
-        out.avg   = pickKeys(rows.avg);
+        out.min = pickKeys(rows.min);
+        out.max = pickKeys(rows.max);
+        out.avg = pickKeys(rows.avg);
         out.judge = pickKeys(rows.judge);
         return out;
     }
 
+    // masker
     function buildJudgeMask(rowsObj, present, keyOrder) {
         var mask = {};
         keyOrder.forEach(function (k) {
@@ -210,26 +275,39 @@
         return mask;
     }
 
-    function renderFooterKeyed($row, objValues, isJudgeRow, judgeMask, keyOrder) {
+    // render
+    function renderFooterKeyed(
+        $row,
+        objValues,
+        isJudgeRow,
+        judgeMask,
+        keyOrder
+    ) {
         var tds = $row.find("td");
         if (!tds.length) return;
-        for (var i = 1; i < tds.length; i++) $(tds[i]).html("").removeClass("j-ok j-ng");
+        for (var i = 1; i < tds.length; i++)
+            $(tds[i]).html("").removeClass("j-ok j-ng");
 
         keyOrder.forEach(function (k, idx) {
             var cell = tds[1 + idx];
             if (!cell) return;
-            var v = (objValues && Object.prototype.hasOwnProperty.call(objValues, k)) ? objValues[k] : "";
+            var v =
+                objValues && Object.prototype.hasOwnProperty.call(objValues, k)
+                    ? objValues[k]
+                    : "";
             if (isJudgeRow && judgeMask && judgeMask[k] === false) v = "";
             $(cell).html(v);
             if (isJudgeRow) {
                 var s = String(v);
-                if (s === "OK" || /text-success/.test(s)) $(cell).addClass("j-ok");
-                else if (s === "NG" || /text-danger/.test(s)) $(cell).addClass("j-ng");
+                if (s === "OK" || /text-success/.test(s))
+                    $(cell).addClass("j-ok");
+                else if (s === "NG" || /text-danger/.test(s))
+                    $(cell).addClass("j-ng");
             }
         });
     }
 
-    // Panggil ini ketika butuh isi summary (dipakai di footerCallback)
+    // summary
     function fillSummaryIntoFooter() {
         if (!aceRoutes.summary) return;
         var $tfoot = ensureFooterAttached();
@@ -238,19 +316,50 @@
         $.get(aceRoutes.summary, currentFilters())
             .done(function (res) {
                 var norm = adaptSummaryResponse(res || {}, keyOrder);
-                var mask = buildJudgeMask(norm, (res && res.present) || null, keyOrder);
-                renderFooterKeyed($tfoot.find("tr.ace-summary-min"),   norm.min,   false, null, keyOrder);
-                renderFooterKeyed($tfoot.find("tr.ace-summary-max"),   norm.max,   false, null, keyOrder);
-                renderFooterKeyed($tfoot.find("tr.ace-summary-avg"),   norm.avg,   false, null, keyOrder);
-                renderFooterKeyed($tfoot.find("tr.ace-summary-judge"), norm.judge, true,  mask, keyOrder);
+                var mask = buildJudgeMask(
+                    norm,
+                    (res && res.present) || null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-min"),
+                    norm.min,
+                    false,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-max"),
+                    norm.max,
+                    false,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-avg"),
+                    norm.avg,
+                    false,
+                    null,
+                    keyOrder
+                );
+                renderFooterKeyed(
+                    $tfoot.find("tr.ace-summary-judge"),
+                    norm.judge,
+                    true,
+                    mask,
+                    keyOrder
+                );
             })
             .fail(function (xhr) {
-                console.error("summary fail", xhr && (xhr.responseText || xhr.statusText));
+                console.error(
+                    "summary fail",
+                    xhr && (xhr.responseText || xhr.statusText)
+                );
                 $("#dt-ace tfoot").removeClass("d-none");
             });
     }
 
-    /* ================= DataTable init ================= */
+    // datatable
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -269,27 +378,28 @@
                 d.shift = f.shift;
                 d.product_type_id = f.product_type_id;
             },
-            error: function (xhr) { console.error("DT ajax error", xhr); },
+            error: function (xhr) {
+                console.error("DT ajax error", xhr);
+            },
         },
         columns: columns,
-        columnDefs: [{ targets: "_all", className: "align-middle text-center" }],
+        columnDefs: [
+            { targets: "_all", className: "align-middle text-center" },
+        ],
         initComplete: function () {
-            buildFooterStructureOnce();   // buat sekali
-            ensureFooterAttached();       // kunci di table
-            fillSummaryIntoFooter();      // isi awal
+            buildFooterStructureOnce(); 
+            ensureFooterAttached(); 
+            fillSummaryIntoFooter(); 
         },
         footerCallback: function () {
-            // dipanggil setiap draw; aman buat isi tanpa rebuild struktur
-            ensureFooterAttached();
-            fillSummaryIntoFooter();
-        }
-        // catatan: tidak perlu drawCallback lagi
+            ensureFooterAttached(); 
+            fillSummaryIntoFooter(); 
+        },
     });
 
-    /* ================= actions ================= */
+    // actions
     function reloadTable() {
         if (window.aceTable) window.aceTable.ajax.reload(null, false);
-        // footerCallback akan jalan otomatis pas redraw → summary terisi
     }
 
     $("#btnSearch").on("click", reloadTable);
@@ -341,7 +451,9 @@
         $.ajax({
             url: aceRoutes.base + "/" + deleteId,
             type: "DELETE",
-            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
         })
             .done(function () {
                 $("#confirmDeleteModal").modal("hide");
@@ -355,31 +467,49 @@
 
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
-        var mode = $("#ace_mode").val(), id = $("#ace_id").val();
+        var mode = $("#ace_mode").val(),
+            id = $("#ace_id").val();
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
-        var url = aceRoutes.store, method = "POST";
-        if (mode === "update" && id) { url = aceRoutes.base + "/" + id; method = "POST"; }
+        var url = aceRoutes.store,
+            method = "POST";
+        if (mode === "update" && id) {
+            url = aceRoutes.base + "/" + id;
+            method = "POST";
+        }
         var fd = new FormData(this);
         if (mode === "update") fd.append("_method", "PUT");
         var $btn = $("#aceSubmitBtn");
-        $btn.prop("disabled", true).data("orig", $btn.html())
-            .html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
+        $btn.prop("disabled", true)
+            .data("orig", $btn.html())
+            .html(
+                '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
+            );
         $.ajax({
-            url: url, type: method, data: fd, processData: false, contentType: false,
-            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
+            url: url,
+            type: method,
+            data: fd,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
         })
             .done(function () {
                 $("#modal-ace").modal("hide");
                 reloadTable();
             })
             .fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Save failed";
+                var msg =
+                    (xhr.responseJSON && xhr.responseJSON.message) ||
+                    "Save failed";
                 $("#aceFormAlert").removeClass("d-none").text(msg);
                 console.error(xhr.responseText || xhr.statusText);
             })
             .always(function () {
-                $btn.prop("disabled", false).html($btn.data("orig") || "Submit");
+                $btn.prop("disabled", false).html(
+                    $btn.data("orig") || "Submit"
+                );
             });
     });
 })();
