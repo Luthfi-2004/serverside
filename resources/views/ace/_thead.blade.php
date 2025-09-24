@@ -2,7 +2,7 @@
   <tr>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Action</th>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">No</th>
-    <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Date</th>
+    <th class="text-center align-middle" rowspan="2" style="min-width:100px;">Date</th>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Shift</th>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Type Product</th>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Sample Start</th>

@@ -6,6 +6,7 @@ use App\Models\AceLine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class AceLineController extends Controller
 {
@@ -71,9 +72,8 @@ class AceLineController extends Controller
             'machine_no' => ['nullable', 'string', 'max:50'],
         ];
 
-        foreach ($numeric as $f) {
+        foreach ($numeric as $f)
             $rules[$f] = ['nullable', 'numeric'];
-        }
 
         return $rules;
     }
@@ -114,9 +114,8 @@ class AceLineController extends Controller
             'bc13_m',
         ]);
 
-        if (!empty($data['date'])) {
+        if (!empty($data['date']))
             $data['date'] = $this->ymd($data['date']);
-        }
 
         return $data;
     }
@@ -126,7 +125,7 @@ class AceLineController extends Controller
         $q = AceLine::query();
 
         if ($d = $this->ymd($request->get('date')))
-            $q->whereDate('date', $d);
+            $q->whereRaw('DATE(`date`) = ?', [$d]);
         if ($s = $request->get('shift'))
             $q->where('shift', $s);
         if ($pt = $request->get('product_type_id'))
@@ -142,21 +141,17 @@ class AceLineController extends Controller
                     });
                 }
             })
-            ->editColumn('date', function(AceLine $r) {
-                // Gunakan timezone Jakarta untuk konsistensi
-                if ($r->date) {
+            ->editColumn('date', function (AceLine $r) {
+                if ($r->date)
                     return Carbon::parse($r->date)->format('Y-m-d');
-                }
-                // Jika tidak ada date, gunakan created_at dengan timezone Jakarta
-                return $r->created_at ? 
-                    Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i') : 
-                    null;
+                return $r->created_at
+                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i')
+                    : null;
             })
-            ->addColumn('created_time', function(AceLine $r) {
-                // Tambah kolom khusus untuk waktu submit dengan timezone Jakarta
-                return $r->created_at ? 
-                    Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') : 
-                    null;
+            ->addColumn('created_time', function (AceLine $r) {
+                return $r->created_at
+                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s')
+                    : null;
             })
             ->make(true);
     }
@@ -172,8 +167,8 @@ class AceLineController extends Controller
             $data['shift'] = $this->detectShift();
 
         if (empty($data['number'])) {
-            $max = AceLine::whereDate('date', $data['date'])->max('number');
-            $data['number'] = ($max ?? 0) + 1;
+            $max = AceLine::whereRaw('DATE(`date`) = ?', [$data['date']])->max('number');
+            $data['number'] = ((int) ($max ?? 0)) + 1;
         }
 
         $row = AceLine::create($data);
@@ -184,15 +179,13 @@ class AceLineController extends Controller
     public function show($id)
     {
         $row = AceLine::findOrFail($id);
-        
-        // Format waktu untuk form editing
-        if ($row->sample_start) {
+
+        // format jam ke H:i untuk form edit
+        if ($row->sample_start)
             $row->sample_start = Carbon::parse($row->sample_start)->format('H:i');
-        }
-        if ($row->sample_finish) {
+        if ($row->sample_finish)
             $row->sample_finish = Carbon::parse($row->sample_finish)->format('H:i');
-        }
-        
+
         return response()->json($row);
     }
 
@@ -223,8 +216,9 @@ class AceLineController extends Controller
     public function summary(Request $request)
     {
         $q = AceLine::query();
+
         if ($d = $this->ymd($request->get('date')))
-            $q->whereDate('date', $d);
+            $q->whereRaw('DATE(`date`) = ?', [$d]);
         if ($s = $request->get('shift'))
             $q->where('shift', $s);
         if ($pt = $request->get('product_type_id'))
@@ -267,11 +261,7 @@ class AceLineController extends Controller
 
         $fmt2 = fn($v) => is_null($v) ? '' : number_format((float) $v, 2, '.', '');
 
-        $rowMin = [];
-        $rowMax = [];
-        $rowAvg = [];
-        $present = [];
-
+        $rowMin = $rowMax = $rowAvg = $present = [];
         foreach ($numericCols as $name) {
             $rowMin[$name] = $fmt2($agg?->{"min_$name"});
             $rowMax[$name] = $fmt2($agg?->{"max_$name"});
@@ -306,13 +296,8 @@ class AceLineController extends Controller
 
         $rowJudge = [];
         $okFlags = [];
-
         foreach ($numericCols as $name) {
-            if (!array_key_exists($name, $spec)) {
-                $rowJudge[$name] = '';
-                continue;
-            }
-            if (!$present[$name]) {
+            if (!array_key_exists($name, $spec) || !$present[$name]) {
                 $rowJudge[$name] = '';
                 continue;
             }
@@ -326,12 +311,7 @@ class AceLineController extends Controller
         $overall = count($okFlags) ? (array_sum($okFlags) === count($okFlags) ? 'OK' : 'NG') : '—';
 
         return response()->json([
-            'rows' => [
-                'min' => $rowMin,
-                'max' => $rowMax,
-                'avg' => $rowAvg,
-                'judge' => $rowJudge,
-            ],
+            'rows' => ['min' => $rowMin, 'max' => $rowMax, 'avg' => $rowAvg, 'judge' => $rowJudge],
             'present' => $present,
             'overall' => $overall,
         ]);
