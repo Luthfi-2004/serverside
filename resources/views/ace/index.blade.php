@@ -145,53 +145,34 @@
 
 @push('styles')
     <style>
-        #dt-ace thead th {
-            white-space: nowrap;
-        }
+      /* HEADER ACE */
+#dt-ace thead th {
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 120px;
+}
 
-        #dt-ace th,
-        #dt-ace td {
-            vertical-align: middle;
-            text-align: center;
-        }
+/* FOOTER ACE (pakai class existing: .ace-summary-row) */
+#dt-ace tfoot .ace-summary-row:first-child td {
+  border-top: 2px solid #333 !important;   /* samain tebalnya dgn greensand */
+}
 
-        /* FOOTER compact */
-        #dt-ace tfoot td {
-            border: 1px solid #dee2e6 !important;
-            background: #fff;
-            font-size: 12.5px;
-            padding: 4px 6px;
-            line-height: 1.1;
-            height: 28px;
-        }
+#dt-ace tfoot .ace-summary-row td {
+  background: #fff;
+  font-size: .95rem;        /* samain ukuran font */
+  line-height: 1.25;        /* samain line-height */
+  padding: .5rem .75rem;    /* samain padding */
+  height: auto !important;  /* override tinggi fixed yg lama */
+  text-align: center;
+  vertical-align: middle;
+  border-top: 1px solid #dee2e6 !important;
+}
 
-        /* setiap baris footer ada border-top tipis */
-        #dt-ace tfoot tr td {
-            border-top: 1px solid #dee2e6 !important;
-        }
+/* warna judge */
+#dt-ace tfoot td.j-ok { color: #2e7d32; font-weight: 600; }
+#dt-ace tfoot td.j-ng { color: #c62828; font-weight: 600; }
 
-        /* sel label merged (Action..Finish) */
-        #dt-ace tfoot .ace-foot-label {
-            text-align: center !important;
-            font-weight: 600;
-            color: #4a5568;
-        }
-
-        /* bold line persis di atas MIN */
-        #dt-ace tfoot .ace-summary-min td {
-            border-top: 3px solid #2f2f2f !important;
-        }
-
-        /* warna OK/NG di JUDGE */
-        #dt-ace tfoot td.j-ok {
-            color: #2e7d32;
-            font-weight: 600;
-        }
-
-        #dt-ace tfoot td.j-ng {
-            color: #c62828;
-            font-weight: 600;
-        }
     </style>
 @endpush
 

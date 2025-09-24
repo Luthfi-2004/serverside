@@ -167,20 +167,34 @@
 
 @push('styles')
     <style>
-        #dt-all tfoot .gs-summary-row:first-child td {
-            border-top: 2px solid #333 !important;
-        }
+        /* HEADER Greensand */
+#dt-all thead th {
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 120px;
+}
 
-        #dt-all tfoot .gs-summary-row td {
-            background: #fff;
-            font-size: .95rem;
-            text-align: center;
-        }
+/* FOOTER Greensand (pakai class existing: .gs-summary-row) */
+#dt-all tfoot .gs-summary-row:first-child td {
+  border-top: 2px solid #333 !important;   /* garis tebal di baris summary pertama */
+}
 
-        #dt-all tfoot .gs-summary-row td:first-child {
-            text-align: left;
-            white-space: nowrap;
-        }
+#dt-all tfoot .gs-summary-row td {
+  background: #fff;
+  font-size: .95rem;        /* samain dengan style lu sebelumnya */
+  line-height: 1.25;        /* hindari baris jadi terlalu tinggi/pendek */
+  padding: .5rem .75rem;    /* nyaman & konsisten dgn bootstrap */
+  height: auto !important;  /* pastikan gak terkunci tinggi */
+  text-align: center;
+  vertical-align: middle;
+  border-top: 1px solid #dee2e6 !important; /* border tipis antar summary row */
+}
+
+/* warna judge */
+#dt-all tfoot td.j-ok { color: #2e7d32; font-weight: 600; }
+#dt-all tfoot td.j-ng { color: #c62828; font-weight: 600; }
+
     </style>
 @endpush
 
