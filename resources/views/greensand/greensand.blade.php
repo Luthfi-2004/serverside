@@ -160,6 +160,8 @@
 
 @push('styles')
     <style>
+        #dt-mm1 thead th,
+        #dt-mm2 thead th,
         #dt-all thead th {
             white-space: nowrap;
             text-align: center;
@@ -167,6 +169,7 @@
             min-width: 120px;
         }
 
+        /* summary row khusus untuk tab all */
         #dt-all tfoot .gs-summary-row:first-child td {
             border-top: 2px solid #333 !important;
         }
