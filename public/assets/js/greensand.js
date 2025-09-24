@@ -419,7 +419,7 @@ $(function () {
         defaultContent: "",
     }));
 
-    // Summary management
+    // Summary management (tfoot dibuat setelah init)
     const summaryManager = {
         load() {
             if (!window.greensandRoutes.summary) return;
@@ -431,9 +431,16 @@ $(function () {
                 .done((res) => this.render(res?.summary || []))
                 .fail(() => this.render([]));
         },
+        ensureTfoot() {
+            const $table = $("#dt-all");
+            let $tfoot = $table.find("tfoot");
+            if (!$tfoot.length) {
+                $tfoot = $("<tfoot/>").appendTo($table);
+            }
+            return $tfoot;
+        },
         render(summary) {
-            const $tfoot = $("#dt-all tfoot");
-            if (!$tfoot.length) return;
+            const $tfoot = this.ensureTfoot();
 
             // index tidak berubah, karena 8 kolom baru ditambahkan di belakang
             const colIndex = {
@@ -532,14 +539,6 @@ $(function () {
                     d.shift = $("#shiftSelect").val() || "";
                     d.keyword = helpers.getKeyword();
                 },
-                // Kalau mau normalize payload agar semua key pasti ada:
-                // ,dataSrc: function(res) {
-                //     const keys = baseColumns.map(c => c.data);
-                //     (res.data || []).forEach(row => {
-                //         keys.forEach(k => { if (row[k] === undefined) row[k] = ""; });
-                //     });
-                //     return res.data || [];
-                // }
             },
             order: isAll
                 ? [
@@ -569,7 +568,7 @@ $(function () {
                         }
                         prevMM = mmText;
                     });
-                    summaryManager.load();
+                    summaryManager.load(); // <— ensure tfoot dibuat setelah init
                 }
             },
         });

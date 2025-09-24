@@ -82,13 +82,14 @@
                                 ];
                             @endphp
                             @foreach($mmFields as [$name, $label])
+                                @php $labelText = str_replace('_', ' ', $label); @endphp
                                 <div class="col-md-3 mb-3">
-                                    <label class="mb-1">{{ $label }}</label>
-                                    <input 
-                                        type="{{ $name === 'machine_no' ? 'text' : 'number' }}" 
+                                    <label class="mb-1">{{ $labelText }}</label>
+                                    <input
+                                        type="{{ $name === 'machine_no' ? 'text' : 'number' }}"
                                         step="{{ $name === 'machine_no' ? null : '0.01' }}"
                                         name="{{ $name }}" id="m_{{ $name }}" class="form-control"
-                                        placeholder="Input Sample {{ $label }}">
+                                        placeholder="Input Sample {{ $labelText }}">
                                 </div>
                             @endforeach
                         </div>
@@ -108,10 +109,11 @@
                                 ];
                             @endphp
                             @foreach($addFields as [$name, $label])
+                                @php $labelText = str_replace('_', ' ', $label); @endphp
                                 <div class="col-md-3 mb-3">
-                                    <label class="mb-1">{{ $label }}</label>
+                                    <label class="mb-1">{{ $labelText }}</label>
                                     <input type="number" step="0.01" name="{{ $name }}" id="m_{{ $name }}" class="form-control"
-                                           placeholder="Input Sample {{ $label }}">
+                                           placeholder="Input Sample {{ $labelText }}">
                                 </div>
                             @endforeach
                         </div>
@@ -133,10 +135,11 @@
                                 ];
                             @endphp
                             @foreach($bc13Fields as [$name, $label])
+                                @php $labelText = str_replace('_', ' ', $label); @endphp
                                 <div class="col-md-3 mb-3">
-                                    <label class="mb-1">{{ $label }}</label>
+                                    <label class="mb-1">{{ $labelText }}</label>
                                     <input type="number" step="0.01" name="{{ $name }}" id="m_{{ $name }}" class="form-control"
-                                           placeholder="Input Sample {{ $label }}">
+                                           placeholder="Input Sample {{ $labelText }}">
                                 </div>
                             @endforeach
                         </div>
@@ -162,7 +165,6 @@
 (function () {
     var $ = window.jQuery;
 
-    // today
     function todayYmd() {
         var t = new Date();
         var y = t.getFullYear();
@@ -171,7 +173,6 @@
         return y + '-' + m + '-' + d;
     }
 
-    // shift
     function detectShiftByNow() {
         var hh = (new Date()).getHours();
         if (hh >= 6 && hh < 16) return 'D';
@@ -179,11 +180,9 @@
         return 'N';
     }
 
-    // show modal
     $('#modal-ace').on('show.bs.modal', function () {
         var isUpdate = $('#ace_mode').val() === 'update';
         if (isUpdate) return;
-        // create
         $('#aceForm')[0].reset();
         $('#ace_mode').val('create');
         $('#aceFormAlert').addClass('d-none').empty();

@@ -125,13 +125,7 @@
                                     <table id="dt-all" class="table table-bordered w-100 text-center">
                                         @includeWhen(true, 'greensand._thead')
                                         <tbody></tbody>
-                                        <tfoot>
-                                            <tr class="gs-summary-row">
-                                                @for ($i = 0; $i < 46; $i++)
-                                                    <th></th>
-                                                @endfor
-                                            </tr>
-                                        </tfoot>
+                                        {{-- TFOOT dibikin dinamis via JS (hindari scrollFoot ekstra) --}}
                                     </table>
                                 </div>
                             </div>
@@ -167,7 +161,7 @@
 
 @push('styles')
     <style>
-        /* HEADER Greensand */
+/* HEADER Greensand */
 #dt-all thead th {
   white-space: nowrap;
   text-align: center;
@@ -182,10 +176,10 @@
 
 #dt-all tfoot .gs-summary-row td {
   background: #fff;
-  font-size: .95rem;        /* samain dengan style lu sebelumnya */
-  line-height: 1.25;        /* hindari baris jadi terlalu tinggi/pendek */
-  padding: .5rem .75rem;    /* nyaman & konsisten dgn bootstrap */
-  height: auto !important;  /* pastikan gak terkunci tinggi */
+  font-size: .95rem;        /* sama dengan ACE */
+  line-height: 1.25;        /* konsisten */
+  padding: .5rem .75rem;    /* konsisten dengan Bootstrap */
+  height: auto !important;  /* jangan kunci tinggi */
   text-align: center;
   vertical-align: middle;
   border-top: 1px solid #dee2e6 !important; /* border tipis antar summary row */
@@ -194,7 +188,6 @@
 /* warna judge */
 #dt-all tfoot td.j-ok { color: #2e7d32; font-weight: 600; }
 #dt-all tfoot td.j-ng { color: #c62828; font-weight: 600; }
-
     </style>
 @endpush
 
