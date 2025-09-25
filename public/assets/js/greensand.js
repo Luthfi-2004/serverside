@@ -343,7 +343,13 @@ $(function () {
                     pendingDeleteId = null;
                 });
         });
-
+    $(function () {
+        $("#shiftSelect").select2({
+            width: "100%",
+            placeholder:
+                $("#shiftSelect").data("placeholder") || "Select shift",
+        });
+    });
     // filter
     $("#filterDate").datepicker({
         format: "dd-mm-yyyy",
