@@ -20,7 +20,7 @@
         return h >= 6 && h < 17 ? "D" : h >= 22 || h < 6 ? "N" : "S";
     }
 
-    // select2
+    // select2 (TANPA kunci di filter)
     function s2() {
         if (!$ || !$.fn.select2) return;
         $(".select2").select2({
@@ -30,11 +30,14 @@
                 return ph && ph.length ? ph : "-- Select --";
             },
         });
+        // ❌ Tidak disable shift di sini (filter bebas)
     }
 
     // datepicker
     function dp() {
         if (!$ || !$.fn.datepicker) return;
+
+        // FILTER: bebas
         var $f = $("#fDate");
         if ($f.length) {
             $f.datepicker({
@@ -43,18 +46,23 @@
                 orientation: "bottom",
             });
         }
+
+        // MODAL: kunci ke hari ini
         var $g = $("#gfnDate");
         if ($g.length) {
+            var todayDate = new Date();
             $g.datepicker({
                 format: "yyyy-mm-dd",
                 autoclose: true,
                 orientation: "bottom",
                 container: "#modal-greensand",
-            });
+                startDate: todayDate,
+                endDate: todayDate,
+            }).datepicker("setDate", todayDate);
         }
     }
 
-    // seeding
+    // seeding filter (boleh default, tapi tidak membatasi)
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
@@ -67,7 +75,7 @@
         }
     }
 
-    // sinkron
+    // sync nilai filter ke modal
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
@@ -82,7 +90,7 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
-    // ikon
+    // ikon filter
     if ($) {
         var $c = $("#filterCollapse"),
             $i = $("#filterIcon"),
@@ -225,7 +233,6 @@
         } catch (_) {}
     }
 
-    // resize
     var _resizeTimer = null;
     function onWinResize() {
         if (_resizeTimer) clearTimeout(_resizeTimer);
@@ -237,7 +244,7 @@
         if (e.target && e.target.classList.contains("gfn-gram")) recalc();
     });
 
-    // autoload
+    // autoload modal
     if (window.openModalGFN) {
         $(function () {
             $("#modal-greensand").modal("show");
@@ -245,7 +252,7 @@
         });
     }
 
-    // duplikat
+    // notifikasi duplikat
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
@@ -328,8 +335,8 @@
                 var $form = $(this);
                 var d = ($form.find("#gfnDate").val() || "").trim();
                 var s = ($form.find('select[name="shift"]').val() || "").trim();
-                if (!d) return; // server
-                e.preventDefault(); // tahan
+                if (!d) return; // server will validate
+                e.preventDefault();
                 var dup = await checkDuplicate(d, s);
                 if (dup) {
                     showWarn(
@@ -340,36 +347,54 @@
                     );
                     return;
                 }
-                this.submit(); // submit
+                this.submit();
             });
         }
     });
 
-    // modal
+    // modal shown → di sinilah kita KUNCI
     if ($) {
         $(document).on("shown.bs.modal", "#modal-greensand", function () {
+            // Lock date ke hari ini
             if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
-                $("#gfnDate").datepicker({
-                    format: "yyyy-mm-dd",
-                    autoclose: true,
-                    orientation: "bottom",
-                    container: "#modal-greensand",
-                });
+                $("#gfnDate")
+                    .datepicker({
+                        format: "yyyy-mm-dd",
+                        autoclose: true,
+                        orientation: "bottom",
+                        container: "#modal-greensand",
+                        startDate: new Date(),
+                        endDate: new Date(),
+                    })
+                    .datepicker("setDate", new Date());
             }
+
+            // Sync nilai filter
             syncModalFromFilter();
+
+            // Set default jika kosong
             var $gd = $("#gfnDate"),
                 $gs = $('select[name="shift"]');
+
             if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
                 $gd.val(today());
                 if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
             }
-            if ($gs.length && (!$gs.val() || !$gs.val().trim())) {
-                $gs.val(autoShift()).trigger("change");
+
+            // Kunci shift di modal: hanya shift saat ini yang enabled
+            var cs = autoShift();
+            if ($gs.length) {
+                $gs.find("option").prop("disabled", false); // reset dulu
+                $gs.find("option").each(function () {
+                    var v = $(this).val();
+                    if (v && v !== cs) $(this).prop("disabled", true);
+                });
+                $gs.val(cs).trigger("change");
             }
         });
     }
 
-    // hapus
+    // hapus (tetap)
     if ($) {
         $(document).on("click", ".btn-delete-gs", function () {
             var d = $(this).data("gfn-date"),
