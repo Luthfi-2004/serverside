@@ -19,7 +19,8 @@
 
                     {{-- FLASH (auto-dismiss) --}}
                     @if(session('status'))
-                        <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-timeout="3000">
+                        <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert"
+                            data-timeout="3000">
                             {{ session('status') }}
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -27,7 +28,8 @@
                         </div>
                     @endif
                     @if($errors->any())
-                        <div class="alert alert-danger alert-dismissible fade show auto-dismiss mb-2" role="alert" data-timeout="5000">
+                        <div class="alert alert-danger alert-dismissible fade show auto-dismiss mb-2" role="alert"
+                            data-timeout="5000">
                             {{ $errors->first() }}
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -273,24 +275,29 @@
 
         {{-- Auto-dismiss flash (robust with Bootstrap fallback) --}}
         <script>
-        (function () {
-          var $ = window.jQuery;
-          if (!$) return;
-          $(function () {
-            $('.alert.auto-dismiss').each(function () {
-              var $el = $(this);
-              var ms = parseInt($el.attr('data-timeout'), 10);
-              if (!Number.isFinite(ms) || ms < 0) ms = 3000;
-              setTimeout(function () {
-                var hasBs = typeof $.fn.alert === 'function';
-                if (hasBs) {
-                  try { $el.alert('close'); return; } catch (e) {}
-                }
-                $el.fadeOut(200, function(){ $(this).remove(); });
-              }, ms);
-            });
-          });
-        })();
+            (function () {
+                var $ = window.jQuery;
+                if (!$) return;
+                $(function () {
+                    $('.alert.auto-dismiss').each(function () {
+                        var $el = $(this);
+                        var ms = parseInt($el.attr('data-timeout'), 10);
+                        if (!Number.isFinite(ms) || ms < 0) ms = 3000;
+                        setTimeout(function () {
+                            var hasBs = typeof $.fn.alert === 'function';
+                            if (hasBs) {
+                                try { $el.alert('close'); return; } catch (e) { }
+                            }
+                            $el.fadeOut(200, function () { $(this).remove(); });
+                        }, ms);
+                    });
+                });
+            })();
         </script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.time.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
+        <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
     @endpush
 @endsection

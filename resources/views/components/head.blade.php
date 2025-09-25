@@ -15,7 +15,6 @@
 <link rel="stylesheet" href="{{ asset('assets/libs/select2/css/select2.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/sweetalert2/sweetalert2.min.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/libs/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/libs/toastr/build/toastr.min.css') }}">
 <!-- App Css (LIGHT default) -->
 <link id="app-style" rel="stylesheet" href="{{ asset('assets/css/app.min.css') }}">
