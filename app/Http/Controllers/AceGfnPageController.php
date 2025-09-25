@@ -165,7 +165,9 @@ class AceGfnPageController extends Controller
             ->exists();
 
         if (!$existsToday) {
-            return back()->withErrors(['delete' => 'Tidak ada data untuk kombinasi tanggal/shift ini hari ini.']);
+            return back()->withErrors([
+                'delete' => 'Penghapusan hanya diperbolehkan untuk data yang dibuat pada hari yang sama.'
+            ]);
         }
 
         DB::transaction(function () use ($gfnDate, $shift, $sinceToday) {
