@@ -273,10 +273,14 @@ $(function () {
                       )
                     : $.post(greensandRoutes.store, formData);
 
+            // submit
             req.done(() => {
                 $("#modal-greensand").modal("hide");
                 reloadAll();
+                if (window.gsFlash)
+                    gsFlash("Data berhasil disimpan.", "success");
             })
+
                 .fail((xhr) => {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
                         errorHandler.apply(xhr.responseJSON.errors);
@@ -313,10 +317,14 @@ $(function () {
             $.post(`${greensandRoutes.base}/${pendingDeleteId}`, {
                 _method: "DELETE",
             })
+                // delete
                 .done(() => {
                     $("#confirmDeleteModal").modal("hide");
                     reloadAll();
+                    if (window.gsFlash)
+                        gsFlash("Data berhasil dihapus.", "success");
                 })
+
                 .fail((xhr) => {
                     const msg =
                         xhr.status === 419

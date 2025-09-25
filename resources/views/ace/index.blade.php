@@ -17,6 +17,9 @@
                         </div>
                     </div>
 
+                    {{-- Flash holder untuk notifikasi AJAX --}}
+                    <div id="flash-holder"></div>
+
                     <div class="card mb-3">
                         <div id="filterHeader"
                             class="card-header bg-light d-flex align-items-center justify-content-between">
@@ -187,6 +190,23 @@
                 $('#filterIcon').toggleClass('ri-subtract-line ri-add-line');
             });
         });
+
+        // util flash ala GFN/Greensand
+        window.gsFlash = function (msg, type = 'success', timeout = 3000) {
+            var holder = document.getElementById('flash-holder');
+            if (!holder) return;
+            var div = document.createElement('div');
+            div.className = 'alert alert-' + type + ' alert-dismissible fade show auto-dismiss';
+            div.innerHTML = msg + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+            holder.prepend(div);
+            // auto close
+            setTimeout(function () {
+                if (window.jQuery && jQuery.fn.alert) {
+                    try { jQuery(div).alert('close'); return; } catch (e) {}
+                }
+                div.parentNode && div.parentNode.removeChild(div);
+            }, timeout);
+        };
     </script>
     <script>
         window.aceRoutes = {
