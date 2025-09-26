@@ -365,10 +365,11 @@ $(function () {
     $("#btnRefresh")
         .off("click")
         .on("click", function () {
-            $("#filterDate").datepicker("setDate", helpers.todayDdMmYyyy());
+            $("#filterDate").datepicker("setDate", new Date());
             $("#shiftSelect").val(helpers.detectShiftByNow()).trigger("change");
             $("#keywordInput").val("");
             reloadAll();
+            if (window.gsFlash) gsFlash("Filter direset.", "secondary");
         });
 
     // columns
