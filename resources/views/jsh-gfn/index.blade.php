@@ -232,8 +232,7 @@
                 </div>
                 <div class="modal-body">
                     <p id="confirmDeleteText" class="mb-0">
-                        Are you sure you want to delete data for <b><span id="delDateText">—</span></b>
-                        (Shift <b><span id="delShiftText">—</span></b>) created today?
+                        Are you sure you want to delete this data?
                     </p>
                 </div>
                 <div class="modal-footer">
