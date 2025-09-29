@@ -17,7 +17,6 @@
             </div>
           </div>
 
-          {{-- FLASH (auto-dismiss) --}}
           @if(session('status'))
             <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-timeout="3000">
               {{ session('status') }}
@@ -249,6 +248,8 @@
       }
       $__recap = $displayRecap ?? null;
     @endphp
+
+    {{-- HANYA data/config di Blade --}}
     <script>
       window.gfnChartData = {
         rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
@@ -260,33 +261,16 @@
     </script>
     @if(session('open_modal'))
       <script>window.openModalGFN = true;</script>
-    @endif
-    <script src="{{ asset('assets/js/gfn-aceline.js') }}"></script>
+    @endif>
 
-    {{-- Auto-dismiss flash --}}
-    <script>
-      (function () {
-        var $ = window.jQuery;
-        if (!$) return;
-        $(function () {
-          $('.alert.auto-dismiss').each(function () {
-            var $el = $(this);
-            var ms = parseInt($el.attr('data-timeout'), 10);
-            if (!Number.isFinite(ms) || ms < 0) ms = 3000;
-            setTimeout(function () {
-              if (typeof $.fn.alert === 'function') {
-                try { $el.alert('close'); return; } catch (e) { }
-              }
-              $el.fadeOut(200, function () { $(this).remove(); });
-            }, ms);
-          });
-        });
-      })();
-    </script>
+    {{-- Library grafik Flot (tetap dari Blade) --}}
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.time.js') }}"></script>
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
     <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
+
+    {{-- App JS --}}
+    <script src="{{ asset('assets/js/gfn-aceline.js') }}" defer></script>
   @endpush
 @endsection

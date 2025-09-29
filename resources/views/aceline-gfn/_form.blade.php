@@ -11,17 +11,17 @@
         <div class="row mb-3">
           <div class="col-xl-6 col-lg-6 mb-2">
             <label class="form-label mb-1">Tanggal</label>
-            <input id="gfnDate" type="text" name="gfn_date" class="form-control"
-                   value="{{ old('gfn_date') }}" placeholder="YYYY-MM-DD" autocomplete="off">
+            <input id="gfnDate" type="text" name="gfn_date" class="form-control" value="" placeholder="YYYY-MM-DD"
+              autocomplete="off">
             @error('gfn_date') <small class="text-danger">{{ $message }}</small> @enderror
           </div>
           <div class="col-xl-6 col-lg-6 mb-2">
             <label class="form-label mb-1">Shift</label>
             <select class="form-control select2" name="shift" data-placeholder="Pilih Shift">
               <option value="" hidden>Pilih Shift</option>
-              <option value="D" @selected(old('shift')==='D')>D</option>
-              <option value="S" @selected(old('shift')==='S')>S</option>
-              <option value="N" @selected(old('shift')==='N')>N</option>
+              <option value="D">D</option>
+              <option value="S">S</option>
+              <option value="N">N</option>
             </select>
             @error('shift') <small class="text-danger">{{ $message }}</small> @enderror
           </div>
@@ -41,14 +41,13 @@
             </thead>
             <tbody id="gfnBody">
               @foreach($meshes as $i => $mesh)
-                @php $oldGram = old('grams.'.$i, ''); $idx = $indices[$i] ?? 0; @endphp
+                @php $idx = $indices[$i] ?? 0; @endphp
                 <tr data-row="{{ $i }}" data-index="{{ $idx }}">
                   <td>{{ $loop->iteration }}</td>
                   <td>{{ $mesh }}</td>
                   <td>
-                    <input type="number" step="0.01" min="0"
-                           class="form-control form-control-sm text-right gfn-gram"
-                           name="grams[]" value="{{ $oldGram }}">
+                    <input type="number" step="0.01" min="0" max="1000" name="grams[]"
+                      class="form-control form-control-sm text-right gfn-gram" value="">
                   </td>
                   <td class="gfn-percent">0,00</td>
                   <td>{{ $idx }}</td>

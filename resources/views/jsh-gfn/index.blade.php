@@ -17,7 +17,6 @@
                         </div>
                     </div>
 
-                    {{-- FLASH (auto-dismiss) --}}
                     @if(session('status'))
                         <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert"
                             data-timeout="3000">
@@ -27,6 +26,7 @@
                             </button>
                         </div>
                     @endif
+
                     @if($errors->any())
                         <div class="alert alert-danger alert-dismissible fade show auto-dismiss mb-2" role="alert"
                             data-timeout="5000">
@@ -43,7 +43,8 @@
                             class="card-header bg-light d-flex justify-content-between align-items-center cursor-pointer"
                             data-toggle="collapse" data-target="#filterCollapse"
                             aria-expanded="{{ $isOpen ? 'true' : 'false' }}" aria-controls="filterCollapse">
-                            <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line align-middle mr-1"></i> Filter Data
+                            <h5 class="font-size-14 mb-0">
+                                <i class="ri-filter-2-line align-middle mr-1"></i> Filter Data
                             </h5>
                             <i id="filterIcon" class="{{ $isOpen ? 'ri-subtract-line' : 'ri-add-line' }}"></i>
                         </div>
@@ -141,6 +142,7 @@
                                                     terakhir.</td>
                                             </tr>
                                         @endforelse
+
                                         @if(!empty($displayRecap))
                                             <tr>
                                                 <th colspan="2" class="bg-dark text-white">TOTAL</th>
@@ -196,6 +198,7 @@
                                         </table>
                                     </div>
                                 </div>
+
                                 <div class="col-lg-6">
                                     <div class="card h-100">
                                         <div class="card-body d-flex flex-column">
@@ -206,10 +209,12 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
                     @include('jsh-gfn._form', ['meshes' => $meshes, 'indices' => $indices])
+
                 </div>
             </div>
         </div>
@@ -227,8 +232,8 @@
                 </div>
                 <div class="modal-body">
                     <p id="confirmDeleteText" class="mb-0">
-                        Are you sure you want to delete data for <b><span id="delDateText">—</span></b> (Shift <b><span
-                                id="delShiftText">—</span></b>) created today?
+                        Are you sure you want to delete data for <b><span id="delDateText">—</span></b>
+                        (Shift <b><span id="delShiftText">—</span></b>) created today?
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -259,6 +264,7 @@
             }
             $__recap = $displayRecap ?? null;
         @endphp
+
         <script>
             window.gfnChartData = {
                 rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
@@ -268,12 +274,19 @@
                 gfnExists: "{{ route('jshgfn.check-exists') }}"
             };
         </script>
+
         @if(session('open_modal'))
             <script>window.openModalGFN = true;</script>
-        @endif
+        @endif>
+
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.time.js') }}"></script>
+        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
+        <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
+
         <script src="{{ asset('assets/js/jsh-gfn.js') }}"></script>
 
-        {{-- Auto-dismiss flash (robust with Bootstrap fallback) --}}
         <script>
             (function () {
                 var $ = window.jQuery;
@@ -294,10 +307,5 @@
                 });
             })();
         </script>
-        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
-        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
-        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.time.js') }}"></script>
-        <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
-        <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
     @endpush
 @endsection

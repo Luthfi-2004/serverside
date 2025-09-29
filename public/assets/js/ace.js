@@ -1,43 +1,75 @@
-// ace.js - with inline GFN-like flash + live summary update (summary stops before dw29_vas)
+// public/assets/js/ace.js
 (function () {
     var $ = window.jQuery;
+
+    // ====== Guard basic ======
+    if (!$) {
+        console.error(
+            "jQuery not found. Please make sure jQuery is loaded before ace.js"
+        );
+        return;
+    }
     if (!window.aceRoutes) {
         console.error(
             "aceRoutes missing. Define it in Blade before loading ace.js"
         );
         return;
     }
+
     $.ajaxSetup({ cache: false });
 
-    // ====== FLASH ala GFN (inline di atas tabel) ======
-    function getFlashHost() {
-        var $host = $("#aceFlash");
-        if (!$host.length) {
-            $host = $(
-                '<div id="aceFlash" class="alert d-none mb-2" role="alert"></div>'
-            );
-            // taruh sebelum card paling pertama
-            var $firstCard = $(".page-content .card").first();
-            if ($firstCard.length) $firstCard.before($host);
-            else $("main, .container-fluid, body").first().prepend($host);
+    // ====== UI INIT (pindahan dari Blade) ======
+    function initPageUI() {
+        // Select2
+        try {
+            $("#shiftSelect,#productSelect").select2();
+        } catch (e) {
+            // ignore jika select2 belum ada
         }
-        return $host;
+
+        // Datepicker (yyyy-mm-dd sesuai Blade)
+        try {
+            $("#filterDate").datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true,
+                orientation: "bottom",
+            });
+        } catch (e) {
+            // ignore jika datepicker belum ada
+        }
+
+        // Toggle filter collapse
+        $("#filterHeader")
+            .off("click")
+            .on("click", function () {
+                $("#filterCollapse").slideToggle(120);
+                $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
+            });
     }
-    function flash(type, text) {
-        var $h = getFlashHost();
-        $h.removeClass(
-            "d-none alert-success alert-danger alert-warning alert-info alert-primary alert-secondary"
-        )
-            .addClass("alert-" + (type || "info"))
-            .html(text || "");
-        clearTimeout($h.data("tmr"));
-        var tmr = setTimeout(function () {
-            $h.addClass("d-none")
-                .removeClass("alert-" + (type || "info"))
-                .empty();
-        }, 2500);
-        $h.data("tmr", tmr);
+
+    // ====== FLASH util (pindahan dari Blade) ======
+    function gsFlash(msg, type = "success", timeout = 3000) {
+        var holder = document.getElementById("flash-holder");
+        if (!holder) return;
+        var div = document.createElement("div");
+        div.className =
+            "alert alert-" + type + " alert-dismissible fade show auto-dismiss";
+        div.innerHTML =
+            msg +
+            '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+        holder.prepend(div);
+        setTimeout(function () {
+            if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
+                try {
+                    jQuery(div).alert("close");
+                    return;
+                } catch (e) {}
+            }
+            if (div.parentNode) div.parentNode.removeChild(div);
+        }, timeout);
     }
+    // expose ke global
+    window.gsFlash = gsFlash;
 
     // ===== Helpers =====
     function normalizeFilterDate(s) {
@@ -123,14 +155,15 @@
         return s === "" || s === "-" || s === "–";
     }
 
-    (function initFilters() {
+    // Seed default filter (tanggal/shift) saat load
+    (function initFiltersDefaults() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
         if (!$d.val()) $d.val(todayYmd()).trigger("change");
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // ===== Table columns =====
+    // ===== Table Columns =====
     var columns = [
         {
             data: null,
@@ -185,15 +218,14 @@
     ];
 
     var START_DATA_COL = 7;
+    var SUMMARY_EXCLUDE_FROM = "dw29_vas"; // summary stop sebelum ini
 
-    // === HANYA untuk summary: ambil key sampai sebelum 'dw29_vas' ===
-    var SUMMARY_EXCLUDE_FROM = "dw29_vas";
     function getSummaryKeyOrder() {
         var order = [];
         for (var i = START_DATA_COL; i < columns.length; i++) {
             var k = columns[i] && columns[i].data;
             if (typeof k !== "string") continue;
-            if (k === SUMMARY_EXCLUDE_FROM) break; // stop sebelum dw29_vas
+            if (k === SUMMARY_EXCLUDE_FROM) break;
             order.push(k);
         }
         return order;
@@ -243,9 +275,7 @@
         if (!footObserver) {
             footObserver = new MutationObserver(function () {
                 var $t2 = $("#dt-ace");
-                if (!$t2.children("tfoot").length) {
-                    $t2.append($tfoot);
-                }
+                if (!$t2.children("tfoot").length) $t2.append($tfoot);
             });
             footObserver.observe($t[0], { childList: true });
         }
@@ -341,7 +371,7 @@
     function fillSummaryIntoFooter() {
         if (!aceRoutes.summary) return;
         var $tfoot = ensureFooterAttached();
-        var keyOrder = getSummaryKeyOrder(); // <<== pakai order yang dipangkas
+        var keyOrder = getSummaryKeyOrder();
         var params = currentFilters();
 
         $.ajax({
@@ -430,7 +460,7 @@
             cache: false,
             error: function (xhr) {
                 console.error("DT ajax error", xhr);
-                flash("danger", "Gagal memuat data.");
+                gsFlash("Gagal memuat data.", "danger");
             },
         },
         columns: columns,
@@ -463,7 +493,7 @@
     // ===== Filter buttons =====
     $("#btnSearch").on("click", function () {
         reloadTable(function () {
-            flash("info", "Filter diterapkan.");
+            gsFlash("Filter diterapkan.", "info");
         });
     });
     $("#btnRefresh").on("click", function () {
@@ -471,25 +501,30 @@
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
         $("#productSelect").val("").trigger("change");
         reloadTable(function () {
-            flash("secondary", "Filter direset.");
+            gsFlash("Filter direset.", "secondary");
         });
     });
     $("#btnExport").on("click", function () {
         if (!aceRoutes.export) return;
         var q = $.param(currentFilters());
         window.location.href = aceRoutes.export + (q ? "?" + q : "");
-        flash("info", "Menyiapkan file Excel…");
+        gsFlash("Menyiapkan file Excel…", "info");
     });
 
     // ===== Modal: Add =====
-    $(document).on("click", '[data-target="#modal-ace"]', function () {
-        $("#aceForm")[0].reset();
-        $("#ace_mode").val("create");
-        $("#ace_id").val("");
-        $("#mDate").val(todayYmd());
-        $("#mShift").val(detectShiftByNow());
-        $("#aceFormAlert").addClass("d-none").empty();
-    });
+    $(document).on(
+        "click",
+        '[data-toggle="modal"][data-target="#modal-ace"], [data-target="#modal-ace"]',
+        function () {
+            var form = document.getElementById("aceForm");
+            if (form && form.reset) form.reset();
+            $("#ace_mode").val("create");
+            $("#ace_id").val("");
+            $("#mDate").val(todayYmd());
+            $("#mShift").val(detectShiftByNow());
+            $("#aceFormAlert").addClass("d-none").empty();
+        }
+    );
 
     // ===== Edit =====
     $("#dt-ace").on("click", ".ace-edit", function () {
@@ -504,7 +539,7 @@
                 $("#modal-ace").modal("show");
             })
             .fail(function (xhr) {
-                flash("danger", "Gagal mengambil data untuk edit.");
+                gsFlash("Gagal mengambil data untuk edit.", "danger");
                 console.error(xhr.responseText || xhr.statusText);
             });
     });
@@ -527,11 +562,11 @@
             .done(function () {
                 $("#confirmDeleteModal").modal("hide");
                 reloadTable(function () {
-                    flash("success", "Data berhasil dihapus.");
+                    gsFlash("Data berhasil dihapus.", "success");
                 });
             })
             .fail(function (xhr) {
-                flash("danger", "Hapus data gagal.");
+                gsFlash("Hapus data gagal.", "danger");
                 console.error(xhr.responseText || xhr.statusText);
             });
     });
@@ -541,22 +576,26 @@
         e.preventDefault();
         var mode = $("#ace_mode").val(),
             id = $("#ace_id").val();
+
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
+
         var url = aceRoutes.store,
             method = "POST";
         if (mode === "update" && id) {
             url = aceRoutes.base + "/" + id;
-            method = "POST";
+            method = "POST"; // dengan _method PUT
         }
         var fd = new FormData(this);
         if (mode === "update") fd.append("_method", "PUT");
+
         var $btn = $("#aceSubmitBtn");
         $btn.prop("disabled", true)
             .data("orig", $btn.html())
             .html(
                 '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
             );
+
         $.ajax({
             url,
             type: method,
@@ -570,11 +609,11 @@
             .done(function () {
                 $("#modal-ace").modal("hide");
                 reloadTable(function () {
-                    flash(
-                        "success",
+                    gsFlash(
                         mode === "update"
                             ? "Data berhasil diperbarui."
-                            : "Data berhasil disimpan."
+                            : "Data berhasil disimpan.",
+                        "success"
                     );
                 });
             })
@@ -583,7 +622,7 @@
                     (xhr.responseJSON && xhr.responseJSON.message) ||
                     "Simpan data gagal.";
                 $("#aceFormAlert").removeClass("d-none").text(msg);
-                flash("danger", msg);
+                gsFlash(msg, "danger");
                 console.error(xhr.responseText || xhr.statusText);
             })
             .always(function () {
@@ -607,6 +646,11 @@
         if (data.date) $("#mDate").val(data.date);
         if (data.shift) $("#mShift").val(data.shift);
     }
+
+    // ===== Kickstart UI (pindahan dari Blade) =====
+    $(function () {
+        initPageUI();
+    });
 
     // seed summary once
     setTimeout(function () {
