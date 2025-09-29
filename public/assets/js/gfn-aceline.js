@@ -105,7 +105,7 @@
     $h.on("click", function () { /* handled by bs collapse */ });
   })();
 
-  // ===== Auto-dismiss flash (pindahan dari Blade) =====
+  // ===== Auto-dismiss flash =====
   function initAutoDismissFlash() {
     $('.alert.auto-dismiss').each(function () {
       var $el = $(this);
@@ -126,13 +126,15 @@
     if (!tb) return;
     var rows = tb.querySelectorAll("tr[data-row]"), tg = 0;
     rows.forEach(function (tr) {
-      var g = parseFloat((tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0");
+      var raw = (tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0";
+      var g = parseFloat(String(raw).replace(",", "."));
       if (!isNaN(g)) tg += g;
     });
     var tp = 0, tpi = 0;
     rows.forEach(function (tr) {
       var idx = parseFloat(tr.dataset.index || "0");
-      var g = parseFloat((tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0");
+      var raw = (tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0";
+      var g = parseFloat(String(raw).replace(",", "."));
       var p = tg > 0 ? (g / tg) * 100 : 0, pi = p * idx;
       var cP = tr.querySelector(".gfn-percent"), cPI = tr.querySelector(".gfn-percent-index");
       if (cP) cP.textContent = fmt(p, 2);
@@ -232,7 +234,7 @@
     if (host) host.classList.add("d-none");
   }
   async function checkDuplicate(date, shift) {
-    if (!(window.aceRoutes && aceRoutes.gfnExists)) return false; // fallback
+    if (!(window.aceRoutes && aceRoutes.gfnExists)) return false;
     var url = aceRoutes.gfnExists + "?date=" + encodeURIComponent(date || "") + (shift ? "&shift=" + encodeURIComponent(shift) : "");
     try {
       var res = await fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" });
@@ -243,8 +245,31 @@
   }
 
   // ===== Event bindings =====
+
+  // user bebas ketik koma/titik → recalc realtime
   document.addEventListener("input", function (e) {
-    if (e.target && e.target.classList.contains("gfn-gram")) recalc();
+    if (e.target && e.target.classList.contains("gfn-gram")) {
+      recalc();
+    }
+  });
+
+  // clamp 0..1000 pas blur/change
+  ["blur", "change"].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (e.target && e.target.classList.contains("gfn-gram")) {
+        var s = (e.target.value || "").trim().replace(",", ".");
+        var n = parseFloat(s);
+        if (!Number.isFinite(n)) {
+          e.target.value = "";
+          recalc();
+          return;
+        }
+        if (n > 1000) n = 1000;
+        if (n < 0) n = 0;
+        e.target.value = String(n);
+        recalc();
+      }
+    });
   });
 
   if (window.openModalGFN) {
@@ -295,13 +320,30 @@
     }
   });
 
+  // clear form pas Cancel/modal close
+  $(document).on("hidden.bs.modal", "#modal-greensand", function () {
+    var $m = $(this);
+
+    $m.find(".gfn-gram").val("");
+    var $gd = $m.find("#gfnDate");
+    $gd.val("");
+    if ($.fn.datepicker) { try { $gd.datepicker("update", ""); } catch (_) {} }
+    $m.find('select[name="shift"]').val("").trigger("change.select2");
+
+    $m.find(".gfn-percent").text("0,00");
+    $m.find(".gfn-percent-index").text("0,0");
+    $("#gfn-total-gram").text("0,00");
+    $("#gfn-total-percent").text("100,00");
+    $("#gfn-total-percent-index").text("0,0");
+  });
+
   // form submit duplicate check
   $(document).on("submit", "#form-greensand", async function (e) {
     hideWarn();
     var $form = $(this);
     var d = ($form.find("#gfnDate").val() || "").trim();
     var s = ($form.find('select[name="shift"]').val() || "").trim();
-    if (!d) return; // server-side validate
+    if (!d) return;
     e.preventDefault();
     var dup = await checkDuplicate(d, s);
     if (dup) {
