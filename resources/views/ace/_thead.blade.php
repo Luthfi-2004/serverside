@@ -8,7 +8,7 @@
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Sample Start</th>
     <th class="text-center align-middle" rowspan="2" style="min-width:120px;">Sample Finish</th>
 
-    <th colspan="14" class="text-center">MM Sample</th>
+    <th colspan="15" class="text-center">MM Sample</th> {{-- dari 14 -> 15 --}}
     <th colspan="6" class="text-center">Additive Additional</th>
     <th colspan="4" class="text-center">Pengecekan BC13</th>
   </tr>
@@ -28,6 +28,7 @@
     <th class="text-center" style="min-width:120px;">CB Weight</th>
     <th class="text-center" style="min-width:120px;">TP 50 Weight</th>
     <th class="text-center" style="min-width:120px;">SSI</th>
+    <th class="text-center" style="min-width:120px;">MOST</th> {{-- <-- DITAMBAH --}}
 
     {{-- Additive Additional --}}
     <th class="text-center" style="min-width:120px;">DW29 VAS</th>

@@ -31,6 +31,7 @@ class AceLine extends Model
         'cb_weight',
         'tp50_weight',
         'ssi',
+        'most',         // <-- DITAMBAH
         'dw29_vas',
         'dw29_debu',
         'dw31_vas',
@@ -51,10 +52,6 @@ class AceLine extends Model
     protected $casts = [
         'date' => 'date:Y-m-d',
 
-        // BIARKAN sample_start/finish TIDAK di-cast; formatnya sudah di-handle di controller@show()
-        // 'sample_start' => 'datetime:H:i',
-        // 'sample_finish'=> 'datetime:H:i',
-
         // numeric casts
         'p' => 'float',
         'c' => 'float',
@@ -69,6 +66,7 @@ class AceLine extends Model
         'cb_weight' => 'float',
         'tp50_weight' => 'float',
         'ssi' => 'float',
+        'most' => 'float',          // <-- DITAMBAH
         'dw29_vas' => 'float',
         'dw29_debu' => 'float',
         'dw31_vas' => 'float',

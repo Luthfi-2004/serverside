@@ -65,6 +65,7 @@
                                     ['cb_weight', 'CB Weight'],
                                     ['tp50_weight', 'TP 50 Weight'],
                                     ['ssi', 'SSI'],
+                                    ['most', 'MOST'], 
                                 ];
                             @endphp
                             @foreach($mmFields as [$name, $label])
@@ -139,33 +140,3 @@
         </form>
     </div>
 </div>
-
-@push('scripts')
-<script>
-(function(){
-    var $ = window.jQuery;
-    function todayYmd(){
-        var t = new Date();
-        var y = t.getFullYear();
-        var m = String(t.getMonth() + 1).padStart(2, '0');
-        var d = String(t.getDate()).padStart(2, '0');
-        return y + '-' + m + '-' + d;
-    }
-    function detectShiftByNow(){
-        var hh = new Date().getHours();
-        if(hh >= 6 && hh < 16) return 'D';
-        if(hh >= 16 && hh < 22) return 'S';
-        return 'N';
-    }
-    $('#modal-ace').on('show.bs.modal', function(){
-        var isUpdate = $('#ace_mode').val() === 'update';
-        if(isUpdate) return;
-        $('#aceForm')[0].reset();
-        $('#ace_mode').val('create');
-        $('#aceFormAlert').addClass('d-none').empty();
-        $('#mDate').val(todayYmd());
-        $('#mShift').val(detectShiftByNow());
-    });
-})();
-</script>
-@endpush

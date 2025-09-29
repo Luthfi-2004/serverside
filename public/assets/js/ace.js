@@ -23,9 +23,7 @@
         // Select2
         try {
             $("#shiftSelect,#productSelect").select2();
-        } catch (e) {
-            // ignore jika select2 belum ada
-        }
+        } catch (e) {}
 
         // Datepicker (yyyy-mm-dd sesuai Blade)
         try {
@@ -34,9 +32,7 @@
                 autoclose: true,
                 orientation: "bottom",
             });
-        } catch (e) {
-            // ignore jika datepicker belum ada
-        }
+        } catch (e) {}
 
         // Toggle filter collapse
         $("#filterHeader")
@@ -47,7 +43,7 @@
             });
     }
 
-    // ====== FLASH util (pindahan dari Blade) ======
+    // ====== FLASH util ======
     function gsFlash(msg, type = "success", timeout = 3000) {
         var holder = document.getElementById("flash-holder");
         if (!holder) return;
@@ -68,7 +64,6 @@
             if (div.parentNode) div.parentNode.removeChild(div);
         }, timeout);
     }
-    // expose ke global
     window.gsFlash = gsFlash;
 
     // ===== Helpers =====
@@ -155,7 +150,7 @@
         return s === "" || s === "-" || s === "–";
     }
 
-    // Seed default filter (tanggal/shift) saat load
+    // Seed default filter saat load
     (function initFiltersDefaults() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
@@ -191,6 +186,8 @@
         { data: "product_type_name", defaultContent: "-" },
         { data: "sample_start", render: toHm, defaultContent: "" },
         { data: "sample_finish", render: toHm, defaultContent: "" },
+
+        // MM Sample
         { data: "p", render: fmt, defaultContent: "" },
         { data: "c", render: fmt, defaultContent: "" },
         { data: "gt", render: fmt, defaultContent: "" },
@@ -205,12 +202,17 @@
         { data: "cb_weight", render: fmt, defaultContent: "" },
         { data: "tp50_weight", render: fmt, defaultContent: "" },
         { data: "ssi", render: fmt, defaultContent: "" },
+        { data: "most", render: fmt, defaultContent: "" }, // <-- DITAMBAH DI SINI
+
+        // Additive Additional
         { data: "dw29_vas", render: fmt, defaultContent: "" },
         { data: "dw29_debu", render: fmt, defaultContent: "" },
         { data: "dw31_vas", render: fmt, defaultContent: "" },
         { data: "dw31_id", render: fmt, defaultContent: "" },
         { data: "dw31_moldex", render: fmt, defaultContent: "" },
         { data: "dw31_sc", render: fmt, defaultContent: "" },
+
+        // BC13
         { data: "no_mix", render: fmt, defaultContent: "" },
         { data: "bc13_cb", render: fmt, defaultContent: "" },
         { data: "bc13_c", render: fmt, defaultContent: "" },
@@ -218,7 +220,8 @@
     ];
 
     var START_DATA_COL = 7;
-    var SUMMARY_EXCLUDE_FROM = "dw29_vas"; // summary stop sebelum ini
+    var SUMMARY_EXCLUDE_FROM = "dw29_vas"; 
+    var SUMMARY_SKIP_KEYS = { most: true };
 
     function getSummaryKeyOrder() {
         var order = [];
@@ -226,6 +229,7 @@
             var k = columns[i] && columns[i].data;
             if (typeof k !== "string") continue;
             if (k === SUMMARY_EXCLUDE_FROM) break;
+            if (SUMMARY_SKIP_KEYS[k]) continue;
             order.push(k);
         }
         return order;
@@ -525,7 +529,19 @@
             $("#aceFormAlert").addClass("d-none").empty();
         }
     );
+    $("#modal-ace").on("show.bs.modal", function () {
+        var isUpdate = $("#ace_mode").val() === "update";
+        if (isUpdate) return; // kalau update, biarkan data hasil .fillForm()
 
+        var form = document.getElementById("aceForm");
+        if (form && form.reset) form.reset();
+
+        $("#ace_mode").val("create");
+        $("#ace_id").val("");
+        $("#aceFormAlert").addClass("d-none").empty();
+        $("#mDate").val(todayYmd());
+        $("#mShift").val(detectShiftByNow());
+    });
     // ===== Edit =====
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
@@ -584,7 +600,7 @@
             method = "POST";
         if (mode === "update" && id) {
             url = aceRoutes.base + "/" + id;
-            method = "POST"; // dengan _method PUT
+            method = "POST";
         }
         var fd = new FormData(this);
         if (mode === "update") fd.append("_method", "PUT");
@@ -647,7 +663,7 @@
         if (data.shift) $("#mShift").val(data.shift);
     }
 
-    // ===== Kickstart UI (pindahan dari Blade) =====
+    // ===== Kickstart UI =====
     $(function () {
         initPageUI();
     });
