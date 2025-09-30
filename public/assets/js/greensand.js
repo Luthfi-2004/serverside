@@ -352,7 +352,7 @@ $(function () {
     });
     // filter
     $("#filterDate").datepicker({
-        format: "dd-mm-yyyy",
+        format: "yyyy-mm-dd",
         autoclose: true,
         orientation: "bottom",
     });
@@ -650,7 +650,7 @@ $(function () {
         });
 
     // init
-    $("#filterDate").datepicker("setDate", helpers.todayDdMmYyyy());
+    $("#filterDate").datepicker("setDate", new Date());
     $("#shiftSelect").val(helpers.detectShiftByNow()).trigger("change");
     reloadAll();
 });
