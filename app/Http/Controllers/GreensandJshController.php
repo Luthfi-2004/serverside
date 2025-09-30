@@ -8,6 +8,8 @@ use App\Models\GreensandJsh;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\GreensandExportFull;
 
 class GreensandJshController extends Controller
 {
@@ -124,6 +126,26 @@ class GreensandJshController extends Controller
         return response()->json(['summary' => $result]);
     }
 
+    public function export(Request $r)
+{
+    // Ambil parameter sama seperti greensand.js (date, shift, keyword, mm dari tab aktif)
+    $date    = $r->query('date');
+    $shift   = $r->query('shift');
+    $keyword = $r->query('keyword');
+    $mm      = $r->query('mm'); // "MM1" | "MM2" | null
+
+    $fname = 'Greensand_'
+        . ($mm ? $mm.'_' : '')
+        . ($date ? str_replace(['/', '-'], '', $date) : now('Asia/Jakarta')->format('Ymd'))
+        . ($shift ? '_'.$shift : '')
+        . '_'.now('Asia/Jakarta')->format('His')
+        . '.xlsx';
+
+    return Excel::download(
+        new GreensandExportFull($date, $shift, $keyword, $mm),
+        $fname
+    );
+}
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
