@@ -30,6 +30,7 @@ class GreensandJsh extends Model
         'mm_ig',
         'mm_cb_weight',
         'mm_tp50_weight',
+        'mm_tp50_height', // NEW
         'mm_ssi',
 
         // Additive
@@ -55,7 +56,7 @@ class GreensandJsh extends Model
         'bc10_temp',
         'bc11_temp',
 
-        // Moulding Data 
+        // Moulding Data
         'add_water_mm',
         'add_water_mm_2',
         'temp_sand_mm_1',

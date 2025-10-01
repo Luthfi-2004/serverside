@@ -17,12 +17,10 @@ class GreensandJshController extends Controller
     {
         return $this->makeResponse($request, 'MM1');
     }
-
     public function dataMM2(Request $request)
     {
         return $this->makeResponse($request, 'MM2');
     }
-
     public function dataAll(Request $request)
     {
         return $this->makeResponse($request, null);
@@ -59,6 +57,7 @@ class GreensandJshController extends Controller
             'mm_ig',
             'mm_cb_weight',
             'mm_tp50_weight',
+            'mm_tp50_height', // NEW (ikut disummary)
             'mm_ssi',
             'add_m3',
             'add_vsd',
@@ -91,6 +90,7 @@ class GreensandJshController extends Controller
             'mm_ig' => ['min' => 3, 'max' => 4],
             'mm_cb_weight' => ['min' => 163, 'max' => 170],
             'mm_tp50_weight' => ['min' => 141, 'max' => 144],
+            'mm_tp50_height' => ['min' => 48, 'max' => 52], // NEW: “50-an” → 48~52 mm
             'mm_ssi' => ['min' => 85, 'max' => 95],
         ];
 
@@ -127,40 +127,34 @@ class GreensandJshController extends Controller
     }
 
     public function export(Request $r)
-{
-    // Ambil parameter sama seperti greensand.js (date, shift, keyword, mm dari tab aktif)
-    $date    = $r->query('date');
-    $shift   = $r->query('shift');
-    $keyword = $r->query('keyword');
-    $mm      = $r->query('mm'); // "MM1" | "MM2" | null
+    {
+        $date = $r->query('date');
+        $shift = $r->query('shift');
+        $keyword = $r->query('keyword');
+        $mm = $r->query('mm'); // "MM1" | "MM2" | null
 
-    $fname = 'Greensand_'
-        . ($mm ? $mm.'_' : '')
-        . ($date ? str_replace(['/', '-'], '', $date) : now('Asia/Jakarta')->format('Ymd'))
-        . ($shift ? '_'.$shift : '')
-        . '_'.now('Asia/Jakarta')->format('His')
-        . '.xlsx';
+        $fname = 'Greensand_'
+            . ($mm ? $mm . '_' : '')
+            . ($date ? str_replace(['/', '-'], '', $date) : now('Asia/Jakarta')->format('Ymd'))
+            . ($shift ? '_' . $shift : '')
+            . '_' . now('Asia/Jakarta')->format('His')
+            . '.xlsx';
 
-    return Excel::download(
-        new GreensandExportFull($date, $shift, $keyword, $mm),
-        $fname
-    );
-}
+        return Excel::download(new GreensandExportFull($date, $shift, $keyword, $mm), $fname);
+    }
+
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
             $q = GreensandJsh::query();
-
             if ($mmFilter)
                 $q->where('mm', $mmFilter);
 
             $d = $request->filled('date') ? $this->toYmd($request->date) : null;
             if ($d)
                 $q->whereDate('date', $d);
-
             if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
-
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
@@ -190,6 +184,7 @@ class GreensandJshController extends Controller
                 'mm_ig',
                 'mm_cb_weight',
                 'mm_tp50_weight',
+                'mm_tp50_height', // NEW
                 'mm_ssi',
                 'add_m3',
                 'add_vsd',
@@ -235,9 +230,8 @@ class GreensandJshController extends Controller
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface) {
+                    if ($row->date instanceof \DateTimeInterface)
                         return $row->date->format('d-m-Y H:i:s');
-                    }
                     try {
                         return Carbon::parse($row->date)->format('d-m-Y H:i:s');
                     } catch (\Throwable $e) {
@@ -276,7 +270,6 @@ class GreensandJshController extends Controller
 
         $data = $this->mapRequestToModel($in, null, $day);
         $row = GreensandJsh::create($data);
-
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
 
@@ -346,9 +339,8 @@ class GreensandJshController extends Controller
 
     private function dayString($value): string
     {
-        if ($value instanceof \DateTimeInterface) {
+        if ($value instanceof \DateTimeInterface)
             return Carbon::instance($value)->toDateString();
-        }
         return Carbon::parse($value)->toDateString();
     }
 
@@ -362,7 +354,6 @@ class GreensandJshController extends Controller
 
         if ($ignoreId)
             $q->where('id', '!=', $ignoreId);
-
         return $q->exists();
     }
 
@@ -406,9 +397,7 @@ class GreensandJshController extends Controller
             $dateTime = "{$day} {$timeNow}";
         }
 
-        $shiftVal = $lockShift
-            ? ($existing->shift ?? null)
-            : ($in['shift'] ?? ($existing->shift ?? null));
+        $shiftVal = $lockShift ? ($existing->shift ?? null) : ($in['shift'] ?? ($existing->shift ?? null));
 
         return [
             'date' => $dateTime,
@@ -417,6 +406,7 @@ class GreensandJshController extends Controller
             'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
             'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),
             'mix_finish' => $in['mix_finish'] ?? ($existing->mix_finish ?? null),
+
             'mm_p' => $in['mm_p'] ?? ($existing->mm_p ?? null),
             'mm_c' => $in['mm_c'] ?? ($existing->mm_c ?? null),
             'mm_gt' => $in['mm_gt'] ?? ($existing->mm_gt ?? null),
@@ -430,24 +420,30 @@ class GreensandJshController extends Controller
             'mm_ig' => $in['mm_ig'] ?? ($existing->mm_ig ?? null),
             'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
             'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
+            'mm_tp50_height' => $in['mm_tp50_height'] ?? ($existing->mm_tp50_height ?? null), // NEW
             'mm_ssi' => $in['mm_ssi'] ?? ($existing->mm_ssi ?? null),
+
             'add_m3' => $in['add_m3'] ?? ($existing->add_m3 ?? null),
             'add_vsd' => $in['add_vsd'] ?? ($existing->add_vsd ?? null),
             'add_sc' => $in['add_sc'] ?? ($existing->add_sc ?? null),
+
             'bc12_cb' => $in['bc12_cb'] ?? ($existing->bc12_cb ?? null),
             'bc12_m' => $in['bc12_m'] ?? ($existing->bc12_m ?? null),
             'bc11_ac' => $in['bc11_ac'] ?? ($existing->bc11_ac ?? null),
             'bc11_vsd' => $in['bc11_vsd'] ?? ($existing->bc11_vsd ?? null),
             'bc16_cb' => $in['bc16_cb'] ?? ($existing->bc16_cb ?? null),
             'bc16_m' => $in['bc16_m'] ?? ($existing->bc16_m ?? null),
+
             'rs_time' => $in['rs_time'] ?? ($existing->rs_time ?? null),
             'rs_type' => $in['rs_type'] ?? ($existing->rs_type ?? null),
+
             'bc9_moist' => $in['bc9_moist'] ?? ($existing->bc9_moist ?? null),
             'bc10_moist' => $in['bc10_moist'] ?? ($existing->bc10_moist ?? null),
             'bc11_moist' => $in['bc11_moist'] ?? ($existing->bc11_moist ?? null),
             'bc9_temp' => $in['bc9_temp'] ?? ($existing->bc9_temp ?? null),
             'bc10_temp' => $in['bc10_temp'] ?? ($existing->bc10_temp ?? null),
             'bc11_temp' => $in['bc11_temp'] ?? ($existing->bc11_temp ?? null),
+
             'add_water_mm' => $in['add_water_mm'] ?? ($existing->add_water_mm ?? null),
             'add_water_mm_2' => $in['add_water_mm_2'] ?? ($existing->add_water_mm_2 ?? null),
             'temp_sand_mm_1' => $in['temp_sand_mm_1'] ?? ($existing->temp_sand_mm_1 ?? null),

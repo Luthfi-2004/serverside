@@ -83,6 +83,7 @@
                                     ['mm_ig', 'IG'],
                                     ['mm_cb_weight', 'CB Weight'],
                                     ['mm_tp50_weight', 'TP 50 Weight'],
+                                    ['mm_tp50_height', 'TP 50 Height'],
                                     ['mm_ssi', 'SSI'],
                                 ];
                             @endphp

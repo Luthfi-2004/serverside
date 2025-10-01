@@ -184,6 +184,7 @@ $(function () {
                 "mm_ig",
                 "mm_cb_weight",
                 "mm_tp50_weight",
+                "mm_tp50_height",
                 "mm_ssi",
                 "add_m3",
                 "add_vsd",
@@ -273,14 +274,12 @@ $(function () {
                       )
                     : $.post(greensandRoutes.store, formData);
 
-            // submit
             req.done(() => {
                 $("#modal-greensand").modal("hide");
                 reloadAll();
                 if (window.gsFlash)
                     gsFlash("Data berhasil disimpan.", "success");
             })
-
                 .fail((xhr) => {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
                         errorHandler.apply(xhr.responseJSON.errors);
@@ -317,14 +316,12 @@ $(function () {
             $.post(`${greensandRoutes.base}/${pendingDeleteId}`, {
                 _method: "DELETE",
             })
-                // delete
                 .done(() => {
                     $("#confirmDeleteModal").modal("hide");
                     reloadAll();
                     if (window.gsFlash)
                         gsFlash("Data berhasil dihapus.", "success");
                 })
-
                 .fail((xhr) => {
                     const msg =
                         xhr.status === 419
@@ -343,6 +340,8 @@ $(function () {
                     pendingDeleteId = null;
                 });
         });
+
+    // select2
     $(function () {
         $("#shiftSelect").select2({
             width: "100%",
@@ -350,6 +349,7 @@ $(function () {
                 $("#shiftSelect").data("placeholder") || "Select shift",
         });
     });
+
     // filter
     $("#filterDate").datepicker({
         format: "yyyy-mm-dd",
@@ -372,7 +372,7 @@ $(function () {
             if (window.gsFlash) gsFlash("Filter direset.", "secondary");
         });
 
-    // columns
+    // columns (Tambahkan mm_tp50_height setelah mm_tp50_weight)
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -394,6 +394,7 @@ $(function () {
         { data: "mm_ig", name: "mm_ig" },
         { data: "mm_cb_weight", name: "mm_cb_weight" },
         { data: "mm_tp50_weight", name: "mm_tp50_weight" },
+        { data: "mm_tp50_height", name: "mm_tp50_height" }, // NEW
         { data: "mm_ssi", name: "mm_ssi" },
         { data: "add_m3", name: "add_m3" },
         { data: "add_vsd", name: "add_vsd" },
@@ -412,7 +413,6 @@ $(function () {
         { data: "bc9_temp", name: "bc9_temp" },
         { data: "bc10_temp", name: "bc10_temp" },
         { data: "bc11_temp", name: "bc11_temp" },
-        // moulding
         { data: "add_water_mm", name: "add_water_mm" },
         { data: "add_water_mm_2", name: "add_water_mm_2" },
         { data: "temp_sand_mm_1", name: "temp_sand_mm_1" },
@@ -423,7 +423,6 @@ $(function () {
         { data: "total_sand", name: "total_sand" },
     ];
 
-    // defaults
     const baseColumnsWithDefaults = baseColumns.map((c) => ({
         ...c,
         defaultContent: "",
@@ -444,15 +443,13 @@ $(function () {
         ensureTfoot() {
             const $table = $("#dt-all");
             let $tfoot = $table.find("tfoot");
-            if (!$tfoot.length) {
-                $tfoot = $("<tfoot/>").appendTo($table);
-            }
+            if (!$tfoot.length) $tfoot = $("<tfoot/>").appendTo($table);
             return $tfoot;
         },
         render(summary) {
             const $tfoot = this.ensureTfoot();
 
-            // index
+            // index setelah penambahan mm_tp50_height
             const colIndex = {
                 mm_p: 7,
                 mm_c: 8,
@@ -467,26 +464,27 @@ $(function () {
                 mm_ig: 17,
                 mm_cb_weight: 18,
                 mm_tp50_weight: 19,
-                mm_ssi: 20,
-                add_m3: 21,
-                add_vsd: 22,
-                add_sc: 23,
-                bc12_cb: 24,
-                bc12_m: 25,
-                bc11_ac: 26,
-                bc11_vsd: 27,
-                bc16_cb: 28,
-                bc16_m: 29,
-                bc9_moist: 32,
-                bc10_moist: 33,
-                bc11_moist: 34,
-                bc9_temp: 35,
-                bc10_temp: 36,
-                bc11_temp: 37,
+                mm_tp50_height: 20, // NEW
+                mm_ssi: 21,
+                add_m3: 22,
+                add_vsd: 23,
+                add_sc: 24,
+                bc12_cb: 25,
+                bc12_m: 26,
+                bc11_ac: 27,
+                bc11_vsd: 28,
+                bc16_cb: 29,
+                bc16_m: 30,
+                // rs_time (31) & rs_type (32) tidak di-summary
+                bc9_moist: 33,
+                bc10_moist: 34,
+                bc11_moist: 35,
+                bc9_temp: 36,
+                bc10_temp: 37,
+                bc11_temp: 38,
             };
 
             const makeRow = (label, valuesMap) => {
-                // merge
                 let tds = `<td class="text-center font-weight-bold" colspan="7">${label}</td>`;
                 for (let i = 7; i < baseColumns.length; i++) {
                     const val = valuesMap?.[i] ?? "";
@@ -517,13 +515,15 @@ $(function () {
                 makeRow("AVG", rows.avg) +
                 makeRow("JUDGE", rows.judge);
             $tfoot.html(html);
-            // style
             $tfoot.find("td").addClass("text-center");
         },
     };
 
     // datatable
     function makeDt($el, url) {
+        // ---- guard: hindari re-init yang bikin header dobel
+        if ($.fn.dataTable.isDataTable($el)) return $el.DataTable();
+
         const isAll = $el.attr("id") === "dt-all";
         return $el.DataTable({
             processing: true,
@@ -556,6 +556,7 @@ $(function () {
                 : [[1, "desc"]],
             columns: baseColumnsWithDefaults,
             stateSave: false,
+            orderCellsTop: true, // <<< penting untuk multi-row thead
             drawCallback: function () {
                 if (isAll) {
                     const $tbody = $(this.api().table().body());
@@ -576,8 +577,7 @@ $(function () {
                         }
                         prevMM = mmText;
                     });
-                    // tfoot
-                    summaryManager.load();
+                    summaryManager.load(); // tfoot
                 }
             },
         });
@@ -628,20 +628,16 @@ $(function () {
         .off("click")
         .on("click", function () {
             if (!window.greensandRoutes || !greensandRoutes.export) return;
-
             const tab = helpers.getActiveTab();
             const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : ""; // "" = All
-
             const params = {
                 date: $("#filterDate").val() || "",
                 shift: $("#shiftSelect").val() || "",
                 keyword: helpers.getKeyword(),
             };
             if (mm) params.mm = mm;
-
-            const q = $.param(params); // sama seperti di ACE
+            const q = $.param(params);
             window.location.href = greensandRoutes.export + (q ? "?" + q : "");
-
             if (window.gsFlash) gsFlash("Menyiapkan file Excel…", "info");
         });
 
