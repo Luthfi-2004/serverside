@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AceLineExportFull;
 
 class AceLineController extends Controller
 {
@@ -322,13 +324,19 @@ class AceLineController extends Controller
 
     public function export(Request $request)
     {
-        return response()->json([
-            'todo' => 'Implement Excel export (Maatwebsite\\Excel)',
-            'filters' => [
-                'date' => $this->ymd($request->get('date')),
-                'shift' => $request->get('shift'),
-                'product_type_id' => $request->get('product_type_id'),
-            ],
-        ]);
+        $ymd = $this->ymd($request->get('date'));
+        $shift = $request->get('shift');
+        $ptId = $request->get('product_type_id');
+
+        $fname = 'ACE_' .
+            ($ymd ? str_replace('-', '', $ymd) : date('Ymd')) .
+            ($shift ? '_' . $shift : '') .
+            ($ptId ? '_PT' . $ptId : '') .
+            '_' . date('His') . '.xlsx';
+
+        return Excel::download(
+            new AceLineExportFull($ymd, $shift, $ptId),
+            $fname
+        );
     }
 }

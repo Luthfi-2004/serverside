@@ -624,29 +624,25 @@ $(function () {
     window.reloadAll = reloadAll;
 
     // export
-    $(document)
-        .off("click", "#btnExport")
-        .on("click", "#btnExport", function (e) {
-            e.preventDefault();
+    $("#btnExport")
+        .off("click")
+        .on("click", function () {
+            if (!window.greensandRoutes || !greensandRoutes.export) return;
+
             const tab = helpers.getActiveTab();
-            const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
+            const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : ""; // "" = All
 
-            if (!window.greensandRoutes?.export) {
-                console.error(
-                    'Export route missing. Pastikan di Blade: route("greensand.export")'
-                );
-                return;
-            }
+            const params = {
+                date: $("#filterDate").val() || "",
+                shift: $("#shiftSelect").val() || "",
+                keyword: helpers.getKeyword(),
+            };
+            if (mm) params.mm = mm;
 
-            const u = new URL(
-                window.greensandRoutes.export,
-                window.location.origin
-            );
-            u.searchParams.set("date", $("#filterDate").val() || "");
-            u.searchParams.set("shift", $("#shiftSelect").val() || "");
-            u.searchParams.set("keyword", helpers.getKeyword());
-            if (mm) u.searchParams.set("mm", mm);
-            window.location.href = u.toString();
+            const q = $.param(params); // sama seperti di ACE
+            window.location.href = greensandRoutes.export + (q ? "?" + q : "");
+
+            if (window.gsFlash) gsFlash("Menyiapkan file Excel…", "info");
         });
 
     // init
