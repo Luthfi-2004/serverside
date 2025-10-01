@@ -105,7 +105,8 @@
                                     <table id="dt-ace" class="table table-bordered w-100 text-center">
                                         @include('ace._thead')
                                         <tbody></tbody>
-                                        <tfoot class="d-none" id="ace-foot"></tfoot>
+                                        {{-- IMPORTANT: jangan d-none. Biar selalu terlihat, JS akan isi --}}
+                                        <tfoot id="ace-foot"></tfoot>
                                     </table>
                                 </div>
                             </div>
