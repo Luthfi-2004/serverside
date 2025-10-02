@@ -23,6 +23,7 @@ class GreensandJsh extends Model
         'mm_cb_mm',
         'mm_cb_lab',
         'mm_m',
+        'machine_no',
         'mm_bakunetsu',
         'mm_ac',
         'mm_tc',
@@ -73,5 +74,6 @@ class GreensandJsh extends Model
         'mix_start' => 'string',
         'mix_finish' => 'string',
         'rs_time' => 'string',
+        'machine_no' => 'string',
     ];
 }

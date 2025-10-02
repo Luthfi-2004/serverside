@@ -64,10 +64,12 @@ class GreensandJshController extends Controller
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
                     $x->where('mix_ke', 'like', "%{$kw}%")
-                        ->orWhere('rs_type', 'like', "%{$kw}%");
+                      ->orWhere('rs_type', 'like', "%{$kw}%")
+                      ->orWhere('machine_no', 'like', "%{$kw}%"); // <-- NEW: cari nomor mesin juga
                 });
             }
 
+            // <-- NEW: tambahkan 'machine_no' di select dan posisikan setelah mm_m
             $q->select([
                 'id',
                 'date',
@@ -82,6 +84,7 @@ class GreensandJshController extends Controller
                 'mm_cb_mm',
                 'mm_cb_lab',
                 'mm_m',
+                'machine_no',        // <-- NEW
                 'mm_bakunetsu',
                 'mm_ac',
                 'mm_tc',
@@ -242,6 +245,7 @@ class GreensandJshController extends Controller
             'mix_start' => 'nullable|date_format:H:i',
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
+            'machine_no' => 'nullable|string|max:50', // <-- NEW: rule nomor mesin (bebas isi)
         ]);
     }
 
@@ -323,6 +327,9 @@ class GreensandJshController extends Controller
             'mm_cb_mm' => $in['mm_cb_mm'] ?? ($existing->mm_cb_mm ?? null),
             'mm_cb_lab' => $in['mm_cb_lab'] ?? ($existing->mm_cb_lab ?? null),
             'mm_m' => $in['mm_m'] ?? ($existing->mm_m ?? null),
+
+            'machine_no' => $in['machine_no'] ?? ($existing->machine_no ?? null), // <-- NEW
+
             'mm_bakunetsu' => $in['mm_bakunetsu'] ?? ($existing->mm_bakunetsu ?? null),
             'mm_ac' => $in['mm_ac'] ?? ($existing->mm_ac ?? null),
             'mm_tc' => $in['mm_tc'] ?? ($existing->mm_tc ?? null),

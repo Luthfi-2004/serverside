@@ -84,6 +84,7 @@
                                     ['mm_cb_mm', 'CB MM'],
                                     ['mm_cb_lab', 'CB Lab'],
                                     ['mm_m', 'Moisture'],
+                                    ['machine_no', 'Nomor Mesin'],    // <-- NEW
                                     ['mm_bakunetsu', 'Bakunetsu'],
                                     ['mm_ac', 'AC'],
                                     ['mm_tc', 'TC'],
@@ -95,11 +96,17 @@
                                     ['mm_ssi', 'SSI'],
                                 ];
                             @endphp
+
                             @foreach ($mmFields as [$name, $label])
                                 <div class="col-md-3 mb-3">
                                     <label class="mb-1">{{ $label }}</label>
-                                    <input type="number" step="any" name="{{ $name }}" id="{{ $name }}" class="form-control"
-                                        placeholder="Enter Sample {{ $label }}">
+                                    @if ($name === 'machine_no')
+                                        <input type="text" name="machine_no" id="machine_no" class="form-control"
+                                            placeholder="Masukkan Nomor Mesin">
+                                    @else
+                                        <input type="number" step="any" name="{{ $name }}" id="{{ $name }}" class="form-control"
+                                            placeholder="Enter Sample {{ $label }}">
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
