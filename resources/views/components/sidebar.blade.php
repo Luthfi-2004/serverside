@@ -38,29 +38,30 @@
           </ul>
         </li>
         <!-- END JSH LINE -->
-
- <!-- ACE LINE -->
-<li class="{{ request()->routeIs('ace.*') || request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
-  <a href="javascript:void(0);" class="has-arrow waves-effect">
-    <i class="ri-flask-line"></i>
-    <span>ACE LINE</span>
-  </a>
-  <ul class="sub-menu" aria-expanded="false">
-    <li class="{{ request()->routeIs('ace.index') ? 'mm-active' : '' }}">
-      <a href="{{ route('ace.index') }}" class="{{ request()->routeIs('ace.index') ? 'active' : '' }}">
-        Daily Check
-      </a>
-    </li>
-    <li class="{{ request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
-      <a href="{{ route('acelinegfn.index') }}" class="{{ request()->routeIs('acelinegfn.*') ? 'active' : '' }}">
-        GFN
-      </a>
-    </li>
-  </ul>
-</li>
-<!-- END ACE LINE -->
-
-
+        <li class="{{ request()->routeIs('ace.*') ? 'mm-active' : '' }}">
+          <a href="javascript:void(0);" class="has-arrow waves-effect">
+            <i class="ri-flask-line"></i>
+            <span>ACE LINE</span>
+          </a>
+          <ul class="sub-menu" aria-expanded="false">
+            <li class="{{ request()->routeIs('ace.index') ? 'mm-active' : '' }}">
+              <a href="{{ route('ace.index') }}" class="{{ request()->routeIs('ace.index') ? 'active' : '' }}">
+                Daily Check
+              </a>
+            </li>
+            <li class="{{ request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
+              <a href="{{ route('acelinegfn.index') }}"
+                class="{{ request()->routeIs('acelinegfn.*') ? 'active' : '' }}">
+                GFN
+              </a>
+            </li>
+            <li class="{{ request()->routeIs('ace.standards') ? 'mm-active' : '' }}">
+              <a href="{{ route('ace.standards') }}" class="{{ request()->routeIs('ace.standards') ? 'active' : '' }}">
+                Standards
+              </a>
+            </li>
+          </ul>
+        </li>
 
       </ul>
     </div>

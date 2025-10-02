@@ -1,14 +1,15 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <title>@yield('title', $title ?? 'SandLab')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-
-    {{-- Head --}}
+    {{-- Head (CSS utama, meta, dll) --}}
     @include('components.head')
+
+    {{-- Styles yang dipush dari halaman (MUSTI di HEAD) --}}
+    @stack('styles')
 </head>
 
 <body data-sidebar="dark">
@@ -21,20 +22,23 @@
 
         {{-- Content --}}
         <div class="main-content">
-            @yield('content') 
+            @yield('content')
         </div>
-        
+
         {{-- Rightbar --}}
         @include('components.rightbar')
-        
+
         {{-- Overlay --}}
         <div class="rightbar-overlay"></div>
-        
-        {{-- Scripts --}}
-        @include('components.footer') </div>
-        @include('components.scripts')
-        @stack('scripts')
-        @stack('styles')
-</body>
 
+        {{-- Footer (kalau footer HTML, bukan scripts) --}}
+        @include('components.footer')
+    </div>
+
+    {{-- Scripts (JS utama) --}}
+    @include('components.scripts')
+
+    {{-- Scripts yang dipush dari halaman (di akhir BODY) --}}
+    @stack('scripts')
+</body>
 </html>

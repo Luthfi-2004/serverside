@@ -1,5 +1,5 @@
 <thead class="table-dark">
-  {{-- ROW 1: GROUP HEADERS --}}
+  {{-- ROW 1 (group headers) sama seperti punyamu --}}
   <tr>
     <th class="text-center align-middle" rowspan="5" style="min-width:120px;">Action</th>
     <th class="text-center align-middle" rowspan="5" style="min-width:80px;">No</th>
@@ -8,109 +8,122 @@
     <th class="text-center align-middle" rowspan="5" style="min-width:140px;">Type Product</th>
     <th class="text-center align-middle" rowspan="5" style="min-width:120px;">Sample Start</th>
     <th class="text-center align-middle" rowspan="5" style="min-width:120px;">Sample Finish</th>
-
     <th colspan="15" class="text-center">MM Sample</th>
     <th colspan="6"  class="text-center">Additive Additional</th>
     <th colspan="4"  class="text-center">Pengecekan BC13</th>
   </tr>
 
-  @php
-    $COL_MM   = ['P','C','G.T','Cb Lab','Moisture','Nomor Mesin','Bakunetsu','AC','TC','VSD','IG','CB Weight','TP 50 Weight','SSI','MOIST'];
-    $COL_ADD  = ['DW29 VAS','DW29 Debu','DW31 VAS','DW31 ID','DW31 Moldex','DW31 SC'];
-    $COL_BC13 = ['NO Mix','BC13 CB','BC13 C','BC13 M'];
+@php
+    use Illuminate\Support\Facades\DB;
 
-    // semua kolom yang di-merge rowspan=4
-    $ROWSPAN4 = [
-      'Nomor Mesin','MOIST',
-      'DW29 VAS','DW29 Debu',
-      'DW31 VAS','DW31 ID','DW31 Moldex','DW31 SC',
-      'NO Mix'
+    // Ambil satu baris standar ACE
+    $__std = DB::table('tb_ace_standards')->first();
+
+    // ===== FORMATTER ANGKA =====
+    // - 12.000  -> "12"
+    // - 12.3    -> "12,30"
+    // - 12.345  -> "12,35"
+    // - tanpa pemisah ribuan
+    $__fmt = function($v) {
+        if ($v === null || $v === '') return '';
+        if (!is_numeric($v)) return (string)$v;
+        $n = (float)$v;
+        if (floor($n) == $n) {
+            return (string)intval($n);              // 12
+        }
+        // 2 desimal, pakai koma, tanpa ribuan
+        return number_format($n, 2, ',', '');       // 12,34
+    };
+
+    $LABEL = [
+      'p'=>'P','c'=>'C','gt'=>'G.T','cb_lab'=>'Cb Lab','moisture'=>'Moisture',
+      'machine_no'=>'Nomor Mesin','bakunetsu'=>'Bakunetsu','ac'=>'AC','tc'=>'TC',
+      'vsd'=>'VSD','ig'=>'IG','cb_weight'=>'CB Weight','tp50_weight'=>'TP 50 Weight','ssi'=>'SSI','most'=>'MOIST',
+      'dw29_vas'=>'DW29 VAS','dw29_debu'=>'DW29 Debu','dw31_vas'=>'DW31 VAS','dw31_id'=>'DW31 ID','dw31_moldex'=>'DW31 Moldex','dw31_sc'=>'DW31 SC',
+      'no_mix'=>'NO Mix','bc13_cb'=>'BC13 CB','bc13_c'=>'BC13 C','bc13_m'=>'BC13 M',
     ];
 
     $STD = [
-      'P' => ['range'=>'150 ~ 240','unit'=>'g / Cm²','freq'=>'min 4x/shift'],
-      'C' => ['range'=>'16.0 ~ 21.0','unit'=>'Mpa','freq'=>'min 4x/shift'],
-      'G.T' => ['range'=>'400 ~ 700','unit'=>'g / Cm²','freq'=>'min 2x/shift'],
-      'Cb Lab' => ['range'=>'33 ~ 43','unit'=>'%','freq'=>'min 4x/shift'],
-      'Moisture' => ['range'=>'3.0 ~ 4.0','unit'=>'%','freq'=>'min 4x/shift'],
-      'Bakunetsu' => ['range'=>'Max 80','unit'=>'%','freq'=>'min 1x/shift'],
-      'AC' => ['range'=>'8.0 ~ 11.0','unit'=>'%','freq'=>'min 1x/shift'],
-      'TC' => ['range'=>'10.0 ~ 16.0','unit'=>'%','freq'=>'min 1x/shift'],
-      'VSD' => ['range'=>'0.2 ~ 0.7','unit'=>'%','freq'=>'min 1x/shift'],
-      'IG' => ['range'=>'2.0 ~ 3.0','unit'=>'%','freq'=>'min 1x/shift'],
-      'CB Weight' => ['range'=>'-','unit'=>'g','freq'=>'min 4x/shift'],
-      'TP 50 Weight' => ['range'=>'-','unit'=>'g','freq'=>'min 4x/shift'],
-      'SSI' => ['range'=>'Min 90','unit'=>'%','freq'=>'min 1x/shift'],
-
-      // BC13
-      'BC13 CB' => ['range'=>'33 ~ 43','unit'=>'Lab','freq'=>'min 6x/shift'],
-      'BC13 C'  => ['range'=>'16.0 ~ 21.0','unit'=>'Mpa','freq'=>'min 6x/shift'],
-      'BC13 M'  => ['range'=>'3.3 ~ 4.0','unit'=>'%','freq'=>'min 6x/shift'],
+      'p'=>['unit'=>'g / Cm²','freq'=>'min 4x/shift'],
+      'c'=>['unit'=>'Mpa','freq'=>'min 4x/shift'],
+      'gt'=>['unit'=>'g / Cm²','freq'=>'min 2x/shift'],
+      'cb_lab'=>['unit'=>'%','freq'=>'min 4x/shift'],
+      'moisture'=>['unit'=>'%','freq'=>'min 4x/shift'],
+      'bakunetsu'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'ac'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'tc'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'vsd'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'ig'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'cb_weight'=>['unit'=>'g','freq'=>'min 4x/shift'],
+      'tp50_weight'=>['unit'=>'g','freq'=>'min 4x/shift'],
+      'ssi'=>['unit'=>'%','freq'=>'min 1x/shift'],
+      'bc13_cb'=>['unit'=>'Lab','freq'=>'min 6x/shift'],
+      'bc13_c'=>['unit'=>'Mpa','freq'=>'min 6x/shift'],
+      'bc13_m'=>['unit'=>'%','freq'=>'min 6x/shift'],
     ];
-    $v = fn($k,$f) => $STD[$k][$f] ?? '-';
-  @endphp
 
-  {{-- ROW 2: COLUMN HEADERS --}}
+    $COL_MM   = ['p','c','gt','cb_lab','moisture','machine_no','bakunetsu','ac','tc','vsd','ig','cb_weight','tp50_weight','ssi','most'];
+    $COL_ADD  = ['dw29_vas','dw29_debu','dw31_vas','dw31_id','dw31_moldex','dw31_sc'];
+    $COL_BC13 = ['no_mix','bc13_cb','bc13_c','bc13_m'];
+
+    $ROWSPAN4 = ['machine_no','most','dw29_vas','dw29_debu','dw31_vas','dw31_id','dw31_moldex','dw31_sc','no_mix'];
+
+    // Range pakai formatter
+    $range = function($k) use($__std, $__fmt) {
+        if (!$__std) return '-';
+        $min = $__std->{$k.'_min'} ?? null;
+        $max = $__std->{$k.'_max'} ?? null;
+        if (is_null($min) && is_null($max)) return '-';
+        if (!is_null($min) && !is_null($max)) return $__fmt($min).' ~ '.$__fmt($max);
+        return !is_null($min) ? '≥ '.$__fmt($min) : '≤ '.$__fmt($max);
+    };
+
+    $unit = fn($k) => $STD[$k]['unit'] ?? '-';
+    $freq = fn($k) => $STD[$k]['freq'] ?? '-';
+@endphp
+
   <tr>
-    @foreach($COL_MM as $c)
-      @if(in_array($c,$ROWSPAN4))
-        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $c }}</th>
+    @foreach($COL_MM as $k)
+      @if(in_array($k,$ROWSPAN4))
+        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @else
-        <th class="text-center" style="min-width:120px;">{{ $c }}</th>
+        <th class="text-center" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @endif
     @endforeach
-    @foreach($COL_ADD as $c)
-      @if(in_array($c,$ROWSPAN4))
-        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $c }}</th>
+    @foreach($COL_ADD as $k)
+      @if(in_array($k,$ROWSPAN4))
+        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @else
-        <th class="text-center" style="min-width:120px;">{{ $c }}</th>
+        <th class="text-center" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @endif
     @endforeach
-    @foreach($COL_BC13 as $c)
-      @if(in_array($c,$ROWSPAN4))
-        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $c }}</th>
+    @foreach($COL_BC13 as $k)
+      @if(in_array($k,$ROWSPAN4))
+        <th class="text-center align-middle" rowspan="4" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @else
-        <th class="text-center" style="min-width:120px;">{{ $c }}</th>
+        <th class="text-center" style="min-width:120px;">{{ $LABEL[$k] ?? strtoupper($k) }}</th>
       @endif
     @endforeach
   </tr>
 
-  {{-- ROW 3: RANGE --}}
+  {{-- ROW 3: RANGE (dari DB Min/Max) --}}
   <tr class="std-row">
-    @foreach($COL_MM as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'range') }}</th> @endif
-    @endforeach
-    @foreach($COL_ADD as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="std-spacer"></th> @endif
-    @endforeach
-    @foreach($COL_BC13 as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'range') }}</th> @endif
-    @endforeach
+    @foreach($COL_MM as $k)   @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $range($k) }}</th> @endif @endforeach
+    @foreach($COL_ADD as $k)  @if(!in_array($k,$ROWSPAN4)) <th class="std-spacer"></th> @endif @endforeach
+    @foreach($COL_BC13 as $k) @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $range($k) }}</th> @endif @endforeach
   </tr>
 
-  {{-- ROW 4: UNIT --}}
+  {{-- ROW 4: UNIT (default/hardcoded) --}}
   <tr class="std-row">
-    @foreach($COL_MM as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'unit') }}</th> @endif
-    @endforeach
-    @foreach($COL_ADD as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="std-spacer"></th> @endif
-    @endforeach
-    @foreach($COL_BC13 as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'unit') }}</th> @endif
-    @endforeach
+    @foreach($COL_MM as $k)   @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $unit($k) }}</th> @endif @endforeach
+    @foreach($COL_ADD as $k)  @if(!in_array($k,$ROWSPAN4)) <th class="std-spacer"></th> @endif @endforeach
+    @foreach($COL_BC13 as $k) @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $unit($k) }}</th> @endif @endforeach
   </tr>
 
-  {{-- ROW 5: FREQ --}}
+  {{-- ROW 5: FREQ (default/hardcoded) --}}
   <tr class="std-row">
-    @foreach($COL_MM as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'freq') }}</th> @endif
-    @endforeach
-    @foreach($COL_ADD as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="std-spacer"></th> @endif
-    @endforeach
-    @foreach($COL_BC13 as $c)
-      @if(!in_array($c,$ROWSPAN4)) <th class="text-center">{{ $v($c,'freq') }}</th> @endif
-    @endforeach
+    @foreach($COL_MM as $k)   @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $freq($k) }}</th> @endif @endforeach
+    @foreach($COL_ADD as $k)  @if(!in_array($k,$ROWSPAN4)) <th class="std-spacer"></th> @endif @endforeach
+    @foreach($COL_BC13 as $k) @if(!in_array($k,$ROWSPAN4)) <th class="text-center">{{ $freq($k) }}</th> @endif @endforeach
   </tr>
 </thead>
