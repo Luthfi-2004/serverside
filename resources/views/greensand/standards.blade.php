@@ -128,39 +128,5 @@
 @endsection
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  // format input: koma -> titik, trim trailing zero
-  document.querySelectorAll('input.std-num').forEach(function (el) {
-    el.addEventListener('input', function () {
-      this.value = this.value.replace(',', '.');
-    });
-    el.addEventListener('blur', function () {
-      const v = this.value.trim();
-      if (!v) return;
-      const n = Number(v);
-      if (!isNaN(n)) {
-        let s = String(n);
-        if (s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');
-        this.value = s;
-      }
-    });
-  });
-
-  // auto dismiss alerts with class .auto-dismiss
-  document.querySelectorAll('.alert.auto-dismiss').forEach(function (el) {
-    var timeout = parseInt(el.getAttribute('data-timeout') || '3000', 10);
-    setTimeout(function () {
-      if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
-        try { jQuery(el).alert('close'); return; } catch (e) {}
-      }
-      el.classList.remove('show');
-      el.classList.add('fade');
-      setTimeout(function () {
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-      }, 150);
-    }, timeout);
-  });
-});
-</script>
+ <script src="{{ asset('assets/js/standards.js') }}" defer></script>
 @endpush

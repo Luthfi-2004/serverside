@@ -4,20 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\JshStandard;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class JshStandardController extends Controller
 {
-    // Halaman form tunggal untuk update standar
     public function index()
     {
         $std = JshStandard::query()->first();
         if (!$std) {
-            // tanpa seeder: auto-create 1 baris kosong
             $std = JshStandard::create([]);
         }
 
-        // daftar untuk rendering
         $groups = [
             'MM Sample' => [
                 'mm_p' => 'P',
@@ -38,56 +34,55 @@ class JshStandardController extends Controller
             ],
             'BC Sample' => [
                 'bc12_cb' => 'BC12 CB',
-                'bc12_m' => 'BC12 M',
+                'bc12_m'  => 'BC12 M',
                 'bc11_ac' => 'BC11 AC',
-                'bc11_vsd' => 'BC11 VSD',
+                'bc11_vsd'=> 'BC11 VSD',
                 'bc16_cb' => 'BC16 CB',
-                'bc16_m' => 'BC16 M',
+                'bc16_m'  => 'BC16 M',
             ],
         ];
 
         return view('greensand.standards', compact('std', 'groups'));
     }
 
-    // Update: tidak ada delete
     public function update(Request $r)
     {
         $std = JshStandard::query()->firstOrCreate([]);
 
-        $clean = [];
+        // Normalisasi nilai: koma -> titik; siapkan array simpan
+        $data = [];
         foreach (JshStandard::fields() as $f) {
-            foreach (['_min', '_max'] as $suf) {
-                $key = $f . $suf;
-                $val = $r->input($key);
-                if ($val === null || $val === '') {
-                    $clean[$key] = null;
-                    continue;
-                }
-                $val = str_replace(',', '.', $val);
-                $clean[$key] = $val;
-            }
-        }
-        $r->merge($clean);
+            $minKey = $f.'_min';
+            $maxKey = $f.'_max';
 
+            $min = $r->input($minKey);
+            $max = $r->input($maxKey);
+
+            $min = ($min === null || $min === '') ? null : str_replace(',', '.', (string)$min);
+            $max = ($max === null || $max === '') ? null : str_replace(',', '.', (string)$max);
+
+            // kalau dua-duanya angka & min>max => swap diam-diam
+            if ($min !== null && $max !== null && is_numeric($min) && is_numeric($max) && (float)$min > (float)$max) {
+                $tmp = $min; $min = $max; $max = $tmp;
+            }
+
+            $data[$minKey] = $min;
+            $data[$maxKey] = $max;
+        }
+
+        // validasi numeric saja (tanpa aturan min<=max, karena sudah auto-swap)
         $rules = [];
         foreach (JshStandard::fields() as $f) {
-            $rules[$f . '_min'] = ['nullable', 'numeric'];
-            $rules[$f . '_max'] = ['nullable', 'numeric'];
+            $rules[$f.'_min'] = ['nullable','numeric'];
+            $rules[$f.'_max'] = ['nullable','numeric'];
         }
-
-        $v = \Validator::make($r->all(), $rules);
+        $v = \Validator::make($data, $rules);
         if ($v->fails()) {
             return back()->withErrors($v)->withInput();
         }
 
-        $data = [];
-        foreach (JshStandard::fields() as $f) {
-            $data[$f . '_min'] = $r->input($f . '_min');
-            $data[$f . '_max'] = $r->input($f . '_max');
-        }
         $std->update($data);
 
         return back()->with('status', 'Standards updated.');
     }
-
 }

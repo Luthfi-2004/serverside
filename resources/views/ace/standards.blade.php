@@ -4,8 +4,14 @@
 @push('styles')
   <base href="{{ url('/') }}/">
   <style>
-    .std-table th, .std-table td { vertical-align: middle !important; }
-    .std-param { text-align: center; }
+    .std-table th,
+    .std-table td {
+      vertical-align: middle !important;
+    }
+
+    .std-param {
+      text-align: center;
+    }
   </style>
 @endpush
 
@@ -43,9 +49,11 @@
 
       @php
         $fmt = function ($v) {
-          if ($v === null || $v === '') return null;
-          $s = str_replace(',', '.', (string)$v);
-          if (is_numeric($s)) $s = rtrim(rtrim($s, '0'), '.');
+          if ($v === null || $v === '')
+            return null;
+          $s = str_replace(',', '.', (string) $v);
+          if (is_numeric($s))
+            $s = rtrim(rtrim($s, '0'), '.');
           return $s;
         };
       @endphp
@@ -86,35 +94,23 @@
                   @endphp
                   @foreach($fields as $key => $label)
                     @php
-                      $minRaw = old($key.'_min', $std->{$key.'_min'});
-                      $maxRaw = old($key.'_max', $std->{$key.'_max'});
+                      $minRaw = old($key . '_min', $std->{$key . '_min'});
+                      $maxRaw = old($key . '_max', $std->{$key . '_max'});
                       $min = $fmt($minRaw);
                       $max = $fmt($maxRaw);
                     @endphp
                     <tr>
                       <td class="std-param">{{ $label }}</td>
                       <td>
-                        <input
-                          type="text"
-                          inputmode="decimal"
-                          lang="en"
-                          pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center"
-                          name="{{ $key }}_min"
-                          value="{{ $min }}">
+                        <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}">
                       </td>
                       <td>
-                        <input
-                          type="text"
-                          inputmode="decimal"
-                          lang="en"
-                          pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center"
-                          name="{{ $key }}_max"
-                          value="{{ $max }}">
+                        <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}">
                       </td>
                       <td class="text-center">
-                        @if($min!==null || $max!==null)
+                        @if($min !== null || $max !== null)
                           <strong>{{ $min ?? '-' }} ~ {{ $max ?? '-' }}</strong>
                         @else
                           <span class="text-muted">-</span>
@@ -147,35 +143,23 @@
                   @endphp
                   @foreach($bc as $key => $label)
                     @php
-                      $minRaw = old($key.'_min', $std->{$key.'_min'});
-                      $maxRaw = old($key.'_max', $std->{$key.'_max'});
+                      $minRaw = old($key . '_min', $std->{$key . '_min'});
+                      $maxRaw = old($key . '_max', $std->{$key . '_max'});
                       $min = $fmt($minRaw);
                       $max = $fmt($maxRaw);
                     @endphp
                     <tr>
                       <td class="std-param">{{ $label }}</td>
                       <td>
-                        <input
-                          type="text"
-                          inputmode="decimal"
-                          lang="en"
-                          pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center"
-                          name="{{ $key }}_min"
-                          value="{{ $min }}">
+                        <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}">
                       </td>
                       <td>
-                        <input
-                          type="text"
-                          inputmode="decimal"
-                          lang="en"
-                          pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center"
-                          name="{{ $key }}_max"
-                          value="{{ $max }}">
+                        <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}">
                       </td>
                       <td class="text-center">
-                        @if($min!==null || $max!==null)
+                        @if($min !== null || $max !== null)
                           <strong>{{ $min ?? '-' }} ~ {{ $max ?? '-' }}</strong>
                         @else
                           <span class="text-muted">-</span>
@@ -202,37 +186,5 @@
 @endsection
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('input.std-num').forEach(function (el) {
-    el.addEventListener('input', function () {
-      this.value = this.value.replace(',', '.');
-    });
-    el.addEventListener('blur', function () {
-      const v = this.value.trim();
-      if (!v) return;
-      const n = Number(v);
-      if (!isNaN(n)) {
-        let s = String(n);
-        if (s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');
-        this.value = s;
-      }
-    });
-  });
-
-  document.querySelectorAll('.alert.auto-dismiss').forEach(function (el) {
-    var timeout = parseInt(el.getAttribute('data-timeout') || '3000', 10);
-    setTimeout(function () {
-      if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
-        try { jQuery(el).alert('close'); return; } catch (e) {}
-      }
-      el.classList.remove('show');
-      el.classList.add('fade');
-      setTimeout(function () {
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-      }, 150);
-    }, timeout);
-  });
-});
-</script>
+  <script src="{{ asset('assets/js/standards.js') }}" defer></script>
 @endpush
