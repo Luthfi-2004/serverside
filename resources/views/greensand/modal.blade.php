@@ -277,6 +277,23 @@
                                     placeholder="Enter Sample Total Sand">
                                 <div id="total_sand_error" class="invalid-feedback"></div>
                             </div>
+
+                            {{-- NEW fields --}}
+                            <div class="col-md-3 mb-3">
+                                <label class="mb-1">Add Water BC10</label>
+                                <input type="number" step="1" min="0" name="add_water_bc10" id="add_water_bc10"
+                                    class="form-control" placeholder="Masukkan Add Water BC10">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="mb-1">Lama BC 10 jalan (menit)</label>
+                                <input type="number" step="1" min="0" name="lama_bc10_jalan" id="lama_bc10_jalan"
+                                    class="form-control" placeholder="Masukkan durasi (menit)">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="mb-1">Rating Pasir Es</label>
+                                <input type="text" name="rating_pasir_es" id="rating_pasir_es" class="form-control"
+                                    placeholder="Masukkan rating (opsional)">
+                            </div>
                         </div>
                     </div>
                 </div>

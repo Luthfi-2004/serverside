@@ -211,6 +211,9 @@ $(function () {
                 "rcs_avg",
                 "add_bentonite_ma",
                 "total_sand",
+                "add_water_bc10", 
+                "lama_bc10_jalan", 
+                "rating_pasir_es",
             ];
             fields.forEach((f) => $("#" + f).val(data[f] ?? ""));
         },
@@ -423,6 +426,9 @@ $(function () {
         { data: "rcs_avg", name: "rcs_avg" },
         { data: "add_bentonite_ma", name: "add_bentonite_ma" },
         { data: "total_sand", name: "total_sand" },
+        { data: "add_water_bc10", name: "add_water_bc10" },
+        { data: "lama_bc10_jalan", name: "lama_bc10_jalan" },
+        { data: "rating_pasir_es", name: "rating_pasir_es" },
     ];
 
     const baseColumnsWithDefaults = baseColumns.map((c) => ({

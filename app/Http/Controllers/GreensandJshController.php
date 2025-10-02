@@ -64,12 +64,12 @@ class GreensandJshController extends Controller
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
                     $x->where('mix_ke', 'like', "%{$kw}%")
-                      ->orWhere('rs_type', 'like', "%{$kw}%")
-                      ->orWhere('machine_no', 'like', "%{$kw}%"); // <-- NEW: cari nomor mesin juga
+                        ->orWhere('rs_type', 'like', "%{$kw}%")
+                        ->orWhere('machine_no', 'like', "%{$kw}%")
+                        ->orWhere('rating_pasir_es', 'like', "%{$kw}%"); // NEW: bisa cari rating juga
                 });
             }
 
-            // <-- NEW: tambahkan 'machine_no' di select dan posisikan setelah mm_m
             $q->select([
                 'id',
                 'date',
@@ -84,7 +84,7 @@ class GreensandJshController extends Controller
                 'mm_cb_mm',
                 'mm_cb_lab',
                 'mm_m',
-                'machine_no',        // <-- NEW
+                'machine_no',        // NEW
                 'mm_bakunetsu',
                 'mm_ac',
                 'mm_tc',
@@ -119,6 +119,9 @@ class GreensandJshController extends Controller
                 'rcs_avg',
                 'add_bentonite_ma',
                 'total_sand',
+                'add_water_bc10',    // NEW
+                'lama_bc10_jalan',   // NEW
+                'rating_pasir_es',   // NEW
             ]);
 
             return DataTables::of($q)
@@ -245,7 +248,10 @@ class GreensandJshController extends Controller
             'mix_start' => 'nullable|date_format:H:i',
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
-            'machine_no' => 'nullable|string|max:50', // <-- NEW: rule nomor mesin (bebas isi)
+            'machine_no' => 'nullable|string|max:50',
+            'add_water_bc10' => 'nullable|integer|min:0',    // NEW
+            'lama_bc10_jalan' => 'nullable|integer|min:0',   // NEW (menit / angka)
+            'rating_pasir_es' => 'nullable|string|max:50',   // NEW
         ]);
     }
 
@@ -328,7 +334,7 @@ class GreensandJshController extends Controller
             'mm_cb_lab' => $in['mm_cb_lab'] ?? ($existing->mm_cb_lab ?? null),
             'mm_m' => $in['mm_m'] ?? ($existing->mm_m ?? null),
 
-            'machine_no' => $in['machine_no'] ?? ($existing->machine_no ?? null), // <-- NEW
+            'machine_no' => $in['machine_no'] ?? ($existing->machine_no ?? null),
 
             'mm_bakunetsu' => $in['mm_bakunetsu'] ?? ($existing->mm_bakunetsu ?? null),
             'mm_ac' => $in['mm_ac'] ?? ($existing->mm_ac ?? null),
@@ -361,6 +367,7 @@ class GreensandJshController extends Controller
             'bc10_temp' => $in['bc10_temp'] ?? ($existing->bc10_temp ?? null),
             'bc11_temp' => $in['bc11_temp'] ?? ($existing->bc11_temp ?? null),
 
+            // Moulding Data
             'add_water_mm' => $in['add_water_mm'] ?? ($existing->add_water_mm ?? null),
             'add_water_mm_2' => $in['add_water_mm_2'] ?? ($existing->add_water_mm_2 ?? null),
             'temp_sand_mm_1' => $in['temp_sand_mm_1'] ?? ($existing->temp_sand_mm_1 ?? null),
@@ -369,6 +376,10 @@ class GreensandJshController extends Controller
             'rcs_avg' => $in['rcs_avg'] ?? ($existing->rcs_avg ?? null),
             'add_bentonite_ma' => $in['add_bentonite_ma'] ?? ($existing->add_bentonite_ma ?? null),
             'total_sand' => $in['total_sand'] ?? ($existing->total_sand ?? null),
+
+            'add_water_bc10' => $in['add_water_bc10'] ?? ($existing->add_water_bc10 ?? null), 
+            'lama_bc10_jalan' => $in['lama_bc10_jalan'] ?? ($existing->lama_bc10_jalan ?? null),
+            'rating_pasir_es' => $in['rating_pasir_es'] ?? ($existing->rating_pasir_es ?? null),
         ];
     }
 }

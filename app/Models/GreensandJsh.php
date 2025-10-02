@@ -31,7 +31,7 @@ class GreensandJsh extends Model
         'mm_ig',
         'mm_cb_weight',
         'mm_tp50_weight',
-        'mm_tp50_height', // NEW
+        'mm_tp50_height',
         'mm_ssi',
 
         // Additive
@@ -66,6 +66,9 @@ class GreensandJsh extends Model
         'rcs_avg',
         'add_bentonite_ma',
         'total_sand',
+        'add_water_bc10',     
+        'lama_bc10_jalan',    
+        'rating_pasir_es',    
     ];
 
     protected $casts = [
@@ -75,5 +78,8 @@ class GreensandJsh extends Model
         'mix_finish' => 'string',
         'rs_time' => 'string',
         'machine_no' => 'string',
+        'add_water_bc10' => 'integer',
+        'lama_bc10_jalan' => 'integer',
+        'rating_pasir_es' => 'string',
     ];
 }

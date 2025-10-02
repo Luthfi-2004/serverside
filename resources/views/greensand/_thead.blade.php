@@ -7,12 +7,11 @@
         <th class="text-center align-middle" rowspan="5" style="min-width:120px;">MIX KE</th>
         <th class="text-center align-middle" rowspan="5" style="min-width:120px;">MIX START</th>
         <th class="text-center align-middle" rowspan="5" style="min-width:120px;">MIX FINISH</th>
-        {{-- Tetap 16 kolom untuk grup MM Sample (termasuk Nomor Mesin) --}}
         <th colspan="16" class="text-center">MM Sample</th>
         <th colspan="3" class="text-center">Additive</th>
         <th colspan="6" class="text-center">BC Sample</th>
         <th colspan="8" class="text-center">Return Sand</th>
-        <th colspan="8" class="text-center">Moulding Data</th>
+        <th colspan="11" class="text-center">Moulding Data</th> 
     </tr>
 
     @php
@@ -25,7 +24,7 @@
             'CB MM' => 'mm_cb_mm',
             'CB Lab' => 'mm_cb_lab',
             'Moisture' => 'mm_m',
-            'Nomor Mesin' => 'machine_no',   // <— ini akan di-rowspan
+            'Nomor Mesin' => 'machine_no',
             'Bakunetsu' => 'mm_bakunetsu',
             'AC' => 'mm_ac',
             'TC' => 'mm_tc',
@@ -46,7 +45,21 @@
             'BC16 M' => 'bc16_m',
         ];
         $COL_RS = ['RS Time', 'Type', 'Moist BC9', 'Moist BC10', 'Moist BC11', 'Temp BC9', 'Temp BC10', 'Temp BC11'];
-        $COL_MD = ['Add Water MM1', 'Add Water MM2', 'Temp Sand MM1', 'RCS Pick Up', 'Total Flask', 'RCS Avg', 'Add Bentonite MA', 'Total Sand'];
+
+        // UPDATE: tambah 3 kolom baru di akhir
+        $COL_MD = [
+            'Add Water MM1',
+            'Add Water MM2',
+            'Temp Sand MM1',
+            'RCS Pick Up',
+            'Total Flask',
+            'RCS Avg',
+            'Add Bentonite MA',
+            'Total Sand',
+            'Add Water BC10',     // NEW
+            'Lama BC 10 jalan',   // NEW
+            'Rating Pasir Es',    // NEW
+        ];
 
         $__std = DB::table('tb_jsh_standards')->first();
 
@@ -105,7 +118,6 @@
         $FREQ_BC = ['BC12 CB' => 'min 2x/shift', 'BC12 M' => 'min 2x/shift', 'BC11 AC' => 'min 1x/shift', 'BC11 VSD' => 'min 1x/shift', 'BC16 CB' => 'min 2x/shift', 'BC16 M' => 'min 2x/shift'];
     @endphp
 
-    {{-- Baris LABEL: “Nomor Mesin” dibikin rowspan=4, yang lain normal --}}
     <tr>
         @foreach($COL_MM as $label => $field)
             @if($label === 'Nomor Mesin')
@@ -132,7 +144,6 @@
         @endforeach
     </tr>
 
-    {{-- Baris RANGE: skip “Nomor Mesin” --}}
     <tr>
         @foreach($COL_MM as $label => $field)
             @if($label !== 'Nomor Mesin')
@@ -144,7 +155,6 @@
         @endforeach
     </tr>
 
-    {{-- Baris UNIT: skip “Nomor Mesin” --}}
     <tr>
         @foreach($COL_MM as $label => $field)
             @if($label !== 'Nomor Mesin')
@@ -156,7 +166,6 @@
         @endforeach
     </tr>
 
-    {{-- Baris FREKUENSI: skip “Nomor Mesin” --}}
     <tr>
         @foreach($COL_MM as $label => $field)
             @if($label !== 'Nomor Mesin')
