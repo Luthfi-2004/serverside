@@ -25,17 +25,59 @@ class AceStandardController extends Controller
      */
     public function update(Request $r)
     {
-        $std = AceStandard::firstOrFail();
+        $std = AceStandard::query()->firstOrCreate([]);
 
-        // Ambil semua input yang relevan (biar flexible, validasi numeric/nullable)
-        $rules = [];
-        foreach ($std->getFillable() as $f) {
-            $rules[$f] = ['nullable','numeric'];
+        $allKeys = [
+            'p',
+            'c',
+            'gt',
+            'cb_lab',
+            'moisture',
+            'bakunetsu',
+            'ac',
+            'tc',
+            'vsd',
+            'ig',
+            'cb_weight',
+            'tp50_weight',
+            'ssi',
+            'bc13_cb',
+            'bc13_c',
+            'bc13_m',
+        ];
+
+        $clean = [];
+        foreach ($allKeys as $k) {
+            foreach (['_min', '_max'] as $suf) {
+                $key = $k . $suf;
+                $val = $r->input($key);
+                if ($val === null || $val === '') {
+                    $clean[$key] = null;
+                    continue;
+                }
+                $val = str_replace(',', '.', $val);
+                $clean[$key] = $val;
+            }
         }
-        $data = $r->validate($rules);
+        $r->merge($clean);
 
+        $rules = [];
+        foreach ($allKeys as $k) {
+            $rules[$k . '_min'] = ['nullable', 'numeric'];
+            $rules[$k . '_max'] = ['nullable', 'numeric'];
+        }
+        $v = \Validator::make($r->all(), $rules);
+        if ($v->fails())
+            return back()->withErrors($v)->withInput();
+
+        $data = [];
+        foreach ($allKeys as $k) {
+            $data[$k . '_min'] = $r->input($k . '_min');
+            $data[$k . '_max'] = $r->input($k . '_max');
+        }
         $std->update($data);
 
-        return back()->with('status','Standards updated.');
+        return back()->with('status', 'Standards updated.');
     }
+
 }

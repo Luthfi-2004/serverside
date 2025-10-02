@@ -3,137 +3,236 @@
 
 @push('styles')
   <base href="{{ url('/') }}/">
+  <style>
+    .std-table th, .std-table td { vertical-align: middle !important; }
+    .std-param { text-align: center; }
+  </style>
 @endpush
 
 @section('content')
-<div class="page-content">
-  <div class="container-fluid">
+  <div class="page-content">
+    <div class="container-fluid">
 
-    <div class="page-title-box d-flex align-items-center justify-content-between">
-      <h4 class="mb-0">ACE Standards</h4>
-      <div class="page-title-right">
-        <ol class="breadcrumb m-0">
-          <li class="breadcrumb-item"><a href="javascript:void(0);">ACE LINE</a></li>
-          <li class="breadcrumb-item active">Standards</li>
-        </ol>
+      <div class="page-title-box d-flex align-items-center justify-content-between">
+        <h4 class="mb-0">ACE Standards</h4>
+        <div class="page-title-right">
+          <ol class="breadcrumb m-0">
+            <li class="breadcrumb-item"><a href="javascript:void(0);">ACE LINE</a></li>
+            <li class="breadcrumb-item active">Standards</li>
+          </ol>
+        </div>
       </div>
+
+      @if(session('status'))
+        <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-timeout="3000">
+          {{ session('status') }}
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+      @endif
+
+      @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show auto-dismiss" role="alert" data-timeout="5000">
+          <ul class="mb-0">
+            @foreach($errors->all() as $e)
+              <li>{{ $e }}</li>
+            @endforeach
+          </ul>
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+      @endif
+
+      @php
+        $fmt = function ($v) {
+          if ($v === null || $v === '') return null;
+          $s = str_replace(',', '.', (string)$v);
+          if (is_numeric($s)) $s = rtrim(rtrim($s, '0'), '.');
+          return $s;
+        };
+      @endphp
+
+      <form method="POST" action="{{ route('ace.standards.update') }}">
+        @csrf
+
+        <div class="card mb-4">
+          <div class="card-header"><strong>MM Sample</strong></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm align-middle std-table">
+                <thead class="thead-light">
+                  <tr>
+                    <th class="text-center" style="min-width:220px;">Parameter</th>
+                    <th class="text-center" style="min-width:120px;">Min</th>
+                    <th class="text-center" style="min-width:120px;">Max</th>
+                    <th class="text-center" style="min-width:180px;">Range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @php
+                    $fields = [
+                      'p' => 'P',
+                      'c' => 'C',
+                      'gt' => 'G.T',
+                      'cb_lab' => 'CB Lab',
+                      'moisture' => 'Moisture',
+                      'bakunetsu' => 'Bakunetsu',
+                      'ac' => 'AC',
+                      'tc' => 'TC',
+                      'vsd' => 'VSD',
+                      'ig' => 'IG',
+                      'cb_weight' => 'CB Weight',
+                      'tp50_weight' => 'TP 50 Weight',
+                      'ssi' => 'SSI',
+                    ];
+                  @endphp
+                  @foreach($fields as $key => $label)
+                    @php
+                      $minRaw = old($key.'_min', $std->{$key.'_min'});
+                      $maxRaw = old($key.'_max', $std->{$key.'_max'});
+                      $min = $fmt($minRaw);
+                      $max = $fmt($maxRaw);
+                    @endphp
+                    <tr>
+                      <td class="std-param">{{ $label }}</td>
+                      <td>
+                        <input
+                          type="text"
+                          inputmode="decimal"
+                          lang="en"
+                          pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center"
+                          name="{{ $key }}_min"
+                          value="{{ $min }}">
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          inputmode="decimal"
+                          lang="en"
+                          pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center"
+                          name="{{ $key }}_max"
+                          value="{{ $max }}">
+                      </td>
+                      <td class="text-center">
+                        @if($min!==null || $max!==null)
+                          <strong>{{ $min ?? '-' }} ~ {{ $max ?? '-' }}</strong>
+                        @else
+                          <span class="text-muted">-</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header"><strong>BC13</strong></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm align-middle std-table">
+                <thead class="thead-light">
+                  <tr>
+                    <th class="text-center" style="min-width:220px;">Parameter</th>
+                    <th class="text-center" style="min-width:120px;">Min</th>
+                    <th class="text-center" style="min-width:120px;">Max</th>
+                    <th class="text-center" style="min-width:180px;">Range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @php
+                    $bc = ['bc13_cb' => 'BC13 CB', 'bc13_c' => 'BC13 C', 'bc13_m' => 'BC13 M'];
+                  @endphp
+                  @foreach($bc as $key => $label)
+                    @php
+                      $minRaw = old($key.'_min', $std->{$key.'_min'});
+                      $maxRaw = old($key.'_max', $std->{$key.'_max'});
+                      $min = $fmt($minRaw);
+                      $max = $fmt($maxRaw);
+                    @endphp
+                    <tr>
+                      <td class="std-param">{{ $label }}</td>
+                      <td>
+                        <input
+                          type="text"
+                          inputmode="decimal"
+                          lang="en"
+                          pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center"
+                          name="{{ $key }}_min"
+                          value="{{ $min }}">
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          inputmode="decimal"
+                          lang="en"
+                          pattern="^-?\d+([.,]\d+)?$"
+                          class="form-control form-control-sm std-num text-center"
+                          name="{{ $key }}_max"
+                          value="{{ $max }}">
+                      </td>
+                      <td class="text-center">
+                        @if($min!==null || $max!==null)
+                          <strong>{{ $min ?? '-' }} ~ {{ $max ?? '-' }}</strong>
+                        @else
+                          <span class="text-muted">-</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-success mb-2">
+            <i class="ri-checkbox-circle-line mr-1"></i> Submit
+          </button>
+        </div>
+      </form>
+
+      <div class="mb-4"></div>
     </div>
-
-    @if(session('status'))
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('status') }}
-        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-      </div>
-    @endif
-
-    @php
-      /**
-       * Formatter untuk VALUE di <input type="number">
-       * - 12.000  -> "12"
-       * - 12.300  -> "12.3"
-       * - 12.345  -> "12.35"  (dibulatkan 2 desimal)
-       * - Tidak ada pemisah ribuan, desimal pakai titik.
-       */
-      $__in = function($v) {
-        if ($v === null || $v === '') return '';
-        if (!is_numeric($v)) return (string)$v;
-        $n = (float)$v;
-        // bulatkan 2 desimal dulu
-        $s = number_format($n, 2, '.', '');   // contoh: "12.00" / "12.30" / "12.35"
-        // hapus trailing nol dan titik jika perlu
-        $s = rtrim(rtrim($s, '0'), '.');      // "12" / "12.3" / "12.35"
-        return $s;
-      };
-    @endphp
-
-    <form method="POST" action="{{ route('ace.standards.update') }}">
-      @csrf
-
-      <div class="card mb-3">
-        <div class="card-header"><strong>MM Sample</strong></div>
-        <div class="card-body">
-          <div class="row">
-            @php
-              $fields = [
-                'p'=>'P','c'=>'C','gt'=>'G.T','cb_lab'=>'Cb Lab','moisture'=>'Moisture',
-                'bakunetsu'=>'Bakunetsu','ac'=>'AC','tc'=>'TC','vsd'=>'VSD','ig'=>'IG',
-                'cb_weight'=>'CB Weight','tp50_weight'=>'TP 50 Weight','ssi'=>'SSI',
-              ];
-            @endphp
-            @foreach($fields as $key=>$label)
-              <div class="col-md-4 mb-3">
-                <label class="mb-1">{{ $label }}</label>
-                <div class="form-row">
-                  <div class="col">
-                    <input
-                      type="number"
-                      step="0.01"
-                      inputmode="decimal"
-                      name="{{ $key }}_min"
-                      class="form-control"
-                      value="{{ old($key.'_min', $__in($std->{$key.'_min'})) }}"
-                      placeholder="Min">
-                  </div>
-                  <div class="col">
-                    <input
-                      type="number"
-                      step="0.01"
-                      inputmode="decimal"
-                      name="{{ $key }}_max"
-                      class="form-control"
-                      value="{{ old($key.'_max', $__in($std->{$key.'_max'})) }}"
-                      placeholder="Max">
-                  </div>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        </div>
-      </div>
-
-      <div class="card mb-3">
-        <div class="card-header"><strong>BC13</strong></div>
-        <div class="card-body">
-          <div class="row">
-            @php
-              $bc = ['bc13_cb'=>'BC13 CB','bc13_c'=>'BC13 C','bc13_m'=>'BC13 M'];
-            @endphp
-            @foreach($bc as $key=>$label)
-              <div class="col-md-4 mb-3">
-                <label class="mb-1">{{ $label }}</label>
-                <div class="form-row">
-                  <div class="col">
-                    <input
-                      type="number"
-                      step="0.01"
-                      inputmode="decimal"
-                      name="{{ $key }}_min"
-                      class="form-control"
-                      value="{{ old($key.'_min', $__in($std->{$key.'_min'})) }}"
-                      placeholder="Min">
-                  </div>
-                  <div class="col">
-                    <input
-                      type="number"
-                      step="0.01"
-                      inputmode="decimal"
-                      name="{{ $key }}_max"
-                      class="form-control"
-                      value="{{ old($key.'_max', $__in($std->{$key.'_max'})) }}"
-                      placeholder="Max">
-                  </div>
-                </div>
-              </div>
-            @endforeach
-          </div>
-        </div>
-      </div>
-
-      <div class="text-right">
-        <button class="btn btn-primary"><i class="ri-save-2-line mr-1"></i> Save</button>
-      </div>
-    </form>
-
   </div>
-</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('input.std-num').forEach(function (el) {
+    el.addEventListener('input', function () {
+      this.value = this.value.replace(',', '.');
+    });
+    el.addEventListener('blur', function () {
+      const v = this.value.trim();
+      if (!v) return;
+      const n = Number(v);
+      if (!isNaN(n)) {
+        let s = String(n);
+        if (s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');
+        this.value = s;
+      }
+    });
+  });
+
+  document.querySelectorAll('.alert.auto-dismiss').forEach(function (el) {
+    var timeout = parseInt(el.getAttribute('data-timeout') || '3000', 10);
+    setTimeout(function () {
+      if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
+        try { jQuery(el).alert('close'); return; } catch (e) {}
+      }
+      el.classList.remove('show');
+      el.classList.add('fade');
+      setTimeout(function () {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }, 150);
+    }, timeout);
+  });
+});
+</script>
+@endpush

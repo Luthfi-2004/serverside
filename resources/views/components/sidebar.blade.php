@@ -1,7 +1,5 @@
 <div class="vertical-menu">
   <div data-simplebar class="h-100">
-
-    <!--- Sidemenu -->
     <div id="sidebar-menu">
       <ul class="metismenu list-unstyled" id="side-menu">
         <li class="menu-title">Menu</li>
@@ -14,19 +12,18 @@
           </a>
         </li>
 
-        <!-- Judul grup -->
+        <!-- Green Sand -->
         <li class="menu-title">Green Sand</li>
 
         <!-- JSH LINE -->
-        <li>
+        <li class="{{ request()->routeIs('greensand.*') || request()->routeIs('jshgfn.*') ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
             <span>JSH LINE</span>
           </a>
           <ul class="sub-menu" aria-expanded="false">
             <li class="{{ request()->routeIs('greensand.index') ? 'mm-active' : '' }}">
-              <a href="{{ route('greensand.index') }}"
-                class="{{ request()->routeIs('greensand.index') ? 'active' : '' }}">
+              <a href="{{ route('greensand.index') }}" class="{{ request()->routeIs('greensand.index') ? 'active' : '' }}">
                 Daily Check
               </a>
             </li>
@@ -35,10 +32,17 @@
                 GFN
               </a>
             </li>
+            <li class="{{ request()->routeIs('greensand.standards') ? 'mm-active' : '' }}">
+              <a href="{{ route('greensand.standards') }}" class="{{ request()->routeIs('greensand.standards') ? 'active' : '' }}">
+                Standards
+              </a>
+            </li>
           </ul>
         </li>
         <!-- END JSH LINE -->
-        <li class="{{ request()->routeIs('ace.*') ? 'mm-active' : '' }}">
+
+        <!-- ACE LINE -->
+        <li class="{{ request()->routeIs('ace.*') || request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
             <span>ACE LINE</span>
@@ -50,8 +54,7 @@
               </a>
             </li>
             <li class="{{ request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
-              <a href="{{ route('acelinegfn.index') }}"
-                class="{{ request()->routeIs('acelinegfn.*') ? 'active' : '' }}">
+              <a href="{{ route('acelinegfn.index') }}" class="{{ request()->routeIs('acelinegfn.*') ? 'active' : '' }}">
                 GFN
               </a>
             </li>
@@ -62,9 +65,9 @@
             </li>
           </ul>
         </li>
+        <!-- END ACE LINE -->
 
       </ul>
     </div>
-    <!-- Sidebar -->
   </div>
 </div>

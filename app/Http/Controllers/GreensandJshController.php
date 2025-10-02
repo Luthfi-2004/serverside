@@ -17,113 +17,15 @@ class GreensandJshController extends Controller
     {
         return $this->makeResponse($request, 'MM1');
     }
+
     public function dataMM2(Request $request)
     {
         return $this->makeResponse($request, 'MM2');
     }
+
     public function dataAll(Request $request)
     {
         return $this->makeResponse($request, null);
-    }
-
-    public function summaryAll(Request $request)
-    {
-        $q = GreensandJsh::query();
-
-        $d = $request->filled('date') ? $this->toYmd($request->date) : null;
-        if ($d)
-            $q->whereDate('date', $d);
-        if ($request->filled('shift'))
-            $q->where('shift', $request->shift);
-        if ($request->filled('keyword')) {
-            $kw = $request->keyword;
-            $q->where(function ($x) use ($kw) {
-                $x->where('mix_ke', 'like', "%{$kw}%")
-                    ->orWhere('rs_type', 'like', "%{$kw}%");
-            });
-        }
-
-        $fields = [
-            'mm_p',
-            'mm_c',
-            'mm_gt',
-            'mm_cb_mm',
-            'mm_cb_lab',
-            'mm_m',
-            'mm_bakunetsu',
-            'mm_ac',
-            'mm_tc',
-            'mm_vsd',
-            'mm_ig',
-            'mm_cb_weight',
-            'mm_tp50_weight',
-            'mm_tp50_height', // NEW (ikut disummary)
-            'mm_ssi',
-            'add_m3',
-            'add_vsd',
-            'add_sc',
-            'bc12_cb',
-            'bc12_m',
-            'bc11_ac',
-            'bc11_vsd',
-            'bc16_cb',
-            'bc16_m',
-            'bc9_moist',
-            'bc10_moist',
-            'bc11_moist',
-            'bc9_temp',
-            'bc10_temp',
-            'bc11_temp',
-        ];
-
-        $spec = [
-            'mm_p' => ['min' => 220, 'max' => 260],
-            'mm_c' => ['min' => 13.5, 'max' => 17.5],
-            'mm_gt' => ['min' => 450, 'max' => 650],
-            'mm_cb_mm' => ['min' => 40, 'max' => 43],
-            'mm_cb_lab' => ['min' => 32, 'max' => 42],
-            'mm_m' => ['min' => 2.45, 'max' => 2.85],
-            'mm_bakunetsu' => ['min' => 20, 'max' => 85],
-            'mm_ac' => ['min' => 6.7, 'max' => 7.3],
-            'mm_tc' => ['min' => 9, 'max' => 11],
-            'mm_vsd' => ['min' => 0.7, 'max' => 1.3],
-            'mm_ig' => ['min' => 3, 'max' => 4],
-            'mm_cb_weight' => ['min' => 163, 'max' => 170],
-            'mm_tp50_weight' => ['min' => 141, 'max' => 144],
-            'mm_tp50_height' => ['min' => 48, 'max' => 52], // NEW: “50-an” → 48~52 mm
-            'mm_ssi' => ['min' => 85, 'max' => 95],
-        ];
-
-        $agg = [];
-        foreach ($fields as $f) {
-            $agg[] = DB::raw("MIN($f) as min_$f");
-            $agg[] = DB::raw("MAX($f) as max_$f");
-            $agg[] = DB::raw("AVG($f) as avg_$f");
-        }
-        $row = $q->select($agg)->first();
-
-        $result = [];
-        foreach ($fields as $f) {
-            $min = $row->{"min_$f"} ?? null;
-            $max = $row->{"max_$f"} ?? null;
-            $avg = $row->{"avg_$f"} ?? null;
-            $judge = null;
-
-            if ($avg !== null && isset($spec[$f])) {
-                $judge = ($avg >= $spec[$f]['min'] && $avg <= $spec[$f]['max']) ? 'OK' : 'NG';
-            }
-
-            $result[] = [
-                'field' => $f,
-                'min' => $min,
-                'max' => $max,
-                'avg' => $avg !== null ? round($avg, 2) : null,
-                'spec' => $spec[$f] ?? null,
-                'judge' => $judge,
-            ];
-        }
-
-        return response()->json(['summary' => $result]);
     }
 
     public function export(Request $r)
@@ -147,14 +49,17 @@ class GreensandJshController extends Controller
     {
         try {
             $q = GreensandJsh::query();
-            if ($mmFilter)
+            if ($mmFilter) {
                 $q->where('mm', $mmFilter);
+            }
 
             $d = $request->filled('date') ? $this->toYmd($request->date) : null;
-            if ($d)
+            if ($d) {
                 $q->whereDate('date', $d);
-            if ($request->filled('shift'))
+            }
+            if ($request->filled('shift')) {
                 $q->where('shift', $request->shift);
+            }
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
@@ -184,7 +89,7 @@ class GreensandJshController extends Controller
                 'mm_ig',
                 'mm_cb_weight',
                 'mm_tp50_weight',
-                'mm_tp50_height', // NEW
+                'mm_tp50_height',
                 'mm_ssi',
                 'add_m3',
                 'add_vsd',
@@ -230,8 +135,9 @@ class GreensandJshController extends Controller
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface)
+                    if ($row->date instanceof \DateTimeInterface) {
                         return $row->date->format('d-m-Y H:i:s');
+                    }
                     try {
                         return Carbon::parse($row->date)->format('d-m-Y H:i:s');
                     } catch (\Throwable $e) {
@@ -254,8 +160,9 @@ class GreensandJshController extends Controller
     {
         $in = $request->all();
         $v = $this->validator($in, 'store');
-        if ($v->fails())
+        if ($v->fails()) {
             return response()->json(['errors' => $v->errors()], 422);
+        }
 
         $mm = $this->normalizeMm($in['mm'] ?? null);
         $shift = $in['shift'];
@@ -285,8 +192,9 @@ class GreensandJshController extends Controller
         $in = $request->all();
 
         $v = $this->validator($in, 'update');
-        if ($v->fails())
+        if ($v->fails()) {
             return response()->json(['errors' => $v->errors()], 422);
+        }
 
         $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
         $shift = $row->shift;
@@ -339,8 +247,9 @@ class GreensandJshController extends Controller
 
     private function dayString($value): string
     {
-        if ($value instanceof \DateTimeInterface)
+        if ($value instanceof \DateTimeInterface) {
             return Carbon::instance($value)->toDateString();
+        }
         return Carbon::parse($value)->toDateString();
     }
 
@@ -352,8 +261,9 @@ class GreensandJshController extends Controller
             ->where('mm', $mm)
             ->where('mix_ke', $mixKe);
 
-        if ($ignoreId)
+        if ($ignoreId) {
             $q->where('id', '!=', $ignoreId);
+        }
         return $q->exists();
     }
 
@@ -420,7 +330,7 @@ class GreensandJshController extends Controller
             'mm_ig' => $in['mm_ig'] ?? ($existing->mm_ig ?? null),
             'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
             'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
-            'mm_tp50_height' => $in['mm_tp50_height'] ?? ($existing->mm_tp50_height ?? null), // NEW
+            'mm_tp50_height' => $in['mm_tp50_height'] ?? ($existing->mm_tp50_height ?? null),
             'mm_ssi' => $in['mm_ssi'] ?? ($existing->mm_ssi ?? null),
 
             'add_m3' => $in['add_m3'] ?? ($existing->add_m3 ?? null),
