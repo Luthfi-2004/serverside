@@ -75,8 +75,6 @@ class JshGfnPageController extends Controller
 
         $date  = $request->input('gfn_date');
         $shift = $request->input('shift');
-
-        // 🔒 Hanya izinkan input untuk tanggal hari ini (backend guard)
         $today = now('Asia/Jakarta')->toDateString();
         if ($date !== $today) {
             return back()
@@ -125,7 +123,7 @@ class JshGfnPageController extends Controller
         }
 
         DB::transaction(function () use ($request, $grams, $percentages, $percentageIndices, $totalGram, $sumPI) {
-            // detail
+
             for ($i = 0; $i < 10; $i++) {
                 JshGfn::create([
                     'gfn_date'              => $request->gfn_date,
@@ -140,7 +138,7 @@ class JshGfnPageController extends Controller
                 ]);
             }
 
-            // rekap
+
             TotalGfn::create([
                 'gfn_date'                 => $request->gfn_date,
                 'shift'                    => $request->shift,

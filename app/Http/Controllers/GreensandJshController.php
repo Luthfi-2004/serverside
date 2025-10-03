@@ -31,7 +31,7 @@ class GreensandJshController extends Controller
         $date = $r->query('date');
         $shift = $r->query('shift');
         $keyword = $r->query('keyword');
-        $mm = $r->query('mm'); // "MM1" | "MM2" | null
+        $mm = $r->query('mm'); 
 
         $fname = 'Greensand_'
             . ($mm ? $mm . '_' : '')
@@ -158,7 +158,6 @@ class GreensandJshController extends Controller
 
     public function store(Request $request)
     {
-        // <<< NORMALISASI INPUT TEXT -> DECIMAL >>>
         $in = $this->normalizeAllDecimals($request->all());
 
         $v = $this->validator($in, 'store');
@@ -190,8 +189,6 @@ class GreensandJshController extends Controller
     public function update(Request $request, $id)
     {
         $row = GreensandJsh::findOrFail($id);
-
-        // <<< NORMALISASI INPUT TEXT -> DECIMAL >>>
         $in = $this->normalizeAllDecimals($request->all());
 
         $v = $this->validator($in, 'update');
@@ -233,8 +230,6 @@ class GreensandJshController extends Controller
             return 'MM2';
         return null;
     }
-
-    // ================== PENTING: VALIDATOR ==================
     private function validator(array $in, string $mode = 'store')
     {
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
@@ -247,22 +242,13 @@ class GreensandJshController extends Controller
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
             'machine_no' => 'nullable|string|max:50',
-
-            // TIGA kolom ini harus desimal -> pakai numeric
             'add_water_bc10' => 'nullable|numeric|min:0',
             'lama_bc10_jalan' => 'nullable|numeric|min:0',
             'rating_pasir_es' => 'nullable|numeric',
         ]);
     }
-
-    // ================== NORMALIZER KOMA -> TITIK ==================
-    /**
-     * Semua field angka diterima sebagai text (bisa koma). Kita ganti koma -> titik,
-     * kosong jadi NULL, lalu kembalikan array.
-     */
     private function normalizeAllDecimals(array $in): array
     {
-        // daftar field numerik (boleh kamu tambah/kurangi sesuai kebutuhan)
         $numericFields = [
             'mm_p',
             'mm_c',
@@ -279,25 +265,21 @@ class GreensandJshController extends Controller
             'mm_tp50_weight',
             'mm_tp50_height',
             'mm_ssi',
-
             'add_m3',
             'add_vsd',
             'add_sc',
-
             'bc12_cb',
             'bc12_m',
             'bc11_ac',
             'bc11_vsd',
             'bc16_cb',
             'bc16_m',
-
             'bc9_moist',
             'bc10_moist',
             'bc11_moist',
             'bc9_temp',
             'bc10_temp',
             'bc11_temp',
-
             'add_water_mm',
             'add_water_mm_2',
             'temp_sand_mm_1',
@@ -306,8 +288,6 @@ class GreensandJshController extends Controller
             'rcs_avg',
             'add_bentonite_ma',
             'total_sand',
-
-            // NEW
             'add_water_bc10',
             'lama_bc10_jalan',
             'rating_pasir_es',
@@ -317,30 +297,20 @@ class GreensandJshController extends Controller
             if (!array_key_exists($key, $in))
                 continue;
             $v = $in[$key];
-
-            // kosong -> null
             if ($v === '' || $v === null) {
                 $in[$key] = null;
                 continue;
             }
-
-            // string: trim & ganti koma -> titik
             if (is_string($v)) {
                 $v = trim($v);
                 $v = str_replace(',', '.', $v);
             }
-
-            // kalau bukan numeric valid, biarkan ke validator yg menolak
-            // kalau numeric, simpan string angka (biar tidak kena locale)
             if (is_numeric($v)) {
-                // HINT: jangan format, cukup simpan sebagai string numeric
                 $in[$key] = $v;
             } else {
-                $in[$key] = $v; // biar validator yang reject
+                $in[$key] = $v;
             }
         }
-
-        // mix_ke tetap integer: kosong -> null (biar validator bicara)
         if (array_key_exists('mix_ke', $in) && $in['mix_ke'] === '')
             $in['mix_ke'] = null;
 

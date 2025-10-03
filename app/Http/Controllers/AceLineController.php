@@ -50,7 +50,7 @@ class AceLineController extends Controller
             'cb_weight',
             'tp50_weight',
             'ssi',
-            'most',           // <-- DITAMBAH
+            'most',       
             'dw29_vas',
             'dw29_debu',
             'dw31_vas',
@@ -106,7 +106,7 @@ class AceLineController extends Controller
             'cb_weight',
             'tp50_weight',
             'ssi',
-            'most',           // <-- DITAMBAH
+            'most',         
             'dw29_vas',
             'dw29_debu',
             'dw31_vas',
@@ -286,7 +286,6 @@ class AceLineController extends Controller
             'ig' => ['min' => 2, 'max' => 3],
             'cb_weight' => ['min' => 169, 'max' => 181],
             'ssi' => ['min' => 90],
-            // NOTE: Belum ada spec utk 'most' → tidak di-judge (kosong). Tambah jika sudah ada.
         ];
 
         $judgeVal = function ($val, array $rule): string {

@@ -49,7 +49,6 @@ class JshStandardController extends Controller
     {
         $std = JshStandard::query()->firstOrCreate([]);
 
-        // Normalisasi nilai: koma -> titik; siapkan array simpan
         $data = [];
         foreach (JshStandard::fields() as $f) {
             $minKey = $f.'_min';
@@ -61,7 +60,6 @@ class JshStandardController extends Controller
             $min = ($min === null || $min === '') ? null : str_replace(',', '.', (string)$min);
             $max = ($max === null || $max === '') ? null : str_replace(',', '.', (string)$max);
 
-            // kalau dua-duanya angka & min>max => swap diam-diam
             if ($min !== null && $max !== null && is_numeric($min) && is_numeric($max) && (float)$min > (float)$max) {
                 $tmp = $min; $min = $max; $max = $tmp;
             }
@@ -70,7 +68,6 @@ class JshStandardController extends Controller
             $data[$maxKey] = $max;
         }
 
-        // validasi numeric saja (tanpa aturan min<=max, karena sudah auto-swap)
         $rules = [];
         foreach (JshStandard::fields() as $f) {
             $rules[$f.'_min'] = ['nullable','numeric'];
