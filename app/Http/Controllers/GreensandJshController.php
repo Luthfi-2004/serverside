@@ -17,12 +17,10 @@ class GreensandJshController extends Controller
     {
         return $this->makeResponse($request, 'MM1');
     }
-
     public function dataMM2(Request $request)
     {
         return $this->makeResponse($request, 'MM2');
     }
-
     public function dataAll(Request $request)
     {
         return $this->makeResponse($request, null);
@@ -49,24 +47,21 @@ class GreensandJshController extends Controller
     {
         try {
             $q = GreensandJsh::query();
-            if ($mmFilter) {
+            if ($mmFilter)
                 $q->where('mm', $mmFilter);
-            }
 
             $d = $request->filled('date') ? $this->toYmd($request->date) : null;
-            if ($d) {
+            if ($d)
                 $q->whereDate('date', $d);
-            }
-            if ($request->filled('shift')) {
+            if ($request->filled('shift'))
                 $q->where('shift', $request->shift);
-            }
             if ($request->filled('keyword')) {
                 $kw = $request->keyword;
                 $q->where(function ($x) use ($kw) {
                     $x->where('mix_ke', 'like', "%{$kw}%")
                         ->orWhere('rs_type', 'like', "%{$kw}%")
                         ->orWhere('machine_no', 'like', "%{$kw}%")
-                        ->orWhere('rating_pasir_es', 'like', "%{$kw}%"); // NEW: bisa cari rating juga
+                        ->orWhere('rating_pasir_es', 'like', "%{$kw}%");
                 });
             }
 
@@ -84,7 +79,7 @@ class GreensandJshController extends Controller
                 'mm_cb_mm',
                 'mm_cb_lab',
                 'mm_m',
-                'machine_no',        // NEW
+                'machine_no',
                 'mm_bakunetsu',
                 'mm_ac',
                 'mm_tc',
@@ -119,9 +114,9 @@ class GreensandJshController extends Controller
                 'rcs_avg',
                 'add_bentonite_ma',
                 'total_sand',
-                'add_water_bc10',    // NEW
-                'lama_bc10_jalan',   // NEW
-                'rating_pasir_es',   // NEW
+                'add_water_bc10',
+                'lama_bc10_jalan',
+                'rating_pasir_es',
             ]);
 
             return DataTables::of($q)
@@ -141,9 +136,8 @@ class GreensandJshController extends Controller
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface) {
+                    if ($row->date instanceof \DateTimeInterface)
                         return $row->date->format('d-m-Y H:i:s');
-                    }
                     try {
                         return Carbon::parse($row->date)->format('d-m-Y H:i:s');
                     } catch (\Throwable $e) {
@@ -164,11 +158,12 @@ class GreensandJshController extends Controller
 
     public function store(Request $request)
     {
-        $in = $request->all();
+        // <<< NORMALISASI INPUT TEXT -> DECIMAL >>>
+        $in = $this->normalizeAllDecimals($request->all());
+
         $v = $this->validator($in, 'store');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
-        }
 
         $mm = $this->normalizeMm($in['mm'] ?? null);
         $shift = $in['shift'];
@@ -195,12 +190,13 @@ class GreensandJshController extends Controller
     public function update(Request $request, $id)
     {
         $row = GreensandJsh::findOrFail($id);
-        $in = $request->all();
+
+        // <<< NORMALISASI INPUT TEXT -> DECIMAL >>>
+        $in = $this->normalizeAllDecimals($request->all());
 
         $v = $this->validator($in, 'update');
-        if ($v->fails()) {
+        if ($v->fails())
             return response()->json(['errors' => $v->errors()], 422);
-        }
 
         $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
         $shift = $row->shift;
@@ -238,9 +234,11 @@ class GreensandJshController extends Controller
         return null;
     }
 
+    // ================== PENTING: VALIDATOR ==================
     private function validator(array $in, string $mode = 'store')
     {
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
+
         return Validator::make($in, [
             'mm' => 'required|in:MM1,MM2',
             'shift' => 'required|in:D,S,N',
@@ -249,17 +247,110 @@ class GreensandJshController extends Controller
             'mix_finish' => 'nullable|date_format:H:i',
             'rs_time' => 'nullable|date_format:H:i',
             'machine_no' => 'nullable|string|max:50',
-            'add_water_bc10' => 'nullable|integer|min:0',    // NEW
-            'lama_bc10_jalan' => 'nullable|integer|min:0',   // NEW (menit / angka)
-            'rating_pasir_es' => 'nullable|string|max:50',   // NEW
+
+            // TIGA kolom ini harus desimal -> pakai numeric
+            'add_water_bc10' => 'nullable|numeric|min:0',
+            'lama_bc10_jalan' => 'nullable|numeric|min:0',
+            'rating_pasir_es' => 'nullable|numeric',
         ]);
+    }
+
+    // ================== NORMALIZER KOMA -> TITIK ==================
+    /**
+     * Semua field angka diterima sebagai text (bisa koma). Kita ganti koma -> titik,
+     * kosong jadi NULL, lalu kembalikan array.
+     */
+    private function normalizeAllDecimals(array $in): array
+    {
+        // daftar field numerik (boleh kamu tambah/kurangi sesuai kebutuhan)
+        $numericFields = [
+            'mm_p',
+            'mm_c',
+            'mm_gt',
+            'mm_cb_mm',
+            'mm_cb_lab',
+            'mm_m',
+            'mm_bakunetsu',
+            'mm_ac',
+            'mm_tc',
+            'mm_vsd',
+            'mm_ig',
+            'mm_cb_weight',
+            'mm_tp50_weight',
+            'mm_tp50_height',
+            'mm_ssi',
+
+            'add_m3',
+            'add_vsd',
+            'add_sc',
+
+            'bc12_cb',
+            'bc12_m',
+            'bc11_ac',
+            'bc11_vsd',
+            'bc16_cb',
+            'bc16_m',
+
+            'bc9_moist',
+            'bc10_moist',
+            'bc11_moist',
+            'bc9_temp',
+            'bc10_temp',
+            'bc11_temp',
+
+            'add_water_mm',
+            'add_water_mm_2',
+            'temp_sand_mm_1',
+            'rcs_pick_up',
+            'total_flask',
+            'rcs_avg',
+            'add_bentonite_ma',
+            'total_sand',
+
+            // NEW
+            'add_water_bc10',
+            'lama_bc10_jalan',
+            'rating_pasir_es',
+        ];
+
+        foreach ($numericFields as $key) {
+            if (!array_key_exists($key, $in))
+                continue;
+            $v = $in[$key];
+
+            // kosong -> null
+            if ($v === '' || $v === null) {
+                $in[$key] = null;
+                continue;
+            }
+
+            // string: trim & ganti koma -> titik
+            if (is_string($v)) {
+                $v = trim($v);
+                $v = str_replace(',', '.', $v);
+            }
+
+            // kalau bukan numeric valid, biarkan ke validator yg menolak
+            // kalau numeric, simpan string angka (biar tidak kena locale)
+            if (is_numeric($v)) {
+                // HINT: jangan format, cukup simpan sebagai string numeric
+                $in[$key] = $v;
+            } else {
+                $in[$key] = $v; // biar validator yang reject
+            }
+        }
+
+        // mix_ke tetap integer: kosong -> null (biar validator bicara)
+        if (array_key_exists('mix_ke', $in) && $in['mix_ke'] === '')
+            $in['mix_ke'] = null;
+
+        return $in;
     }
 
     private function dayString($value): string
     {
-        if ($value instanceof \DateTimeInterface) {
+        if ($value instanceof \DateTimeInterface)
             return Carbon::instance($value)->toDateString();
-        }
         return Carbon::parse($value)->toDateString();
     }
 
@@ -271,9 +362,8 @@ class GreensandJshController extends Controller
             ->where('mm', $mm)
             ->where('mix_ke', $mixKe);
 
-        if ($ignoreId) {
+        if ($ignoreId)
             $q->where('id', '!=', $ignoreId);
-        }
         return $q->exists();
     }
 
@@ -324,6 +414,7 @@ class GreensandJshController extends Controller
             'shift' => $shiftVal,
             'mm' => $mm,
             'mix_ke' => $in['mix_ke'] ?? ($existing->mix_ke ?? null),
+
             'mix_start' => $in['mix_start'] ?? ($existing->mix_start ?? null),
             'mix_finish' => $in['mix_finish'] ?? ($existing->mix_finish ?? null),
 
@@ -341,6 +432,7 @@ class GreensandJshController extends Controller
             'mm_tc' => $in['mm_tc'] ?? ($existing->mm_tc ?? null),
             'mm_vsd' => $in['mm_vsd'] ?? ($existing->mm_vsd ?? null),
             'mm_ig' => $in['mm_ig'] ?? ($existing->mm_ig ?? null),
+
             'mm_cb_weight' => $in['mm_cb_weight'] ?? ($existing->mm_cb_weight ?? null),
             'mm_tp50_weight' => $in['mm_tp50_weight'] ?? ($existing->mm_tp50_weight ?? null),
             'mm_tp50_height' => $in['mm_tp50_height'] ?? ($existing->mm_tp50_height ?? null),
@@ -367,7 +459,6 @@ class GreensandJshController extends Controller
             'bc10_temp' => $in['bc10_temp'] ?? ($existing->bc10_temp ?? null),
             'bc11_temp' => $in['bc11_temp'] ?? ($existing->bc11_temp ?? null),
 
-            // Moulding Data
             'add_water_mm' => $in['add_water_mm'] ?? ($existing->add_water_mm ?? null),
             'add_water_mm_2' => $in['add_water_mm_2'] ?? ($existing->add_water_mm_2 ?? null),
             'temp_sand_mm_1' => $in['temp_sand_mm_1'] ?? ($existing->temp_sand_mm_1 ?? null),
@@ -377,7 +468,7 @@ class GreensandJshController extends Controller
             'add_bentonite_ma' => $in['add_bentonite_ma'] ?? ($existing->add_bentonite_ma ?? null),
             'total_sand' => $in['total_sand'] ?? ($existing->total_sand ?? null),
 
-            'add_water_bc10' => $in['add_water_bc10'] ?? ($existing->add_water_bc10 ?? null), 
+            'add_water_bc10' => $in['add_water_bc10'] ?? ($existing->add_water_bc10 ?? null),
             'lama_bc10_jalan' => $in['lama_bc10_jalan'] ?? ($existing->lama_bc10_jalan ?? null),
             'rating_pasir_es' => $in['rating_pasir_es'] ?? ($existing->rating_pasir_es ?? null),
         ];

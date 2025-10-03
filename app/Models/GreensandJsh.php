@@ -66,9 +66,11 @@ class GreensandJsh extends Model
         'rcs_avg',
         'add_bentonite_ma',
         'total_sand',
-        'add_water_bc10',     
-        'lama_bc10_jalan',    
-        'rating_pasir_es',    
+
+        // NEW
+        'add_water_bc10',
+        'lama_bc10_jalan',
+        'rating_pasir_es',
     ];
 
     protected $casts = [
@@ -78,8 +80,10 @@ class GreensandJsh extends Model
         'mix_finish' => 'string',
         'rs_time' => 'string',
         'machine_no' => 'string',
-        'add_water_bc10' => 'integer',
-        'lama_bc10_jalan' => 'integer',
-        'rating_pasir_es' => 'string',
+
+        // pastikan TIGA kolom ini decimal
+        'add_water_bc10'  => 'decimal:2',
+        'lama_bc10_jalan' => 'decimal:2',
+        'rating_pasir_es' => 'decimal:2',
     ];
 }
