@@ -4,7 +4,6 @@
       <ul class="metismenu list-unstyled" id="side-menu">
         <li class="menu-title">Menu</li>
 
-        <!-- Dashboard -->
         <li class="{{ request()->routeIs('dashboard') ? 'mm-active' : '' }}">
           <a href="{{ route('dashboard') }}" class="waves-effect {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="ri-dashboard-line"></i>
@@ -12,10 +11,8 @@
           </a>
         </li>
 
-        <!-- Green Sand -->
         <li class="menu-title">Green Sand</li>
 
-        <!-- JSH LINE -->
         <li class="{{ request()->routeIs('greensand.*') || request()->routeIs('jshgfn.*') ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -32,16 +29,16 @@
                 GFN
               </a>
             </li>
-            <li class="{{ request()->routeIs('greensand.standards') ? 'mm-active' : '' }}">
-              <a href="{{ route('greensand.standards') }}" class="{{ request()->routeIs('greensand.standards') ? 'active' : '' }}">
-                Standards
-              </a>
-            </li>
+            @if(auth()->check() && auth()->user()->role === 'admin')
+              <li class="{{ request()->routeIs('greensand.standards') ? 'mm-active' : '' }}">
+                <a href="{{ route('greensand.standards') }}" class="{{ request()->routeIs('greensand.standards') ? 'active' : '' }}">
+                  Standards
+                </a>
+              </li>
+            @endif
           </ul>
         </li>
-        <!-- END JSH LINE -->
 
-        <!-- ACE LINE -->
         <li class="{{ request()->routeIs('ace.*') || request()->routeIs('acelinegfn.*') ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -58,14 +55,15 @@
                 GFN
               </a>
             </li>
-            <li class="{{ request()->routeIs('ace.standards') ? 'mm-active' : '' }}">
-              <a href="{{ route('ace.standards') }}" class="{{ request()->routeIs('ace.standards') ? 'active' : '' }}">
-                Standards
-              </a>
-            </li>
+            @if(auth()->check() && auth()->user()->role === 'admin')
+              <li class="{{ request()->routeIs('ace.standards') ? 'mm-active' : '' }}">
+                <a href="{{ route('ace.standards') }}" class="{{ request()->routeIs('ace.standards') ? 'active' : '' }}">
+                  Standards
+                </a>
+              </li>
+            @endif
           </ul>
         </li>
-        <!-- END ACE LINE -->
 
       </ul>
     </div>
