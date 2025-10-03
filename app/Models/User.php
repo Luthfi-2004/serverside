@@ -1,5 +1,4 @@
 <?php
-// app/Models/User.php
 
 namespace App\Models;
 
@@ -12,24 +11,18 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'email',
         'username',
+        'email',
         'password',
         'role',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    public const ROLE_ADMIN = 'admin';
-    public const ROLE_PEKERJA = 'pekerja';
-
-    public function isAdmin(): bool
-    {
-        return $this->role === self::ROLE_ADMIN;
-    }
-
-    public function isPekerja(): bool
-    {
-        return $this->role === self::ROLE_PEKERJA;
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
 }
