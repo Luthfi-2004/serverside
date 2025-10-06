@@ -6,87 +6,129 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('id', 'asc')->get();
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index');
     }
 
-    public function create()
+    public function data()
     {
-        return redirect()->route('admin.users.index');
+        $q = User::query()->select(['id', 'username', 'email', 'role']);
+
+        return DataTables::of($q)
+            ->addColumn('action', function ($row) {
+                return '
+                <div class="btn-group btn-group-sm se-2">
+                    <button type="button" class="btn btn-outline-warning btn-sm mr-2 btn-edit" data-id="'.$row->id.'" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-delete" data-id="'.$row->id.'" title="Hapus">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>';
+            })
+            ->rawColumns(['action'])
+            ->toJson();
+    }
+
+    public function json(User $user)
+    {
+        return response()->json($user);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name'     => ['nullable','string','max:100'],
-            'username' => ['required','string','max:100','unique:users,username'],
-            'email'    => ['nullable','email','max:150','unique:users,email'],
-            'password' => ['required','string','min:6'],
-            'role'     => ['required', Rule::in(['admin','pekerja'])],
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:60', 'unique:users,username'],
+            'email'    => ['nullable', 'email', 'max:120', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6'],
+            'role'     => ['required', Rule::in(['admin', 'pekerja'])],
         ]);
 
-        // Auto-isi name bila kosong
-        if (empty($data['name'])) {
-            $data['name'] = $data['username'];
+        try {
+            return DB::transaction(function () use ($validated) {
+                $user = new User();
+                // ISI NAME OTOMATIS => username (FIX ERROR name NOT NULL)
+                $user->name     = $validated['username'];
+                $user->username = $validated['username'];
+                $user->email    = $validated['email'] ?? null;
+                $user->role     = $validated['role'];
+                $user->password = Hash::make($validated['password']);
+                $user->save();
+
+                return response()->json(['ok' => true, 'id' => $user->id]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('User store failed', [
+                'msg' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json([
+                'ok' => false,
+                'message' => 'Store failed: '.$e->getMessage(),
+            ], 500);
         }
-
-        $user = new User();
-        $user->name     = $data['name'];
-        $user->username = $data['username'];
-        $user->email    = $data['email'] ?? null;
-        $user->password = Hash::make($data['password']);
-        $user->role     = $data['role'];
-        $user->save();
-
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dibuat.');
-    }
-
-    public function show(User $user)
-    {
-        return redirect()->route('admin.users.index');
-    }
-
-    public function edit(User $user)
-    {
-        return view('admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
-        $data = $request->validate([
-            'name'     => ['nullable','string','max:100'],
-            'username' => ['required','string','max:100', Rule::unique('users','username')->ignore($user->id)],
-            'email'    => ['nullable','email','max:150', Rule::unique('users','email')->ignore($user->id)],
-            'password' => ['nullable','string','min:6'],
-            'role'     => ['required', Rule::in(['admin','pekerja'])],
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:60', Rule::unique('users', 'username')->ignore($user->id)],
+            'email'    => ['nullable', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:6'],
+            'role'     => ['required', Rule::in(['admin', 'pekerja'])],
         ]);
 
-        $user->name     = $data['name'] ?: $data['username'];
-        $user->username = $data['username'];
-        $user->email    = $data['email'] ?? null;
-        if (!empty($data['password'])) {
-            $user->password = Hash::make($data['password']);
-        }
-        $user->role     = $data['role'];
-        $user->save();
+        try {
+            return DB::transaction(function () use ($validated, $user) {
+                // Jaga konsistensi: kalau name kosong/NULL, isi ulang dari username
+                $user->name     = $user->name ?: $validated['username'];
+                $user->username = $validated['username'];
+                $user->email    = $validated['email'] ?? null;
+                $user->role     = $validated['role'];
+                if (!empty($validated['password'])) {
+                    $user->password = Hash::make($validated['password']);
+                }
+                $user->save();
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil diperbarui.');
+                return response()->json(['ok' => true]);
+            });
+        } catch (\Throwable $e) {
+            Log::error('User update failed', [
+                'msg' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json([
+                'ok' => false,
+                'message' => 'Update failed: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     public function destroy(User $user)
     {
-        // Jangan hapus diri sendiri
-        if (auth()->id() === $user->id) {
-            return back()->with('success', 'Tidak dapat menghapus akun yang sedang login.');
+        try {
+            $user->delete();
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            Log::error('User delete failed', [
+                'msg' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return response()->json([
+                'ok' => false,
+                'message' => 'Delete failed: '.$e->getMessage(),
+            ], 500);
         }
-
-        $user->delete();
-        return back()->with('success', 'User berhasil dihapus.');
     }
 }

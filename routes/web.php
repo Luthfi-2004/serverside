@@ -11,8 +11,7 @@ use App\Http\Controllers\AceSummaryController;
 use App\Http\Controllers\JshStandardController;
 use App\Http\Controllers\GreensandSummaryController;
 use App\Http\Controllers\Admin\UserController;
-
-app('router')->aliasMiddleware('role', \App\Http\Middleware\RoleMiddleware::class);
+use App\Http\Middleware\RoleMiddleware;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -21,8 +20,13 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('users', UserController::class);
+Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/data', [UserController::class, 'data'])->name('users.data');
+    Route::get('users/{user}/json', [UserController::class, 'json'])->name('users.json');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
+    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 Route::middleware('auth')->group(function () {
@@ -37,7 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/data/mm2', [GreensandJshController::class, 'dataMM2'])->name('data.mm2');
         Route::get('/data/all', [GreensandJshController::class, 'dataAll'])->name('data.all');
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware(RoleMiddleware::class . ':admin')->group(function () {
             Route::get('/standards', [JshStandardController::class, 'index'])->name('standards');
             Route::post('/standards', [JshStandardController::class, 'update'])->name('standards.update');
         });
@@ -67,7 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/{id}', [AceLineController::class, 'update'])->whereNumber('id')->name('update');
         Route::delete('/{id}', [AceLineController::class, 'destroy'])->whereNumber('id')->name('destroy');
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware(RoleMiddleware::class . ':admin')->group(function () {
             Route::get('/standards', [AceStandardController::class, 'index'])->name('standards');
             Route::post('/standards', [AceStandardController::class, 'update'])->name('standards.update');
         });

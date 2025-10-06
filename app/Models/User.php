@@ -9,12 +9,13 @@ class User extends Authenticatable
 {
     use Notifiable;
 
+    // Aman untuk kolom yang kamu pakai
     protected $fillable = [
-        'name',
         'username',
         'email',
         'password',
         'role',
+        'name',         // ada / tidak ada di DB tidak masalah
     ];
 
     protected $hidden = [
