@@ -1,7 +1,13 @@
 @extends('layouts.app')
 
 @push('styles')
-<base href="{{ url('/') }}/">
+    <base href="{{ url('/') }}/">
+    <style>
+        /* keep first col neat */
+        #usersTable th:first-child, #usersTable td:first-child { white-space: nowrap; }
+        /* help avoid header jitter */
+        #usersTable thead th { vertical-align: middle; }
+    </style>
 @endpush
 
 @section('content')
@@ -21,6 +27,7 @@
 
       <div class="card mb-3">
         <div class="card-body">
+
           <div class="mb-3 d-flex justify-content-between align-items-center">
             <button type="button" class="btn btn-success btn-sm btn-add">
               <i class="ri-add-line"></i> Add Data
@@ -41,6 +48,7 @@
               <tbody></tbody>
             </table>
           </div>
+
         </div>
       </div>
 
@@ -52,13 +60,13 @@
 @endsection
 
 @push('scripts')
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script>
-  window.usersDataUrl   = "{{ route('admin.users.data') }}";
-  window.usersStoreUrl  = "{{ route('admin.users.store') }}";
-  window.userShowUrl    = id => "{{ route('admin.users.json', ':id') }}".replace(':id', id);
-  window.userUpdateUrl  = id => "{{ route('admin.users.update', ':id') }}".replace(':id', id);
-  window.userDestroyUrl = id => "{{ route('admin.users.destroy', ':id') }}".replace(':id', id);
-</script>
-<script src="{{ asset('assets/js/users.js') }}"></script>
+    <script>
+      window.usersDataUrl    = "{{ route('admin.users.data') }}";
+      window.usersStoreUrl   = "{{ route('admin.users.store') }}";
+      window.usersJsonUrl    = "{{ route('admin.users.json', ':id') }}";
+      window.usersUpdateUrl  = "{{ route('admin.users.update', ':id') }}";
+      window.usersDestroyUrl = "{{ route('admin.users.destroy', ':id') }}";
+    </script>
+
+    <script src="{{ asset('assets/js/users.js') }}"></script>
 @endpush

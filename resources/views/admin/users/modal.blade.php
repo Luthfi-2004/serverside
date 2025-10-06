@@ -49,15 +49,3 @@
     </form>
   </div>
 </div>
-
-@push('scripts')
-<script>
-$(function () {
-  $('#role').select2({
-    width: '100%',
-    placeholder: 'Pilih Role',
-    dropdownParent: $('#modal-user')
-  });
-});
-</script>
-@endpush
