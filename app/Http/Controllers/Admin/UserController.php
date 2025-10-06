@@ -22,45 +22,32 @@ class UserController extends Controller
     {
         $adminCount = User::where('role', 'admin')->count();
 
-        $q = User::query()->select(['id', 'username', 'email', 'role']);
-
+        $q = User::select(['id', 'username', 'email', 'role']);
         return DataTables::of($q)
             ->addColumn('action', function ($row) use ($adminCount) {
                 $isSelf = auth()->id() === $row->id;
                 $isLastAdmin = ($row->role === 'admin' && $adminCount <= 1);
 
                 $canDelete = !($isSelf || $isLastAdmin);
-                $canChangeRole = !($isSelf || $isLastAdmin);
+                $canEdit = true;
 
-                $editBtn = '
-                <button type="button"
-                    class="btn btn-outline-warning btn-sm mr-2 btn-edit"
-                    data-id="' . $row->id . '"
-                    data-can-change-role="' . ($canChangeRole ? '1' : '0') . '"
-                    title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>';
-
-                $delBtn = '
-                <button type="button"
-                    class="btn btn-outline-danger btn-sm btn-delete"
-                    data-id="' . $row->id . '"
-                    ' . ($canDelete ? '' : 'disabled') . '
-                    title="' . ($canDelete ? 'Hapus' : 'Tidak dapat dihapus') . '">
-                    <i class="fas fa-trash"></i>
-                </button>';
-
-                return '<div class="btn-group btn-group-sm se-2">' . $editBtn . $delBtn . '</div>';
+                return '
+                <div class="btn-group btn-group-sm se-2">
+                    <button type="button" class="btn btn-outline-warning btn-sm mr-2 btn-edit" data-id="' . $row->id . '" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-delete" data-id="' . $row->id . '" ' . ($canDelete ? '' : 'disabled') . ' title="' . ($canDelete ? 'Hapus' : 'Tidak dapat dihapus') . '">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>';
             })
             ->rawColumns(['action'])
             ->toJson();
     }
 
-
     public function json(User $user)
     {
         $adminCount = User::where('role', 'admin')->count();
-
         $isSelf = auth()->id() === $user->id;
         $isLastAdmin = ($user->role === 'admin' && $adminCount <= 1);
 
@@ -73,86 +60,84 @@ class UserController extends Controller
         ]);
     }
 
-
-    public function store(Request $request)
+    public function store(Request $r)
     {
-        $validated = $request->validate([
+        $r->validate([
             'username' => ['required', 'string', 'max:60', 'unique:users,username'],
             'email' => ['nullable', 'email', 'max:120', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', Rule::in(['admin', 'pekerja'])],
+            'confirm_password' => ['required', 'string'],
         ]);
 
-        try {
-            return DB::transaction(function () use ($validated) {
-                $user = new User();
-                // ISI NAME OTOMATIS => username (FIX ERROR name NOT NULL)
-                $user->name = $validated['username'];
-                $user->username = $validated['username'];
-                $user->email = $validated['email'] ?? null;
-                $user->role = $validated['role'];
-                $user->password = Hash::make($validated['password']);
-                $user->save();
+        if (!Hash::check($r->confirm_password, auth()->user()->password)) {
+            return response()->json(['errors' => ['confirm_password' => ['Password konfirmasi salah.']]], 422);
+        }
 
-                return response()->json(['ok' => true, 'id' => $user->id]);
-            });
+        DB::beginTransaction();
+        try {
+            $user = new User();
+            $user->name = $r->username;
+            $user->username = $r->username;
+            $user->email = $r->email ?? null;
+            $user->role = $r->role;
+            $user->password = Hash::make($r->password);
+            $user->save();
+            DB::commit();
+
+            return response()->json(['ok' => true, 'id' => $user->id]);
         } catch (\Throwable $e) {
-            Log::error('User store failed', [
-                'msg' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
-            return response()->json([
-                'ok' => false,
-                'message' => 'Store failed: ' . $e->getMessage(),
-            ], 500);
+            DB::rollBack();
+            Log::error('User store failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Gagal menyimpan user.'], 500);
         }
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $r, User $user)
     {
-        $validated = $request->validate([
-            'username' => ['required', 'string', 'max:50', Rule::unique('users', 'username')->ignore($user->id)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        $r->validate([
+            'username' => ['required', 'string', 'max:60', Rule::unique('users', 'username')->ignore($user->id)],
+            'email' => ['nullable', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:6'],
-            // role tidak wajib kalau tidak dikirim
-            'role' => ['sometimes', 'required', Rule::in(['admin', 'pekerja'])],
+            'role' => ['sometimes', Rule::in(['admin', 'pekerja'])],
+            'confirm_password' => ['required', 'string'],
         ]);
 
+        if (!Hash::check($r->confirm_password, auth()->user()->password)) {
+            return response()->json(['errors' => ['confirm_password' => ['Password konfirmasi salah.']]], 422);
+        }
+
         $data = [
-            'username' => $validated['username'],
-            'email' => $validated['email'] ?? null,
+            'username' => $r->username,
+            'email' => $r->email ?? null,
         ];
-
-        // hanya update role kalau dikirim
-        if ($request->has('role')) {
-            $data['role'] = $validated['role'];
-        }
-
-        if (!empty($validated['password'])) {
-            $data['password'] = Hash::make($validated['password']);
-        }
+        if ($r->has('role'))
+            $data['role'] = $r->role;
+        if ($r->filled('password'))
+            $data['password'] = Hash::make($r->password);
 
         $user->update($data);
-
         return response()->json(['message' => 'Updated']);
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $r, User $user)
     {
-        if (auth()->id() === $user->id) {
-            return response()->json(['message' => 'Anda tidak bisa menghapus akun Anda sendiri.'], 422);
+        $r->validate(['confirm_password' => ['required', 'string']]);
+
+        if (!Hash::check($r->confirm_password, auth()->user()->password)) {
+            return response()->json(['errors' => ['confirm_password' => ['Password konfirmasi salah.']]], 422);
         }
 
-        if ($user->role === 'admin') {
-            $adminCount = User::where('role', 'admin')->count();
-            if ($adminCount <= 1) {
-                return response()->json(['message' => 'Tidak boleh menghapus admin terakhir.'], 422);
-            }
+        if (auth()->id() === $user->id) {
+            return response()->json(['message' => 'Tidak bisa menghapus akun sendiri.'], 422);
+        }
+
+        $adminCount = User::where('role', 'admin')->count();
+        if ($user->role === 'admin' && $adminCount <= 1) {
+            return response()->json(['message' => 'Tidak boleh menghapus admin terakhir.'], 422);
         }
 
         $user->delete();
         return response()->json(['message' => 'Deleted']);
     }
-
 }
