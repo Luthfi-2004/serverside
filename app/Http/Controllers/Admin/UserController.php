@@ -27,9 +27,7 @@ class UserController extends Controller
             ->addColumn('action', function ($row) use ($adminCount) {
                 $isSelf = auth()->id() === $row->id;
                 $isLastAdmin = ($row->role === 'admin' && $adminCount <= 1);
-
                 $canDelete = !($isSelf || $isLastAdmin);
-                $canEdit = true;
 
                 return '
                 <div class="btn-group btn-group-sm se-2">
@@ -60,6 +58,7 @@ class UserController extends Controller
         ]);
     }
 
+    // CREATE: tanpa konfirmasi password
     public function store(Request $r)
     {
         $r->validate([
@@ -67,17 +66,12 @@ class UserController extends Controller
             'email' => ['nullable', 'email', 'max:120', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', Rule::in(['admin', 'pekerja'])],
-            'confirm_password' => ['required', 'string'],
         ]);
-
-        if (!Hash::check($r->confirm_password, auth()->user()->password)) {
-            return response()->json(['errors' => ['confirm_password' => ['Password konfirmasi salah.']]], 422);
-        }
 
         DB::beginTransaction();
         try {
             $user = new User();
-            $user->name = $r->username;
+            $user->name = $r->username; // isi otomatis supaya tidak null
             $user->username = $r->username;
             $user->email = $r->email ?? null;
             $user->role = $r->role;
@@ -93,6 +87,7 @@ class UserController extends Controller
         }
     }
 
+    // UPDATE: tanpa konfirmasi password
     public function update(Request $r, User $user)
     {
         $r->validate([
@@ -100,26 +95,24 @@ class UserController extends Controller
             'email' => ['nullable', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:6'],
             'role' => ['sometimes', Rule::in(['admin', 'pekerja'])],
-            'confirm_password' => ['required', 'string'],
         ]);
-
-        if (!Hash::check($r->confirm_password, auth()->user()->password)) {
-            return response()->json(['errors' => ['confirm_password' => ['Password konfirmasi salah.']]], 422);
-        }
 
         $data = [
             'username' => $r->username,
             'email' => $r->email ?? null,
         ];
-        if ($r->has('role'))
+        if ($r->has('role')) {
             $data['role'] = $r->role;
-        if ($r->filled('password'))
+        }
+        if ($r->filled('password')) {
             $data['password'] = Hash::make($r->password);
+        }
 
         $user->update($data);
         return response()->json(['message' => 'Updated']);
     }
 
+    // DELETE: tetap minta konfirmasi password
     public function destroy(Request $r, User $user)
     {
         $r->validate(['confirm_password' => ['required', 'string']]);

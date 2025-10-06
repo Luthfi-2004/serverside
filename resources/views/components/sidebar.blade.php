@@ -1,22 +1,22 @@
 @php
-    $isDash  = request()->routeIs('dashboard');
+  $isDash = request()->routeIs('dashboard');
 
-    // JSH group
-    $isJshIndex   = request()->routeIs('greensand.index');
-    $isJshGfn     = request()->routeIs('jshgfn.*');
-    $isJshStd     = request()->routeIs('greensand.standards');
-    $isJshOpen    = $isJshIndex || $isJshGfn || $isJshStd;
+  // JSH group
+  $isJshIndex = request()->routeIs('greensand.index');
+  $isJshGfn = request()->routeIs('jshgfn.*');
+  $isJshStd = request()->routeIs('greensand.standards');
+  $isJshOpen = $isJshIndex || $isJshGfn || $isJshStd;
 
-    // ACE group
-    $isAceIndex   = request()->routeIs('ace.index');
-    $isAceGfn     = request()->routeIs('acelinegfn.*');
-    $isAceStd     = request()->routeIs('ace.standards');
-    $isAceOpen    = $isAceIndex || $isAceGfn || $isAceStd;
+  // ACE group
+  $isAceIndex = request()->routeIs('ace.index');
+  $isAceGfn = request()->routeIs('acelinegfn.*');
+  $isAceStd = request()->routeIs('ace.standards');
+  $isAceOpen = $isAceIndex || $isAceGfn || $isAceStd;
 
-    // Admin group
-    $isAdminUser  = request()->routeIs('admin.users.*');
+  // Admin group
+  $isAdminUser = request()->routeIs('admin.users.*');
 
-    $isAdmin = auth()->check() && auth()->user()->role === 'admin';
+  $isAdmin = auth()->check() && auth()->user()->role === 'admin';
 @endphp
 
 <div class="vertical-menu">
@@ -32,13 +32,23 @@
             <span>Dashboard</span>
           </a>
         </li>
+        {{-- Admin: Kelola User --}}
+        @if($isAdmin)
+          <li class="{{ $isAdminUser ? 'mm-active' : '' }}">
+            <a href="{{ route('admin.users.index') }}" class="waves-effect {{ $isAdminUser ? 'active' : '' }}">
+              <i class="ri-user-settings-line"></i>
+              <span>Kelola User</span>
+            </a>
+          </li>
+        @endif
 
         {{-- Green Sand --}}
         <li class="menu-title">Green Sand</li>
 
         {{-- JSH LINE --}}
         <li class="{{ $isJshOpen ? 'mm-active' : '' }}">
-          <a href="javascript:void(0);" class="has-arrow waves-effect {{ $isJshOpen ? 'aria-expanded' : '' }}" aria-expanded="{{ $isJshOpen ? 'true' : 'false' }}">
+          <a href="javascript:void(0);" class="has-arrow waves-effect {{ $isJshOpen ? 'aria-expanded' : '' }}"
+            aria-expanded="{{ $isJshOpen ? 'true' : 'false' }}">
             <i class="ri-flask-line"></i>
             <span>JSH LINE</span>
           </a>
@@ -66,7 +76,8 @@
 
         {{-- ACE LINE --}}
         <li class="{{ $isAceOpen ? 'mm-active' : '' }}">
-          <a href="javascript:void(0);" class="has-arrow waves-effect {{ $isAceOpen ? 'aria-expanded' : '' }}" aria-expanded="{{ $isAceOpen ? 'true' : 'false' }}">
+          <a href="javascript:void(0);" class="has-arrow waves-effect {{ $isAceOpen ? 'aria-expanded' : '' }}"
+            aria-expanded="{{ $isAceOpen ? 'true' : 'false' }}">
             <i class="ri-flask-line"></i>
             <span>ACE LINE</span>
           </a>
@@ -92,15 +103,7 @@
         </li>
         {{-- END ACE LINE --}}
 
-        {{-- Admin: Kelola User --}}
-        @if($isAdmin)
-          <li class="{{ $isAdminUser ? 'mm-active' : '' }}">
-            <a href="{{ route('admin.users.index') }}" class="waves-effect {{ $isAdminUser ? 'active' : '' }}">
-              <i class="ri-user-settings-line"></i>
-              <span>Kelola User</span>
-            </a>
-          </li>
-        @endif
+
 
       </ul>
     </div>
