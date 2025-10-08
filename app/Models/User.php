@@ -1,29 +1,34 @@
 <?php
 
-namespace App\Models;
+    namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+    use Illuminate\Foundation\Auth\User as Authenticatable;
+    use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
-{
-    use Notifiable;
+    class User extends Authenticatable
+    {
+        use Notifiable;
 
-    // Aman untuk kolom yang kamu pakai
-    protected $fillable = [
-        'username',
-        'email',
-        'password',
-        'role',
-        'name',         // ada / tidak ada di DB tidak masalah
-    ];
+        // Koneksi & tabel di aicc-master
+        protected $connection = 'mysql_aicc';
+        protected $table = 'tb_user';
+        protected $primaryKey = 'id';
+        public $incrementing = true;
+        protected $keyType = 'int';
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+        // Banyak tabel lama tidak punya updated_at
+        public $timestamps = false;
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-}
+        protected $fillable = [
+            'nama','section_id','usr','pswd','email','no_hp','kode_user',
+            'is_active','level','is_user_computer','created_at','image_sign',
+        ];
+
+        protected $hidden = ['pswd'];
+
+        // Dipakai kalau kamu pakai Auth::attempt (opsional)
+        public function getAuthPassword()
+        {
+            return $this->pswd;
+        }
+    }

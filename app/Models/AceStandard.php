@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AceStandard extends Model
 {
-    protected $table = 'tb_ace_standards';
+    protected $table = 'tb_greensand_std_ace';
 
     protected $fillable = [
         // MM

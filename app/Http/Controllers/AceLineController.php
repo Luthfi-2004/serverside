@@ -50,7 +50,7 @@ class AceLineController extends Controller
             'cb_weight',
             'tp50_weight',
             'ssi',
-            'most',       
+            'most',
             'dw29_vas',
             'dw29_debu',
             'dw31_vas',
@@ -77,7 +77,6 @@ class AceLineController extends Controller
 
         foreach ($numeric as $f)
             $rules[$f] = ['nullable', 'numeric'];
-
         return $rules;
     }
 
@@ -106,7 +105,7 @@ class AceLineController extends Controller
             'cb_weight',
             'tp50_weight',
             'ssi',
-            'most',         
+            'most',
             'dw29_vas',
             'dw29_debu',
             'dw31_vas',
@@ -117,10 +116,8 @@ class AceLineController extends Controller
             'bc13_c',
             'bc13_m',
         ]);
-
         if (!empty($data['date']))
             $data['date'] = $this->ymd($data['date']);
-
         return $data;
     }
 
@@ -148,14 +145,10 @@ class AceLineController extends Controller
             ->editColumn('date', function (AceLine $r) {
                 if ($r->date)
                     return Carbon::parse($r->date)->format('Y-m-d');
-                return $r->created_at
-                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i')
-                    : null;
+                return $r->created_at ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i') : null;
             })
             ->addColumn('created_time', function (AceLine $r) {
-                return $r->created_at
-                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s')
-                    : null;
+                return $r->created_at ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null;
             })
             ->make(true);
     }
@@ -176,20 +169,16 @@ class AceLineController extends Controller
         }
 
         $row = AceLine::create($data);
-
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Saved']);
     }
 
     public function show($id)
     {
         $row = AceLine::findOrFail($id);
-
-        // format jam ke H:i untuk form edit
         if ($row->sample_start)
             $row->sample_start = Carbon::parse($row->sample_start)->format('H:i');
         if ($row->sample_finish)
             $row->sample_finish = Carbon::parse($row->sample_finish)->format('H:i');
-
         return response()->json($row);
     }
 
@@ -197,7 +186,6 @@ class AceLineController extends Controller
     {
         $request->validate($this->rules());
         $row = AceLine::findOrFail($id);
-
         $data = $this->fillable($request);
         if (!array_key_exists('number', $data))
             unset($data['number']);
@@ -205,9 +193,7 @@ class AceLineController extends Controller
             unset($data['date']);
         if (!array_key_exists('shift', $data))
             unset($data['shift']);
-
         $row->update($data);
-
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Updated']);
     }
 
@@ -333,9 +319,54 @@ class AceLineController extends Controller
             ($ptId ? '_PT' . $ptId : '') .
             '_' . date('His') . '.xlsx';
 
-        return Excel::download(
-            new AceLineExportFull($ymd, $shift, $ptId),
-            $fname
-        );
+        return Excel::download(new AceLineExportFull($ymd, $shift, $ptId), $fname);
     }
+
+    public function lookupProducts(Request $request)
+    {
+        try {
+            $term = trim((string) $request->get('q', ''));
+            $page = max(1, (int) $request->get('page', 1));
+            $take = 20;
+            $offset = ($page - 1) * $take;
+
+            // 🔹 pastikan koneksi DB WIP digunakan
+            $query = DB::connection('mysql_wip')
+                ->table('products')
+                ->select(['id', 'no', 'name'])
+                ->when($term, function ($q) use ($term) {
+                    $q->where(function ($w) use ($term) {
+                        $w->where('no', 'like', "%{$term}%")
+                            ->orWhere('name', 'like', "%{$term}%");
+                    });
+                })
+                ->orderBy('no');
+
+            $rows = $query->offset($offset)->limit($take)->get();
+
+            // 🔹 format hasil agar cocok dengan Select2 (id + text)
+            $results = $rows->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'text' => "{$r->no} - {$r->name}",
+                    'no' => $r->no,
+                    'name' => $r->name,
+                ];
+            });
+
+            $hasMore = $rows->count() === $take;
+
+            return response()->json([
+                'results' => $results,
+                'pagination' => ['more' => $hasMore],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('lookupProducts error: ' . $e->getMessage());
+            return response()->json([
+                'results' => [],
+                'pagination' => ['more' => false],
+            ]);
+        }
+    }
+
 }

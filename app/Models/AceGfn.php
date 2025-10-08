@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AceGfn extends Model
 {
-    protected $table = 'tb_gfn_aceline';
+    protected $table = 'tb_greensand_gfn_ace';
 
     protected $fillable = [
         'gfn_date', 'shift', 'mesh', 'gram', 'percentage', 'index',

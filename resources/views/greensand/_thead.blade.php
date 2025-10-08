@@ -61,7 +61,7 @@
             'Rating Pasir Es',    // NEW
         ];
 
-        $__std = DB::table('tb_jsh_standards')->first();
+        $__std = DB::table('tb_greensand_std_jsh')->first();
 
         $fmt = function ($v) {
             if ($v === null || $v === '')

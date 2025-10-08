@@ -17,7 +17,7 @@
     use Illuminate\Support\Facades\DB;
 
     // Ambil satu baris standar ACE
-    $__std = DB::table('tb_ace_standards')->first();
+    $__std = DB::table('tb_greensand_std_ace')->first();
 
     // ===== FORMATTER ANGKA =====
     // - 12.000  -> "12"

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TotalGfn extends Model
 {
-    protected $table = 'tb_total_gfn';
+    protected $table = 'tb_greensand_gfn_total_jsh';
 
     protected $fillable = [
         // metadata

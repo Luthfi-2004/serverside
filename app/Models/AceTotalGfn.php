@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AceTotalGfn extends Model
 {
-    protected $table = 'tb_total_gfn_aceline';
+    protected $table = 'tb_greensand_gfn_total_ace';
 
     protected $fillable = [
         'gfn_date','shift','nilai_gfn','mesh_total140','mesh_total70','meshpan',

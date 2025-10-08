@@ -10,26 +10,24 @@ use App\Http\Controllers\AceStandardController;
 use App\Http\Controllers\AceSummaryController;
 use App\Http\Controllers\JshStandardController;
 use App\Http\Controllers\GreensandSummaryController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Middleware\RoleMiddleware;
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+Route::get('/lookup/products', [AceLineController::class, 'lookupProducts'])->name('lookup.products');
+
+Route::get('/debug/wip-products', function () {
+    try {
+        $rows = \Illuminate\Support\Facades\DB::connection('mysql_wip')
+            ->table('products')->select(['id', 'no', 'name'])->limit(10)->get();
+        return response()->json(['ok' => true, 'count' => $rows->count(), 'rows' => $rows]);
+    } catch (\Throwable $e) {
+        return response()->json(['ok' => false, 'err' => $e->getMessage()], 500);
+    }
 });
 
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth', RoleMiddleware::class . ':admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('users', [UserController::class, 'index'])->name('users.index');
-    Route::get('users/data', [UserController::class, 'data'])->name('users.data');
-    Route::get('users/{user}/json', [UserController::class, 'json'])->name('users.json');
-    Route::post('users', [UserController::class, 'store'])->name('users.store');
-    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-});
-
-Route::middleware('auth')->group(function () {
+Route::group([], function () {
     Route::view('/', 'greensand.dashboard')->name('dashboard');
 
     Route::view('/greensand', 'greensand.greensand')->name('greensand.index');
@@ -40,12 +38,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/data/mm1', [GreensandJshController::class, 'dataMM1'])->name('data.mm1');
         Route::get('/data/mm2', [GreensandJshController::class, 'dataMM2'])->name('data.mm2');
         Route::get('/data/all', [GreensandJshController::class, 'dataAll'])->name('data.all');
-
-        Route::middleware(RoleMiddleware::class . ':admin')->group(function () {
-            Route::get('/standards', [JshStandardController::class, 'index'])->name('standards');
-            Route::post('/standards', [JshStandardController::class, 'update'])->name('standards.update');
-        });
-
+        Route::get('/standards', [JshStandardController::class, 'index'])->name('standards');
+        Route::post('/standards', [JshStandardController::class, 'update'])->name('standards.update');
         Route::post('/processes', [GreensandJshController::class, 'store'])->name('processes.store');
         Route::get('/processes/{id}', [GreensandJshController::class, 'show'])->whereNumber('id')->name('processes.show');
         Route::put('/processes/{id}', [GreensandJshController::class, 'update'])->whereNumber('id')->name('processes.update');
@@ -70,11 +64,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}', [AceLineController::class, 'show'])->whereNumber('id')->name('show');
         Route::put('/{id}', [AceLineController::class, 'update'])->whereNumber('id')->name('update');
         Route::delete('/{id}', [AceLineController::class, 'destroy'])->whereNumber('id')->name('destroy');
-
-        Route::middleware(RoleMiddleware::class . ':admin')->group(function () {
-            Route::get('/standards', [AceStandardController::class, 'index'])->name('standards');
-            Route::post('/standards', [AceStandardController::class, 'update'])->name('standards.update');
-        });
+        Route::get('/standards', [AceStandardController::class, 'index'])->name('standards');
+        Route::post('/standards', [AceStandardController::class, 'update'])->name('standards.update');
     });
 
     Route::prefix('aceline-gfn')->name('acelinegfn.')->group(function () {

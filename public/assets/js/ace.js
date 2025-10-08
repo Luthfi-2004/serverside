@@ -2,7 +2,6 @@
 (function () {
     var $ = window.jQuery;
 
-    // ====== Guard basic ======
     if (!$) {
         console.error(
             "jQuery not found. Please make sure jQuery is loaded before ace.js"
@@ -18,18 +17,63 @@
 
     $.ajaxSetup({ cache: false });
 
-    // ====== UI INIT (pindahan dari Blade) ======
+    // ====== UI INIT (Filter Section) ======
     function initPageUI() {
         try {
-            $("#shiftSelect,#productSelect").select2();
-        } catch (e) {}
+            // shiftSelect dari index.blade
+            $("#shiftSelect").select2({
+                width: "100%",
+                placeholder: "Select shift",
+            });
+
+            // Type Product filter (Select2 AJAX)
+            $("#productSelectFilter").select2({
+                width: "100%",
+                placeholder: "All type",
+                ajax: {
+                    url: window.aceRoutes.lookupProducts,
+                    dataType: "json",
+                    delay: 200,
+                    data: function (params) {
+                        return { q: params.term || "", page: params.page || 1 };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: Array.isArray(data.results)
+                                ? data.results
+                                : [],
+                            pagination: {
+                                more: !!(
+                                    data.pagination && data.pagination.more
+                                ),
+                            },
+                        };
+                    },
+                    cache: true,
+                },
+                minimumInputLength: 0,
+                templateResult: function (item) {
+                    return item.text || "";
+                },
+                templateSelection: function (item) {
+                    return item.text || item.id || "";
+                },
+            });
+        } catch (e) {
+            console.error("Select2 init error:", e);
+        }
+
         try {
             $("#filterDate").datepicker({
                 format: "yyyy-mm-dd",
                 autoclose: true,
                 orientation: "bottom",
             });
-        } catch (e) {}
+        } catch (e) {
+            console.warn("datepicker init error:", e);
+        }
+
         $("#filterHeader")
             .off("click")
             .on("click", function () {
@@ -88,11 +132,6 @@
         if (typeof v === "number") return v.toFixed(2);
         return v;
     }
-    function fmtInt(v) {
-        if (v === null || v === undefined || v === "") return "-";
-        var n = parseInt(v, 10);
-        return isNaN(n) ? "-" : n;
-    }
     function toHm(s) {
         if (!s) return "";
         var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
@@ -114,38 +153,18 @@
                 String(dt.getMinutes()).padStart(2, "0");
             return dateStr + " " + timeStr;
         }
-        if (typeof v === "string" && v.includes("T")) {
-            var d2 = new Date(v);
-            d2.setHours(d2.getHours() + 7);
-            var dateStr2 =
-                d2.getFullYear() +
-                "-" +
-                String(d2.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(d2.getDate()).padStart(2, "0");
-            var timeStr2 =
-                String(d2.getHours()).padStart(2, "0") +
-                ":" +
-                String(d2.getMinutes()).padStart(2, "0");
-            return dateStr2 + " " + timeStr2;
-        }
         return String(v).substring(0, 16);
     }
     function currentFilters() {
         return {
             date: normalizeFilterDate($("#filterDate").val()),
             shift: $("#shiftSelect").val() || "",
-            product_type_id: $("#productSelect").val() || "",
+            product_type_id: $("#productSelectFilter").val() || "",
             _ts: Date.now(),
         };
     }
-    function isEmptyVal(x) {
-        if (x === null || x === undefined) return true;
-        var s = String(x).trim();
-        return s === "" || s === "-" || s === "–";
-    }
 
-    // Seed default filter saat load
+    // ===== Default Filters =====
     (function initFiltersDefaults() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
@@ -153,8 +172,9 @@
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // ===== Table Columns =====
+    // ===== DataTables Columns =====
     var columns = [
+        // Action
         {
             data: null,
             orderable: false,
@@ -164,18 +184,27 @@
                 var id = row.id || "";
                 return [
                     '<div class="btn-group btn-group-sm" role="group">',
-                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="',
-                    id,
-                    '"><i class="fas fa-edit"></i></button>',
-                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="',
-                    id,
-                    '"><i class="fas fa-trash"></i></button>',
+                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="' +
+                        id +
+                        '"><i class="fas fa-edit"></i></button>',
+                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="' +
+                        id +
+                        '"><i class="fas fa-trash"></i></button>',
                     "</div>",
                 ].join("");
             },
             defaultContent: "",
         },
-        { data: "number", render: fmtInt, defaultContent: "" },
+
+        // 🔢 NO (Nomor Urut Dinamis, ikut pagination & sort)
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            },
+            defaultContent: "",
+        },
+
         { data: "date", render: formatDateTimeColumn, defaultContent: "" },
         { data: "shift", defaultContent: "" },
         { data: "product_type_name", defaultContent: "-" },
@@ -197,9 +226,9 @@
         { data: "cb_weight", render: fmt, defaultContent: "" },
         { data: "tp50_weight", render: fmt, defaultContent: "" },
         { data: "ssi", render: fmt, defaultContent: "" },
-        { data: "most", render: fmt, defaultContent: "" }, // skip di summary
+        { data: "most", render: fmt, defaultContent: "" },
 
-        // Additive Additional (TIDAK ikut summary)
+        // Additive Additional
         { data: "dw29_vas", render: fmt, defaultContent: "" },
         { data: "dw29_debu", render: fmt, defaultContent: "" },
         { data: "dw31_vas", render: fmt, defaultContent: "" },
@@ -207,305 +236,14 @@
         { data: "dw31_moldex", render: fmt, defaultContent: "" },
         { data: "dw31_sc", render: fmt, defaultContent: "" },
 
-        // BC13 (HARUS ikut summary)
+        // BC13
         { data: "no_mix", render: fmt, defaultContent: "" },
         { data: "bc13_cb", render: fmt, defaultContent: "" },
         { data: "bc13_c", render: fmt, defaultContent: "" },
         { data: "bc13_m", render: fmt, defaultContent: "" },
     ];
 
-    var START_DATA_COL = 7;
-
-    // 👉 Skip additive saja (bukan "stop di sini")
-    var ADDITIVE_KEYS = {
-        dw29_vas: true,
-        dw29_debu: true,
-        dw31_vas: true,
-        dw31_id: true,
-        dw31_moldex: true,
-        dw31_sc: true,
-    };
-    // tetap skip 'most' dari judge/summary
-    var SUMMARY_SKIP_KEYS = { most: true };
-
-    // ===== Footer helpers (summary) =====
-    function getSummaryKeyOrder() {
-        var order = [];
-        for (var i = START_DATA_COL; i < columns.length; i++) {
-            var k = columns[i] && columns[i].data;
-            if (typeof k !== "string") continue;
-            if (SUMMARY_SKIP_KEYS[k]) continue; // skip 'most'
-            if (ADDITIVE_KEYS[k]) continue; // skip additive
-            order.push(k);
-        }
-        return order;
-    }
-    function totalColumnCount() {
-        return Array.isArray(columns)
-            ? columns.length
-            : $("#dt-ace thead th").length;
-    }
-    function buildFooterStructureOnce() {
-        var $t = $("#dt-ace"),
-            $tfoot = $t.find("tfoot");
-        if (!$tfoot.length) $tfoot = $("<tfoot/>").appendTo($t);
-
-        if ($tfoot.find("tr.ace-summary-row").length) {
-            $tfoot.removeClass("d-none");
-            return $tfoot;
-        }
-        var totalCols = totalColumnCount();
-        $tfoot.empty();
-        ["MIN", "MAX", "AVG", "JUDGE"].forEach(function (L) {
-            var $tr = $("<tr/>").addClass(
-                "ace-summary-row ace-summary-" + L.toLowerCase()
-            );
-            $tr.append(
-                $("<td/>")
-                    .addClass("ace-foot-label")
-                    .attr("colspan", START_DATA_COL)
-                    .text(L)
-            );
-            for (var i = START_DATA_COL; i < totalCols; i++)
-                $tr.append($("<td/>"));
-            $tfoot.append($tr);
-        });
-        $tfoot.removeClass("d-none");
-        return $tfoot;
-    }
-
-    // Keep a single real <tfoot/> and re-attach if DT messes with DOM
-    var footObserver = null;
-    function ensureFooterAttached() {
-        var $t = $("#dt-ace"),
-            $tfoot = $t.find("tfoot");
-
-        if (!$tfoot.length || !$tfoot.find("tr.ace-summary-row").length) {
-            $tfoot = buildFooterStructureOnce();
-        }
-        if (!$t.children("tfoot").length) $t.append($tfoot); // re-attach if detached
-        if (!$tfoot.is(":visible")) $tfoot.removeClass("d-none");
-
-        // Observe if DataTables rewraps table (e.g., scrollX/page length)
-        if (!footObserver) {
-            try {
-                footObserver = new MutationObserver(function () {
-                    var $t2 = $("#dt-ace");
-                    var $tf2 = $t2.find("tfoot");
-                    if (!$t2.children("tfoot").length && $tf2.length) {
-                        $t2.append($tf2);
-                    }
-                });
-                footObserver.observe($t[0], { childList: true });
-            } catch (e) {}
-        }
-        return $tfoot;
-    }
-
-    function adaptSummaryResponse(res, keyOrder) {
-        var out = { min: {}, max: {}, avg: {}, judge: {} };
-
-        // API bentuk baru: { summary: [{field,min,max,avg,judge}, ...], present:{k:true/false} }
-        if (res && Array.isArray(res.summary)) {
-            var map = {};
-            res.summary.forEach(function (s) {
-                if (s && s.field) map[s.field] = s;
-            });
-            keyOrder.forEach(function (k) {
-                var s = map[k] || {};
-                out.min[k] = s.min != null ? s.min : "";
-                out.max[k] = s.max != null ? s.max : "";
-                out.avg[k] = s.avg != null ? s.avg : "";
-                out.judge[k] = s.judge != null ? s.judge : "";
-            });
-            return out;
-        }
-
-        // fallback ke bentuk lama { rows:{min,max,avg,judge}, present? }
-        function pickKeys(raw) {
-            var obj = {};
-            if (!raw) return obj;
-            if (Array.isArray(raw)) {
-                for (var i = 0; i < Math.min(raw.length, keyOrder.length); i++)
-                    obj[keyOrder[i]] = raw[i];
-                return obj;
-            }
-            if (typeof raw === "object") {
-                keyOrder.forEach(function (k) {
-                    if (k in raw) obj[k] = raw[k];
-                });
-                return obj;
-            }
-            return obj;
-        }
-        var rows = (res && res.rows) || {};
-        out.min = pickKeys(rows.min);
-        out.max = pickKeys(rows.max);
-        out.avg = pickKeys(rows.avg);
-        out.judge = pickKeys(rows.judge);
-        return out;
-    }
-
-    function buildJudgeMask(rowsObj, present, keyOrder) {
-        var mask = {};
-        keyOrder.forEach(function (k) {
-            if (present && typeof present[k] !== "undefined") {
-                mask[k] = !!present[k];
-            } else {
-                var has =
-                    (rowsObj.min && !isEmptyVal(rowsObj.min[k])) ||
-                    (rowsObj.max && !isEmptyVal(rowsObj.max[k])) ||
-                    (rowsObj.avg && !isEmptyVal(rowsObj.avg[k]));
-                mask[k] = !!has;
-            }
-        });
-        return mask;
-    }
-
-    // === PERUBAHAN PENTING: render berdasarkan POSISI KOLOM, bukan urutan keyOrder ===
-    function renderFooterKeyed(
-        $row,
-        objValues,
-        isJudgeRow,
-        judgeMask,
-        keyOrder
-    ) {
-        var tds = $row.find("td");
-        if (!tds.length) return;
-
-        // clear semua cell (kecuali label pertama yang colspan)
-        for (var i = 1; i < tds.length; i++)
-            $(tds[i]).html("").removeClass("j-ok j-ng");
-
-        // isi cell sesuai POSISI kolom asli
-        var totalCols = columns.length;
-        for (var colIdx = START_DATA_COL; colIdx < totalCols; colIdx++) {
-            var key = columns[colIdx] && columns[colIdx].data;
-            var tdIndex = 1 + (colIdx - START_DATA_COL); // cell ke berapa di tfoot row
-
-            // safety
-            if (!tds[tdIndex]) continue;
-
-            // Skip yang memang tidak dirangkum
-            if (SUMMARY_SKIP_KEYS[key] || ADDITIVE_KEYS[key]) {
-                $(tds[tdIndex]).html("");
-                continue;
-            }
-
-            var val =
-                objValues &&
-                Object.prototype.hasOwnProperty.call(objValues, key)
-                    ? objValues[key]
-                    : "";
-
-            // hide judge kalau mask mengatakan tidak present (tidak ada batas min/max)
-            if (isJudgeRow && judgeMask && judgeMask[key] === false) {
-                val = "";
-            }
-
-            $(tds[tdIndex]).html(val);
-
-            if (isJudgeRow) {
-                var s = String(val);
-                if (s === "OK" || /text-success/.test(s))
-                    $(tds[tdIndex]).addClass("j-ok");
-                else if (s === "NG" || /text-danger/.test(s))
-                    $(tds[tdIndex]).addClass("j-ng");
-            }
-        }
-    }
-
-    function fillSummaryIntoFooter() {
-        if (!aceRoutes.summary) return;
-        var $tfoot = ensureFooterAttached();
-        var keyOrder = getSummaryKeyOrder();
-        var params = currentFilters();
-
-        $.ajax({
-            url: aceRoutes.summary,
-            type: "GET",
-            data: params,
-            cache: false,
-        })
-            .done(function (res) {
-                var norm = adaptSummaryResponse(res || {}, keyOrder);
-                var mask = buildJudgeMask(
-                    norm,
-                    (res && res.present) || null,
-                    keyOrder
-                );
-
-                renderFooterKeyed(
-                    $tfoot.find("tr.ace-summary-min"),
-                    norm.min,
-                    false,
-                    null,
-                    keyOrder
-                );
-                renderFooterKeyed(
-                    $tfoot.find("tr.ace-summary-max"),
-                    norm.max,
-                    false,
-                    null,
-                    keyOrder
-                );
-                renderFooterKeyed(
-                    $tfoot.find("tr.ace-summary-avg"),
-                    norm.avg,
-                    false,
-                    null,
-                    keyOrder
-                );
-                renderFooterKeyed(
-                    $tfoot.find("tr.ace-summary-judge"),
-                    norm.judge,
-                    true,
-                    mask,
-                    keyOrder
-                );
-
-                $tfoot.removeClass("d-none");
-            })
-            .fail(function (xhr) {
-                console.error(
-                    "summary fail",
-                    xhr && (xhr.responseText || xhr.statusText)
-                );
-                $("#dt-ace tfoot").removeClass("d-none");
-            });
-    }
-
-    // Trigger isi summary setelah DT redraw/aksi apapun
-    function wireSummaryEvents(dt) {
-        var $t = $("#dt-ace");
-        // Semua event relevan yang bisa mengubah DOM/wrapper
-        $t.on(
-            "draw.dt length.dt order.dt search.dt page.dt xhr.dt",
-            function () {
-                ensureFooterAttached();
-                // delay sangat pendek memberi waktu DT selesai layouting
-                setTimeout(function () {
-                    ensureFooterAttached();
-                    fillSummaryIntoFooter();
-                }, 60);
-            }
-        );
-    }
-
-    // Non-sort di baris bawah thead (Standard/Unit/Freq)
-    function lockSortOnTop() {
-        var $thead = $("#dt-ace thead");
-        $thead
-            .find("tr.std-row th")
-            .removeClass(
-                "sorting sorting_asc sorting_desc sorting_asc_disabled sorting_desc_disabled"
-            )
-            .addClass("sorting_disabled")
-            .css({ "pointer-events": "none", "background-image": "none" })
-            .attr("aria-label", "");
-    }
-
-    // ===== DataTable init =====
+    // ===== Init DataTable =====
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -515,8 +253,7 @@
         scrollCollapse: true,
         deferRender: true,
         pageLength: 25,
-        order: [[2, "desc"]],
-        orderCellsTop: true, // sort ambil baris header teratas
+        order: [[2, "desc"]], // urut kolom tanggal (setelah Action & No)
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -537,32 +274,12 @@
         columnDefs: [
             { targets: "_all", className: "align-middle text-center" },
         ],
-        initComplete: function () {
-            lockSortOnTop();
-            buildFooterStructureOnce();
-            ensureFooterAttached();
-            fillSummaryIntoFooter();
-            wireSummaryEvents(this.api()); // daftar event di sini
-        },
-        headerCallback: function () {
-            lockSortOnTop();
-        },
-        // footerCallback: tidak dipakai; kita kelola sendiri agar stabil
-        drawCallback: function () {
-            // Pastikan <tfoot> nempel setelah render panjang (misal ganti page length)
-            ensureFooterAttached();
-        },
     });
 
     function reloadTable(cb) {
         if (window.aceTable) {
             window.aceTable.ajax.reload(function () {
                 if (typeof cb === "function") cb();
-                // Pastikan summary di-refresh setelah reload
-                setTimeout(function () {
-                    ensureFooterAttached();
-                    fillSummaryIntoFooter();
-                }, 80);
             }, false);
         }
     }
@@ -576,7 +293,7 @@
     $("#btnRefresh").on("click", function () {
         $("#filterDate").val(todayYmd());
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
-        $("#productSelect").val("").trigger("change");
+        $("#productSelectFilter").val("").trigger("change");
         reloadTable(function () {
             gsFlash("Filter direset.", "secondary");
         });
@@ -588,42 +305,70 @@
         gsFlash("Menyiapkan file Excel…", "info");
     });
 
-    // ===== Modal: Add =====
-    $(document).on(
-        "click",
-        '[data-toggle="modal"][data-target="#modal-ace"], [data-target="#modal-ace"]',
-        function () {
-            var form = document.getElementById("aceForm");
-            if (form && form.reset) form.reset();
-            $("#ace_mode").val("create");
-            $("#ace_id").val("");
-            $("#mDate").val(todayYmd());
-            $("#mShift").val(detectShiftByNow());
-            $("#aceFormAlert").addClass("d-none").empty();
-        }
-    );
-    $("#modal-ace").on("show.bs.modal", function () {
-        var isUpdate = $("#ace_mode").val() === "update";
-        if (isUpdate) return;
+    // ===== Modal: Add (clear all) =====
+    $(document).on("click", '[data-target="#modal-ace"]', function () {
         var form = document.getElementById("aceForm");
         if (form && form.reset) form.reset();
         $("#ace_mode").val("create");
         $("#ace_id").val("");
-        $("#aceFormAlert").addClass("d-none").empty();
         $("#mDate").val(todayYmd());
         $("#mShift").val(detectShiftByNow());
+        $("#aceFormAlert").addClass("d-none").empty();
+
+        var $ps = $("#productSelectModal");
+        // bersihin isi & cache supaya gak kebawa dari edit sebelumnya
+        if ($ps.data("select2")) $ps.empty().trigger("change");
+        $ps.val(null).trigger("change");
+        $ps.removeData("selected-id").removeData("selected-text");
+        $ps.attr("data-selected-id", "").attr("data-selected-text", "");
+        $("#productTypeName").val("");
     });
 
     // ===== Edit =====
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
+
         $.get(aceRoutes.base + "/" + id)
             .done(function (row) {
                 $("#aceFormAlert").addClass("d-none").empty();
                 $("#ace_mode").val("update");
                 $("#ace_id").val(row.id || "");
                 fillForm(row);
+
+                var $ps = $("#productSelectModal");
+
+                if (row.product_type_id && row.product_type_name) {
+                    // ✅ ada type product → tampilkan pilihan yg benar tanpa buka dropdown
+                    if ($ps.data("select2")) $ps.empty(); // buang option lama biar gak nyangkut
+                    var opt = new Option(
+                        row.product_type_name,
+                        row.product_type_id,
+                        true,
+                        true
+                    );
+                    $ps.append(opt).trigger("change");
+
+                    // simpan cache utk modal script (kalau dipakai)
+                    $ps.data("selected-id", row.product_type_id);
+                    $ps.data("selected-text", row.product_type_name);
+                    $ps.attr("data-selected-id", row.product_type_id);
+                    $ps.attr("data-selected-text", row.product_type_name);
+
+                    // hidden name ikut diisi
+                    $("#productTypeName").val(row.product_type_name);
+                } else {
+                    // ❌ kosong → benar-benar kosongkan & hilangkan jejak sebelumnya
+                    if ($ps.data("select2")) $ps.empty().trigger("change");
+                    $ps.val(null).trigger("change");
+                    $ps.removeData("selected-id").removeData("selected-text");
+                    $ps.attr("data-selected-id", "").attr(
+                        "data-selected-text",
+                        ""
+                    );
+                    $("#productTypeName").val("");
+                }
+
                 $("#modal-ace").modal("show");
             })
             .fail(function (xhr) {
@@ -727,7 +472,6 @@
             var $f = $("#m_" + k);
             if ($f.length) $f.val(data[k]);
         });
-        $("#mProductName").val(data.product_type_name || "");
         $("#mStart").val(data.sample_start || "");
         $("#mFinish").val(data.sample_finish || "");
         $("#mNoMix").val(data.no_mix || "");
@@ -739,12 +483,4 @@
     $(function () {
         initPageUI();
     });
-
-    // seed summary once (backup trigger awal)
-    setTimeout(function () {
-        try {
-            ensureFooterAttached();
-            fillSummaryIntoFooter();
-        } catch (e) {}
-    }, 150);
 })();

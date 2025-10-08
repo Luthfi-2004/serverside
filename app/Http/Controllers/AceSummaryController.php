@@ -12,7 +12,7 @@ class AceSummaryController extends Controller
         $date  = $r->query('date');
         $shift = $r->query('shift');
         $pid   = $r->query('product_type_id');
-        $q = DB::table('tb_greensand_ace');
+        $q = DB::table('tb_greensand_check_ace');
         if ($date)  $q->whereDate('date', $date);
         if ($shift) $q->where('shift', $shift);
         if ($pid)   $q->where('product_type_id', $pid);
@@ -22,7 +22,7 @@ class AceSummaryController extends Controller
             'no_mix', 'bc13_cb', 'bc13_c', 'bc13_m',
         ];
         $nonNumeric = ['machine_no','most','no_mix'];
-        $std = DB::table('tb_ace_standards')->first();
+        $std = DB::table('tb_greensand_std_ace')->first();
         $rows = [];
         foreach ($keys as $k) {
             if (in_array($k, $nonNumeric, true)) {

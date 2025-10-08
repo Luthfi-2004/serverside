@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AceLine extends Model
 {
-    protected $table = 'tb_greensand_ace';
+    protected $table = 'tb_greensand_check_ace';
 
     protected $fillable = [
         'date',
@@ -31,7 +31,7 @@ class AceLine extends Model
         'cb_weight',
         'tp50_weight',
         'ssi',
-        'most',         // <-- DITAMBAH
+        'most',
         'dw29_vas',
         'dw29_debu',
         'dw31_vas',
@@ -43,16 +43,8 @@ class AceLine extends Model
         'bc13_m',
     ];
 
-    /**
-     * NOTE:
-     * - Kalau kolom `date` kamu tipe DATE → gunakan 'date:Y-m-d'
-     * - Kalau kolom `date` kamu tipe DATETIME/TIMESTAMP → pakai 'datetime:Y-m-d'
-     * Di bawah ini aman untuk DATE (disarankan).
-     */
     protected $casts = [
         'date' => 'date:Y-m-d',
-
-        // numeric casts
         'p' => 'float',
         'c' => 'float',
         'gt' => 'float',
@@ -66,7 +58,7 @@ class AceLine extends Model
         'cb_weight' => 'float',
         'tp50_weight' => 'float',
         'ssi' => 'float',
-        'most' => 'float',          // <-- DITAMBAH
+        'most' => 'float',
         'dw29_vas' => 'float',
         'dw29_debu' => 'float',
         'dw31_vas' => 'float',
@@ -80,24 +72,4 @@ class AceLine extends Model
         'no_mix' => 'integer',
         'product_type_id' => 'integer',
     ];
-
-    /* ===== Scopes ringan ===== */
-    public function scopeFilterDate($q, ?string $ymd)
-    {
-        if ($ymd)
-            $q->whereRaw('DATE(`date`) = ?', [$ymd]);
-        return $q;
-    }
-    public function scopeFilterShift($q, ?string $shift)
-    {
-        if ($shift)
-            $q->where('shift', $shift);
-        return $q;
-    }
-    public function scopeFilterProduct($q, $productTypeId)
-    {
-        if ($productTypeId)
-            $q->where('product_type_id', $productTypeId);
-        return $q;
-    }
 }

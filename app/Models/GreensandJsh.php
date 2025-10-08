@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GreensandJsh extends Model
 {
-    protected $table = 'tb_greensand_jsh';
+    protected $table = 'tb_greensand_check_jsh';
 
     protected $fillable = [
         'date',

@@ -31,12 +31,12 @@
 
                                         <div class="form-group auth-form-group-custom mb-4">
                                             <i class="ri-user-2-line auti-custom-input-icon"></i>
-                                            <label for="username">Username</label>
-                                            <input type="text" id="username" name="username"
-                                                class="form-control @error('username') is-invalid @enderror"
-                                                value="{{ old('username') }}" placeholder="Enter username"
-                                                autofocus>
-                                            @error('username')
+                                            <label for="usr">Username</label>
+                                            <input type="text" id="usr" name="usr"
+                                                class="form-control @error('usr') is-invalid @enderror"
+                                                value="{{ old('usr') }}" placeholder="Enter username"
+                                                autofocus autocomplete="username">
+                                            @error('usr')
                                                 <span class="invalid-feedback d-block">{{ $message }}</span>
                                             @enderror
                                         </div>
@@ -46,7 +46,7 @@
                                             <label for="password">Password</label>
                                             <input type="password" id="password" name="password"
                                                 class="form-control @error('password') is-invalid @enderror"
-                                                placeholder="Enter password">
+                                                placeholder="Enter password" autocomplete="current-password">
                                             @error('password')
                                                 <span class="invalid-feedback d-block">{{ $message }}</span>
                                             @enderror

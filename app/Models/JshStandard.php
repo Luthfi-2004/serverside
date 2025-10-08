@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class JshStandard extends Model
 {
-    protected $table = 'tb_jsh_standards';
+    protected $table = 'tb_greensand_std_jsh';
 
     protected $guarded = [];
 
