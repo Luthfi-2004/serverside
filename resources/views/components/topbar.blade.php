@@ -52,8 +52,13 @@
                     <img class="rounded-circle header-profile-user"
                         src="{{ asset('assets/images/users/avatar-2.jpg') }}" alt="Header Avatar">
                     <span class="d-xl-inline-block ml-1">
-                        {{ auth()->check() ? (auth()->user()->name ?? auth()->user()->username ?? 'User') : 'Guest' }}
+                        @auth
+                            {{ auth()->user()->nama ?? auth()->user()->usr ?? auth()->user()->email ?? 'User' }}
+                        @else
+                            Guest
+                        @endauth
                     </span>
+
                     <i class="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
                 </button>
 

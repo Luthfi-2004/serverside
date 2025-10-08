@@ -11,8 +11,22 @@ use App\Http\Controllers\AceSummaryController;
 use App\Http\Controllers\JshStandardController;
 use App\Http\Controllers\GreensandSummaryController;
 
-Route::get('/lookup/products', [AceLineController::class, 'lookupProducts'])->name('lookup.products');
+/**
+ * Auth routes (public, tapi hanya untuk tamu/guest)
+ */
+Route::middleware('guest')->group(function () {
+    Route::get('/login',  [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+});
 
+/**
+ * Logout (harus login)
+ */
+Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+/**
+ * Debug (biarkan di luar auth untuk tes koneksi WIP)
+ */
 Route::get('/debug/wip-products', function () {
     try {
         $rows = \Illuminate\Support\Facades\DB::connection('mysql_wip')
@@ -23,13 +37,17 @@ Route::get('/debug/wip-products', function () {
     }
 });
 
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
-Route::group([], function () {
+/**
+ * APP routes (protected)
+ */
+Route::middleware(['auth'])->group(function () {
+    // Dashboard
     Route::view('/', 'greensand.dashboard')->name('dashboard');
 
+    // Lookup
+    Route::get('/lookup/products', [AceLineController::class, 'lookupProducts'])->name('lookup.products');
+
+    // Greensand
     Route::view('/greensand', 'greensand.greensand')->name('greensand.index');
     Route::get('/greensand/export', [GreensandJshController::class, 'export'])->name('greensand.export');
     Route::get('/greensand/summary', [GreensandSummaryController::class, 'jsh'])->name('greensand.summary');
@@ -38,14 +56,17 @@ Route::group([], function () {
         Route::get('/data/mm1', [GreensandJshController::class, 'dataMM1'])->name('data.mm1');
         Route::get('/data/mm2', [GreensandJshController::class, 'dataMM2'])->name('data.mm2');
         Route::get('/data/all', [GreensandJshController::class, 'dataAll'])->name('data.all');
+
         Route::get('/standards', [JshStandardController::class, 'index'])->name('standards');
         Route::post('/standards', [JshStandardController::class, 'update'])->name('standards.update');
+
         Route::post('/processes', [GreensandJshController::class, 'store'])->name('processes.store');
         Route::get('/processes/{id}', [GreensandJshController::class, 'show'])->whereNumber('id')->name('processes.show');
         Route::put('/processes/{id}', [GreensandJshController::class, 'update'])->whereNumber('id')->name('processes.update');
         Route::delete('/processes/{id}', [GreensandJshController::class, 'destroy'])->whereNumber('id')->name('processes.destroy');
     });
 
+    // JSH GFN
     Route::prefix('jsh-gfn')->name('jshgfn.')->group(function () {
         Route::get('/', [JshGfnPageController::class, 'index'])->name('index');
         Route::post('/', [JshGfnPageController::class, 'store'])->name('store');
@@ -54,20 +75,24 @@ Route::group([], function () {
         Route::get('/check-exists', [JshGfnPageController::class, 'checkExists'])->name('check-exists');
     });
 
+    // ACE
     Route::view('/ace', 'ace.index')->name('ace.index');
 
     Route::prefix('ace')->name('ace.')->group(function () {
         Route::get('/data', [AceLineController::class, 'data'])->name('data');
         Route::get('/export', [AceLineController::class, 'export'])->name('export');
         Route::get('/summary', AceSummaryController::class)->name('summary');
+
         Route::post('/', [AceLineController::class, 'store'])->name('store');
         Route::get('/{id}', [AceLineController::class, 'show'])->whereNumber('id')->name('show');
         Route::put('/{id}', [AceLineController::class, 'update'])->whereNumber('id')->name('update');
         Route::delete('/{id}', [AceLineController::class, 'destroy'])->whereNumber('id')->name('destroy');
+
         Route::get('/standards', [AceStandardController::class, 'index'])->name('standards');
         Route::post('/standards', [AceStandardController::class, 'update'])->name('standards.update');
     });
 
+    // ACE GFN
     Route::prefix('aceline-gfn')->name('acelinegfn.')->group(function () {
         Route::get('/', [AceGfnPageController::class, 'index'])->name('index');
         Route::post('/store', [AceGfnPageController::class, 'store'])->name('store');
