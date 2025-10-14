@@ -17,16 +17,13 @@
 
     $.ajaxSetup({ cache: false });
 
-    // Init
+    // ===== UI INIT =====
     function initPageUI() {
         try {
-            // Shift
             $("#shiftSelect").select2({
                 width: "100%",
                 placeholder: "Select shift",
             });
-
-            // Product
             $("#productSelectFilter").select2({
                 width: "100%",
                 placeholder: "All type",
@@ -82,7 +79,7 @@
             });
     }
 
-    // Flash
+    // ===== FLASH =====
     function gsFlash(msg, type = "success", timeout = 3000) {
         var holder = document.getElementById("flash-holder");
         if (!holder) return;
@@ -105,7 +102,7 @@
     }
     window.gsFlash = gsFlash;
 
-    // Helpers
+    // ===== HELPERS =====
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
         var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -164,7 +161,7 @@
         };
     }
 
-    // Defaults
+    // default filter seed
     (function initFiltersDefaults() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
@@ -172,9 +169,9 @@
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // Columns
+    // ===== COLUMNS (HARUS SINKRON DENGAN colIndex DI SUMMARY) =====
     var columns = [
-        // Action
+        // 0 Action
         {
             data: null,
             orderable: false,
@@ -195,50 +192,152 @@
             },
             defaultContent: "",
         },
-        // No
+        // 1 No
         {
             data: null,
-            render: function (data, type, row, meta) {
-                return meta.row + meta.settings._iDisplayStart + 1;
+            render: function (d, t, r, m) {
+                return m.row + m.settings._iDisplayStart + 1;
             },
             defaultContent: "",
         },
-        { data: "date", render: formatDateTimeColumn, defaultContent: "" },
-        { data: "shift", defaultContent: "" },
-        { data: "product_type_name", defaultContent: "-" },
-        { data: "sample_start", render: toHm, defaultContent: "" },
-        { data: "sample_finish", render: toHm, defaultContent: "" },
+        // 2..31
+        { data: "date", render: formatDateTimeColumn, defaultContent: "" }, // 2
+        { data: "shift", defaultContent: "" }, // 3
+        { data: "product_type_name", defaultContent: "-" }, // 4
+        { data: "sample_start", render: toHm, defaultContent: "" }, // 5
+        { data: "sample_finish", render: toHm, defaultContent: "" }, // 6
         // MM
-        { data: "p", render: fmt, defaultContent: "" },
-        { data: "c", render: fmt, defaultContent: "" },
-        { data: "gt", render: fmt, defaultContent: "" },
-        { data: "cb_lab", render: fmt, defaultContent: "" },
-        { data: "moisture", render: fmt, defaultContent: "" },
-        { data: "machine_no", render: fmt, defaultContent: "" },
-        { data: "bakunetsu", render: fmt, defaultContent: "" },
-        { data: "ac", render: fmt, defaultContent: "" },
-        { data: "tc", render: fmt, defaultContent: "" },
-        { data: "vsd", render: fmt, defaultContent: "" },
-        { data: "ig", render: fmt, defaultContent: "" },
-        { data: "cb_weight", render: fmt, defaultContent: "" },
-        { data: "tp50_weight", render: fmt, defaultContent: "" },
-        { data: "ssi", render: fmt, defaultContent: "" },
-        { data: "most", render: fmt, defaultContent: "" },
+        { data: "p", render: fmt, defaultContent: "" }, // 7
+        { data: "c", render: fmt, defaultContent: "" }, // 8
+        { data: "gt", render: fmt, defaultContent: "" }, // 9
+        { data: "cb_lab", render: fmt, defaultContent: "" }, // 10
+        { data: "moisture", render: fmt, defaultContent: "" }, // 11
+        { data: "machine_no", render: fmt, defaultContent: "" }, // 12 (non-numeric untuk judge)
+        { data: "bakunetsu", render: fmt, defaultContent: "" }, // 13
+        { data: "ac", render: fmt, defaultContent: "" }, // 14
+        { data: "tc", render: fmt, defaultContent: "" }, // 15
+        { data: "vsd", render: fmt, defaultContent: "" }, // 16
+        { data: "ig", render: fmt, defaultContent: "" }, // 17
+        { data: "cb_weight", render: fmt, defaultContent: "" }, // 18
+        { data: "tp50_weight", render: fmt, defaultContent: "" }, // 19
+        { data: "ssi", render: fmt, defaultContent: "" }, // 20
+        { data: "most", render: fmt, defaultContent: "" }, // 21 (non-numeric untuk judge)
         // Additive
-        { data: "dw29_vas", render: fmt, defaultContent: "" },
-        { data: "dw29_debu", render: fmt, defaultContent: "" },
-        { data: "dw31_vas", render: fmt, defaultContent: "" },
-        { data: "dw31_id", render: fmt, defaultContent: "" },
-        { data: "dw31_moldex", render: fmt, defaultContent: "" },
-        { data: "dw31_sc", render: fmt, defaultContent: "" },
+        { data: "dw29_vas", render: fmt, defaultContent: "" }, // 22
+        { data: "dw29_debu", render: fmt, defaultContent: "" }, // 23
+        { data: "dw31_vas", render: fmt, defaultContent: "" }, // 24
+        { data: "dw31_id", render: fmt, defaultContent: "" }, // 25
+        { data: "dw31_moldex", render: fmt, defaultContent: "" }, // 26
+        { data: "dw31_sc", render: fmt, defaultContent: "" }, // 27
         // BC13
-        { data: "no_mix", render: fmt, defaultContent: "" },
-        { data: "bc13_cb", render: fmt, defaultContent: "" },
-        { data: "bc13_c", render: fmt, defaultContent: "" },
-        { data: "bc13_m", render: fmt, defaultContent: "" },
+        { data: "no_mix", render: fmt, defaultContent: "" }, // 28 (non-numeric untuk judge)
+        { data: "bc13_cb", render: fmt, defaultContent: "" }, // 29
+        { data: "bc13_c", render: fmt, defaultContent: "" }, // 30
+        { data: "bc13_m", render: fmt, defaultContent: "" }, // 31
     ];
 
-    // Table
+    // ===== SUMMARY MANAGER (renders <tfoot id="ace-foot">) =====
+    var summaryManager = {
+        ensureTfoot: function () {
+            var $table = $("#dt-ace");
+            var $tfoot = $table.find("tfoot#ace-foot");
+            if (!$tfoot.length)
+                $tfoot = $('<tfoot id="ace-foot"/>').appendTo($table);
+            return $tfoot;
+        },
+        load: function () {
+            if (!window.aceRoutes.summary) return;
+            var f = currentFilters();
+            $.get(window.aceRoutes.summary, {
+                date: f.date,
+                shift: f.shift,
+                product_type_id: f.product_type_id,
+            })
+                .done(function (res) {
+                    var list = Array.isArray(res.summary) ? res.summary : [];
+                    summaryManager.render(list);
+                })
+                .fail(function () {
+                    summaryManager.render([]);
+                });
+        },
+        render: function (summary) {
+            var $tfoot = this.ensureTfoot();
+
+            // mapping index kolom (harus match array `columns` di atas)
+            var colIndex = {
+                // mulai dari 7 (kolom data pertama setelah sample_finish)
+                p: 7,
+                c: 8,
+                gt: 9,
+                cb_lab: 10,
+                moisture: 11,
+                // machine_no: 12,   // non-numeric → tidak dijudge, tetap boleh tampil MIN/MAX/AVG jika mau, tapi kita kosongkan
+                bakunetsu: 13,
+                ac: 14,
+                tc: 15,
+                vsd: 16,
+                ig: 17,
+                cb_weight: 18,
+                tp50_weight: 19,
+                ssi: 20,
+                // most: 21,         // non-numeric → skip
+                dw29_vas: 22,
+                dw29_debu: 23,
+                dw31_vas: 24,
+                dw31_id: 25,
+                dw31_moldex: 26,
+                dw31_sc: 27,
+                // no_mix: 28,       // non-numeric → skip
+                bc13_cb: 29,
+                bc13_c: 30,
+                bc13_m: 31,
+            };
+
+            function makeRow(label, valuesMap) {
+                // kolom 0..6 dipakai untuk label (action, No, date, shift, product, start, finish)
+                var tds =
+                    '<td class="text-center font-weight-bold" colspan="7">' +
+                    label +
+                    "</td>";
+                // sisanya (7..31) diisi sesuai valuesMap
+                for (var i = 7; i < columns.length; i++) {
+                    var val =
+                        valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
+                    tds += '<td class="text-center">' + val + "</td>";
+                }
+                return '<tr class="ace-summary-row">' + tds + "</tr>";
+            }
+
+            var rows = { min: {}, max: {}, avg: {}, judge: {} };
+            summary.forEach(function (s) {
+                var idx = colIndex[s.field];
+                if (idx == null) return;
+
+                rows.min[idx] = (s.min ?? "") === "" ? "" : s.min;
+                rows.max[idx] = (s.max ?? "") === "" ? "" : s.max;
+                rows.avg[idx] = (s.avg ?? "") === "" ? "" : s.avg;
+
+                if (s.judge) {
+                    var cls = s.judge === "NG" ? "j-ng" : "j-ok";
+                    rows.judge[idx] =
+                        '<span class="' + cls + '">' + s.judge + "</span>";
+                } else {
+                    rows.judge[idx] = "";
+                }
+            });
+
+            var html =
+                makeRow("MIN", rows.min) +
+                makeRow("MAX", rows.max) +
+                makeRow("AVG", rows.avg) +
+                makeRow("JUDGE", rows.judge);
+
+            $tfoot.html(html);
+        },
+    };
+
+    // ===== TABLE =====
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -248,7 +347,7 @@
         scrollCollapse: true,
         deferRender: true,
         pageLength: 25,
-        order: [[2, "desc"]], // Order
+        order: [[2, "desc"]],
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -269,6 +368,13 @@
         columnDefs: [
             { targets: "_all", className: "align-middle text-center" },
         ],
+        drawCallback: function () {
+            // setelah data digambar ulang → refresh summary footer
+            summaryManager.load();
+        },
+        initComplete: function () {
+            summaryManager.load();
+        },
     });
 
     function reloadTable(cb) {
@@ -279,7 +385,7 @@
         }
     }
 
-    // Filters
+    // ===== FILTERS =====
     $("#btnSearch").on("click", function () {
         reloadTable(function () {
             gsFlash("Filter diterapkan.", "info");
@@ -300,7 +406,7 @@
         gsFlash("Menyiapkan file Excel…", "info");
     });
 
-    // Add
+    // ===== ADD =====
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         var form = document.getElementById("aceForm");
         if (form && form.reset) form.reset();
@@ -318,7 +424,7 @@
         $("#productTypeName").val("");
     });
 
-    // Edit
+    // ===== EDIT =====
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
@@ -331,7 +437,6 @@
                 fillForm(row);
 
                 var $ps = $("#productSelectModal");
-
                 if (row.product_type_id && row.product_type_name) {
                     if ($ps.data("select2")) $ps.empty();
                     var opt = new Option(
@@ -365,7 +470,7 @@
             });
     });
 
-    // Delete
+    // ===== DELETE =====
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
@@ -392,7 +497,7 @@
             });
     });
 
-    // Submit
+    // ===== SUBMIT =====
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         var mode = $("#ace_mode").val(),
@@ -453,7 +558,7 @@
             });
     });
 
-    // Fill
+    // ===== FILL FORM =====
     function fillForm(data) {
         if (!data) return;
         Object.keys(data).forEach(function (k) {
@@ -467,7 +572,7 @@
         if (data.shift) $("#mShift").val(data.shift);
     }
 
-    // Start
+    // ===== START =====
     $(function () {
         initPageUI();
     });

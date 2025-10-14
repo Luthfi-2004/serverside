@@ -9,8 +9,18 @@ use Illuminate\Support\Facades\DB;
 
 class JshStandardController extends Controller
 {
-    // URL permission khusus untuk halaman standards JSH
-    private string $permUrl = 'quality/greensand/standards';
+    /**
+     * Daftar URL yg diizinkan untuk halaman Standards (biar tahan variasi).
+     * Isi sesuai dengan yang kamu pakai di tb_menus / v_user_permissions.
+     *
+     * Contoh yang umum:
+     * - 'greensand/jsh-greensand-std'              (tanpa "quality/")
+     * - 'quality/greensand/jsh-greensand-std'      (dengan "quality/")
+     */
+    private const PERM_URLS = [
+        'greensand/jsh-greensand-std',
+        'quality/greensand/jsh-greensand-std',
+    ];
 
     public function index()
     {
@@ -54,7 +64,7 @@ class JshStandardController extends Controller
 
     public function update(Request $r)
     {
-        // Update standar = minimal butuh can_edit
+        // Submit butuh can_edit
         if (!$this->can('can_edit'))
             abort(403);
 
@@ -92,11 +102,10 @@ class JshStandardController extends Controller
         }
 
         $std->update($data);
-
         return back()->with('status', 'Standards updated.');
     }
 
-    /** ===== Permission helper khusus controller ini ===== */
+    /** ===== Permission helper (cek multi-URL + variasi slash) ===== */
     private function can(string $flag): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false)))
@@ -107,7 +116,14 @@ class JshStandardController extends Controller
             return false;
 
         $userIds = array_filter([$user->id ?? null, $user->kode_user ?? null]);
-        $urls = [ltrim($this->permUrl, '/'), '/' . ltrim($this->permUrl, '/')];
+
+        // bangun semua kandidat url (tanpa & dengan leading slash)
+        $urls = [];
+        foreach (self::PERM_URLS as $u) {
+            $clean = ltrim($u, '/');
+            $urls[] = $clean;
+            $urls[] = '/' . $clean;
+        }
 
         try {
             return DB::connection('mysql_aicc')

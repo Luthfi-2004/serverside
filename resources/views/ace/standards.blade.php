@@ -4,24 +4,19 @@
 @push('styles')
   <base href="{{ url('/') }}/">
   <style>
-    .std-table th,
-    .std-table td {
-      vertical-align: middle !important;
-    }
-
-    .std-param {
-      text-align: center;
-    }
-
-    .badge-readonly {
-      font-size: .85rem;
-    }
+    .std-table th, .std-table td { vertical-align: middle !important; }
+    .std-param { text-align: center; }
+    .badge-readonly { font-size: .85rem; }
   </style>
 @endpush
 
 @php
   use App\Support\Perm;
-  $canEdit = Perm::can('quality/ace/standards', 'can_edit');
+
+  // Cek can_edit untuk URL standar ACE (tanpa & dengan "quality/")
+  $canEdit =
+      Perm::can('greensand/ace-greensand-std', 'can_edit')
+   || Perm::can('quality/greensand/ace-greensand-std', 'can_edit');
 @endphp
 
 @section('content')
@@ -63,11 +58,9 @@
 
       @php
         $fmt = function ($v) {
-          if ($v === null || $v === '')
-            return null;
-          $s = str_replace(',', '.', (string) $v);
-          if (is_numeric($s))
-            $s = rtrim(rtrim($s, '0'), '.');
+          if ($v === null || $v === '') return null;
+          $s = str_replace(',', '.', (string)$v);
+          if (is_numeric($s)) $s = rtrim(rtrim($s, '0'), '.');
           return $s;
         };
       @endphp

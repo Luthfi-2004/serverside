@@ -9,24 +9,50 @@ class AceSummaryController extends Controller
 {
     public function __invoke(Request $r)
     {
-        $date  = $r->query('date');
+        $date = $r->query('date');
         $shift = $r->query('shift');
-        $pid   = $r->query('product_type_id');
+        $pid = $r->query('product_type_id');
+
         $q = DB::table('tb_greensand_check_ace');
-        if ($date)  $q->whereDate('date', $date);
-        if ($shift) $q->where('shift', $shift);
-        if ($pid)   $q->where('product_type_id', $pid);
+        if ($date)
+            $q->whereDate('date', $date);
+        if ($shift)
+            $q->where('shift', $shift);
+        if ($pid)
+            $q->where('product_type_id', $pid);
+
+        // urutan dan nama field harus sinkron dengan ace.js (colIndex di bawah)
         $keys = [
-            'p','c','gt','cb_lab','moisture','machine_no','bakunetsu','ac','tc',
-            'vsd','ig','cb_weight','tp50_weight','ssi','most',
-            'no_mix', 'bc13_cb', 'bc13_c', 'bc13_m',
+            'p',
+            'c',
+            'gt',
+            'cb_lab',
+            'moisture',
+            'machine_no',
+            'bakunetsu',
+            'ac',
+            'tc',
+            'vsd',
+            'ig',
+            'cb_weight',
+            'tp50_weight',
+            'ssi',
+            'most',
+            'no_mix',
+            'bc13_cb',
+            'bc13_c',
+            'bc13_m',
         ];
-        $nonNumeric = ['machine_no','most','no_mix'];
+
+        $nonNumeric = ['machine_no', 'most', 'no_mix'];
+
+        // ambil standar (kalau mau judge berdasarkan standar tabel)
         $std = DB::table('tb_greensand_std_ace')->first();
+
         $rows = [];
         foreach ($keys as $k) {
             if (in_array($k, $nonNumeric, true)) {
-                $rows[$k] = ['min'=>'', 'max'=>'', 'avg'=>''];
+                $rows[$k] = ['min' => '', 'max' => '', 'avg' => ''];
                 continue;
             }
 
@@ -35,52 +61,55 @@ class AceSummaryController extends Controller
                 ->first();
 
             $rows[$k] = [
-                'min' => $agg && $agg->min_val !== null ? round((float)$agg->min_val, 2) : '',
-                'max' => $agg && $agg->max_val !== null ? round((float)$agg->max_val, 2) : '',
-                'avg' => $agg && $agg->avg_val !== null ? round((float)$agg->avg_val, 2) : '',
+                'min' => $agg && $agg->min_val !== null ? round((float) $agg->min_val, 2) : '',
+                'max' => $agg && $agg->max_val !== null ? round((float) $agg->max_val, 2) : '',
+                'avg' => $agg && $agg->avg_val !== null ? round((float) $agg->avg_val, 2) : '',
             ];
         }
-        $skipJudge = $nonNumeric; 
-        $judgeRow  = [];
-        $present   = [];
 
+        $judgeRow = [];
         foreach ($keys as $k) {
-            $judgeRow[$k] = '';
-            $present[$k]  = false;
-
-            if (in_array($k, $skipJudge, true)) continue;
-
+            if (in_array($k, $nonNumeric, true)) {
+                $judgeRow[$k] = '';
+                continue;
+            }
             $val = $rows[$k]['avg'];
-            if ($val === '' || $val === null) continue;
+            if ($val === '' || $val === null) {
+                $judgeRow[$k] = '';
+                continue;
+            }
+
             $min = $std?->{$k . '_min'} ?? null;
             $max = $std?->{$k . '_max'} ?? null;
 
             if ($min === null && $max === null) {
+                $judgeRow[$k] = '';
                 continue;
             }
 
+            $v = (float) $val;
             $ok = true;
-            if ($min !== null && $val < (float)$min) $ok = false;
-            if ($max !== null && $val > (float)$max) $ok = false;
+            if ($min !== null && $v < (float) $min)
+                $ok = false;
+            if ($max !== null && $v > (float) $max)
+                $ok = false;
 
             $judgeRow[$k] = $ok ? 'OK' : 'NG';
-            $present[$k]  = true;
         }
 
         $summary = [];
         foreach ($keys as $k) {
             $summary[] = [
                 'field' => $k,
-                'min'   => $rows[$k]['min'],
-                'max'   => $rows[$k]['max'],
-                'avg'   => $rows[$k]['avg'],
+                'min' => $rows[$k]['min'],
+                'max' => $rows[$k]['max'],
+                'avg' => $rows[$k]['avg'],
                 'judge' => $judgeRow[$k],
             ];
         }
 
         return response()->json([
             'summary' => $summary,
-            'present' => $present,
         ]);
     }
 }

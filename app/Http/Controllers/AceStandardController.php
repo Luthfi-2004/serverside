@@ -9,8 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class AceStandardController extends Controller
 {
-    // URL permission khusus untuk halaman standards ACE
-    private string $permUrl = 'quality/ace/standards';
+    /**
+     * Daftar URL yg diizinkan untuk halaman Standards ACE.
+     * Sesuaikan dengan yang kamu simpan di tb_menus / v_user_permissions.
+     */
+    private const PERM_URLS = [
+        'greensand/ace-greensand-std',
+        'quality/greensand/ace-greensand-std',
+    ];
 
     public function index()
     {
@@ -63,11 +69,10 @@ class AceStandardController extends Controller
         }
 
         $std->update($data);
-
         return back()->with('status', 'Standards updated.');
     }
 
-    /** ===== Permission helper khusus controller ini ===== */
+    /** ===== Permission helper (cek multi-URL + variasi slash) ===== */
     private function can(string $flag): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false))) return true;
@@ -76,7 +81,13 @@ class AceStandardController extends Controller
         if (!$user) return false;
 
         $userIds = array_filter([$user->id ?? null, $user->kode_user ?? null]);
-        $urls = [ltrim($this->permUrl, '/'), '/'.ltrim($this->permUrl, '/')];
+
+        $urls = [];
+        foreach (self::PERM_URLS as $u) {
+            $clean = ltrim($u, '/');
+            $urls[] = $clean;
+            $urls[] = '/'.$clean;
+        }
 
         try {
             return DB::connection('mysql_aicc')

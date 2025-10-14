@@ -12,8 +12,11 @@
 
 @php
   use App\Support\Perm;
-  // editor = boleh submit; kalau tidak, semua input disabled
-  $canEdit = Perm::can('quality/greensand/standards', 'can_edit');
+
+  // Cek can_edit untuk URL standar JSH (tanpa & dengan "quality/")
+  $canEdit =
+      Perm::can('greensand/jsh-greensand-std', 'can_edit')
+   || Perm::can('quality/greensand/jsh-greensand-std', 'can_edit');
 @endphp
 
 @section('content')

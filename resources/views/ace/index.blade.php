@@ -153,12 +153,12 @@
       border-top: 1px solid #dee2e6 !important;
     }
 
-    #dt-ace tfoot td.j-ok {
+    #dt-ace tfoot .j-ok {
       color: #2e7d32;
       font-weight: 600;
     }
 
-    #dt-ace tfoot td.j-ng {
+    #dt-ace tfoot .j-ng {
       color: #c62828;
       font-weight: 600;
     }
