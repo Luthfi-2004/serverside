@@ -15,10 +15,12 @@ use App\Exports\GreensandExportFull;
 class GreensandJshController extends Controller
 {
     /**
-     * URL izin utama modul (daily/data/export/CRUD)
-     * (Standards dipisah di controller lain: JshStandardController)
+     * URL izin untuk modul JSH Daily (data/export/CRUD) — pakai URL spesifik.
+     * Pastikan ada di tb_menus + tb_user_permissions.
+     *
+     * Contoh row tb_menus.url: `quality/greensand/jsh-greensand-check`
      */
-    private const URL_MAIN = 'quality/greensand';
+    private const URL_MAIN = 'quality/greensand/jsh-greensand-check';
 
     /** =================== DATA/API =================== */
     public function dataMM1(Request $request)
@@ -94,6 +96,7 @@ class GreensandJshController extends Controller
     {
         if (!$this->can('can_read'))
             abort(403);
+
         $row = GreensandJsh::findOrFail($id);
         return response()->json(['data' => $row]);
     }
@@ -131,6 +134,7 @@ class GreensandJshController extends Controller
     {
         if (!$this->can('can_delete'))
             abort(403);
+
         $row = GreensandJsh::findOrFail($id);
         $row->delete();
         return response()->json(['message' => 'Deleted']);
@@ -219,12 +223,10 @@ class GreensandJshController extends Controller
             return DataTables::of($q)
                 ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
                     $html = '<div class="btn-group btn-group-sm se-2">';
-                    if ($canEdit) {
+                    if ($canEdit)
                         $html .= '<button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>';
-                    }
-                    if ($canDelete) {
+                    if ($canDelete)
                         $html .= '<button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>';
-                    }
                     $html .= '</div>';
                     return $html;
                 })
@@ -328,10 +330,11 @@ class GreensandJshController extends Controller
                 $v = trim($v);
                 $v = str_replace(',', '.', $v);
             }
-            $in[$key] = $v; // biarkan numeric/str; DB casting akan handle
+            $in[$key] = $v;
         }
         if (array_key_exists('mix_ke', $in) && $in['mix_ke'] === '')
             $in['mix_ke'] = null;
+
         return $in;
     }
 
@@ -393,7 +396,6 @@ class GreensandJshController extends Controller
     ): array {
         $mm = $this->normalizeMm($in['mm'] ?? ($existing->mm ?? null));
 
-        // Tentukan 'date'
         if ($existing && $lockDate) {
             try {
                 $dateTime = $existing->date instanceof \DateTimeInterface
@@ -476,9 +478,8 @@ class GreensandJshController extends Controller
     }
 
     /**
-     * Permission checker berbasis v_user_permissions (URL root quality/greensand).
-     * $flag: can_access | can_read | can_add | can_edit | can_delete | ...
-     * $url : default null → pakai URL_MAIN.
+     * Permission checker ke v_user_permissions.
+     * Default: pakai URL_MAIN (quality/greensand/jsh-greensand-check).
      */
     private function can(string $flag, ?string $url = null): bool
     {
@@ -492,10 +493,7 @@ class GreensandJshController extends Controller
         $userIds = array_filter([$user->id ?? null, $user->kode_user ?? null]);
         $target = $url ?: self::URL_MAIN;
 
-        $urls = [
-            ltrim($target, '/'),
-            '/' . ltrim($target, '/'),
-        ];
+        $urls = [ltrim($target, '/'), '/' . ltrim($target, '/')];
 
         try {
             return DB::connection('mysql_aicc')
