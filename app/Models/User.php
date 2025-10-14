@@ -9,14 +9,12 @@
     {
         use Notifiable;
 
-        // Koneksi & tabel di aicc-master
         protected $connection = 'mysql_aicc';
         protected $table = 'tb_user';
         protected $primaryKey = 'id';
         public $incrementing = true;
         protected $keyType = 'int';
 
-        // Banyak tabel lama tidak punya updated_at
         public $timestamps = false;
 
         protected $fillable = [
@@ -26,7 +24,7 @@
 
         protected $hidden = ['pswd'];
 
-        // Dipakai kalau kamu pakai Auth::attempt (opsional)
+ 
         public function getAuthPassword()
         {
             return $this->pswd;

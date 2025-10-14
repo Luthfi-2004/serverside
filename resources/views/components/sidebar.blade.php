@@ -3,22 +3,15 @@
 
   // JSH group
   $isJshIndex = request()->routeIs('greensand.index');
-  $isJshGfn   = request()->routeIs('jshgfn.*');
-  $isJshStd   = request()->routeIs('greensand.standards');
-  $isJshOpen  = $isJshIndex || $isJshGfn || $isJshStd;
+  $isJshGfn = request()->routeIs('jshgfn.*');
+  $isJshStd = request()->routeIs('greensand.standards');
+  $isJshOpen = $isJshIndex || $isJshGfn || $isJshStd;
 
   // ACE group
   $isAceIndex = request()->routeIs('ace.index');
-  $isAceGfn   = request()->routeIs('acelinegfn.*');
-  $isAceStd   = request()->routeIs('ace.standards');
-  $isAceOpen  = $isAceIndex || $isAceGfn || $isAceStd;
-
-  // Admin check:
-  // - Saat auth aktif: admin = user login dengan role 'admin'
-  // - Saat testing tanpa login: set BYPASS_AUTH=true di .env, maka menu Standards tetap kelihatan
-  $loggedInAdmin = auth()->check() && optional(auth()->user())->role === 'admin';
-  $bypassAdmin   = (bool) env('BYPASS_AUTH', false);
-  $isAdmin       = $loggedInAdmin || $bypassAdmin;
+  $isAceGfn = request()->routeIs('acelinegfn.*');
+  $isAceStd = request()->routeIs('ace.standards');
+  $isAceOpen = $isAceIndex || $isAceGfn || $isAceStd;
 @endphp
 
 <div class="vertical-menu">
@@ -38,7 +31,8 @@
         {{-- Green Sand --}}
         <li class="menu-title">Green Sand</li>
 
-        {{-- JSH LINE --}}
+        {{-- JSH LINE (group hanya muncul kalau boleh akses modul) --}}
+        @perm('quality/greensand')
         <li class="{{ ($isJshIndex || $isJshGfn || $isJshStd) ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -58,17 +52,20 @@
               </a>
             </li>
 
-            @if($isAdmin)
-              <li class="{{ $isJshStd ? 'mm-active' : '' }}">
-                <a href="{{ route('greensand.standards') }}" class="{{ $isJshStd ? 'active' : '' }}">
-                  Standards
-                </a>
-              </li>
-            @endif
+            {{-- Standards hanya muncul kalau punya can_read di URL standards --}}
+            @perm('quality/greensand/standards', 'can_read')
+            <li class="{{ $isJshStd ? 'mm-active' : '' }}">
+              <a href="{{ route('greensand.standards') }}" class="{{ $isJshStd ? 'active' : '' }}">
+                Standards
+              </a>
+            </li>
+            @endperm
           </ul>
         </li>
+        @endperm
 
-        {{-- ACE LINE --}}
+        {{-- ACE LINE (group hanya muncul kalau boleh akses modul) --}}
+        @perm('quality/ace')
         <li class="{{ ($isAceIndex || $isAceGfn || $isAceStd) ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -88,23 +85,16 @@
               </a>
             </li>
 
-            @if($isAdmin)
-              <li class="{{ $isAceStd ? 'mm-active' : '' }}">
-                <a href="{{ route('ace.standards') }}" class="{{ $isAceStd ? 'active' : '' }}">
-                  Standards
-                </a>
-              </li>
-            @endif
+            @perm('quality/ace/standards', 'can_read')
+            <li class="{{ $isAceStd ? 'mm-active' : '' }}">
+              <a href="{{ route('ace.standards') }}" class="{{ $isAceStd ? 'active' : '' }}">
+                Standards
+              </a>
+            </li>
+            @endperm
           </ul>
         </li>
-
-        {{-- (opsional) menu Admin lain --}}
-        {{-- <li class="{{ $isAdminUser ? 'mm-active' : '' }}">
-          <a href="{{ route('admin.users.index') }}" class="{{ $isAdminUser ? 'active' : '' }}">
-            <i class="ri-user-settings-line"></i>
-            <span>Users</span>
-          </a>
-        </li> --}}
+        @endperm
 
       </ul>
     </div>

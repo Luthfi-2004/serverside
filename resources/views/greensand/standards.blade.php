@@ -1,12 +1,20 @@
 @extends('layouts.app')
 @section('title', 'JSH Standards')
+
 @push('styles')
   <base href="{{ url('/') }}/">
   <style>
     .std-table th, .std-table td { vertical-align: middle !important; }
     .std-param { text-align: center; }
+    .badge-readonly { font-size: .85rem; }
   </style>
 @endpush
+
+@php
+  use App\Support\Perm;
+  // editor = boleh submit; kalau tidak, semua input disabled
+  $canEdit = Perm::can('quality/greensand/standards', 'can_edit');
+@endphp
 
 @section('content')
 <div class="page-content">
@@ -14,7 +22,12 @@
     <div class="row"><div class="col-12">
 
       <div class="page-title-box d-flex align-items-center justify-content-between">
-        <h4 class="mb-0">JSH Standards</h4>
+        <h4 class="mb-0">
+          JSH Standards
+          @unless($canEdit)
+            <span class="badge badge-secondary ml-2 badge-readonly">Read-only</span>
+          @endunless
+        </h4>
         <div class="page-title-right">
           <ol class="breadcrumb m-0">
             <li class="breadcrumb-item"><a href="{{ route('greensand.index') }}">JSH LINE</a></li>
@@ -85,7 +98,9 @@
                             pattern="^-?\d+([.,]\d+)?$"
                             class="form-control form-control-sm std-num text-center"
                             name="{{ $key }}_min"
-                            value="{{ $min }}">
+                            value="{{ $min }}"
+                            @disabled(!$canEdit)
+                          >
                         </td>
                         <td>
                           <input
@@ -95,7 +110,9 @@
                             pattern="^-?\d+([.,]\d+)?$"
                             class="form-control form-control-sm std-num text-center"
                             name="{{ $key }}_max"
-                            value="{{ $max }}">
+                            value="{{ $max }}"
+                            @disabled(!$canEdit)
+                          >
                         </td>
                         <td class="text-center">
                           @if($min!==null || $max!==null)
@@ -114,9 +131,11 @@
         @endforeach
 
         <div class="d-flex justify-content-end">
-          <button type="submit" class="btn btn-success mb-2">
-            <i class="ri-checkbox-circle-line mr-1"></i> Submit
-          </button>
+          @if($canEdit)
+            <button type="submit" class="btn btn-success mb-2">
+              <i class="ri-checkbox-circle-line mr-1"></i> Submit
+            </button>
+          @endif
         </div>
       </form>
 
@@ -128,5 +147,5 @@
 @endsection
 
 @push('scripts')
- <script src="{{ asset('assets/js/standards.js') }}" defer></script>
+  <script src="{{ asset('assets/js/standards.js') }}" defer></script>
 @endpush

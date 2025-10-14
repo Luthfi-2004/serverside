@@ -6,7 +6,6 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-12">
-
         <div class="page-title-box d-flex align-items-center justify-content-between">
           <h4 class="mb-0">Daily Check</h4>
           <div class="page-title-right">
@@ -19,13 +18,11 @@
 
         <div id="flash-holder"></div>
 
-        {{-- FILTER CARD --}}
         <div class="card mb-3">
           <div id="filterHeader" class="card-header bg-light d-flex align-items-center justify-content-between">
             <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line mr-1"></i> Filter Data</h5>
             <i id="filterIcon" class="ri-subtract-line"></i>
           </div>
-
           <div id="filterCollapse" class="show">
             <div class="card-body">
               <div class="row align-items-end">
@@ -33,16 +30,15 @@
                   <div class="form-group mb-2">
                     <label>Process Date</label>
                     <div class="input-group">
-                      <input type="text" class="form-control" id="filterDate"
-                        data-provide="datepicker" data-date-format="yyyy-mm-dd"
-                        data-date-autoclose="true" autocomplete="off" placeholder="YYYY-MM-DD">
+                      <input type="text" class="form-control" id="filterDate" data-provide="datepicker"
+                        data-date-format="yyyy-mm-dd" data-date-autoclose="true" autocomplete="off"
+                        placeholder="YYYY-MM-DD">
                       <div class="input-group-append">
                         <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
                       </div>
                     </div>
                   </div>
                 </div>
-
                 <div class="col-xl-4 col-lg-4">
                   <div class="form-group mb-2">
                     <label class="form-label mb-1">Shift</label>
@@ -55,7 +51,6 @@
                     </select>
                   </div>
                 </div>
-
                 <div class="col-xl-4 col-lg-4">
                   <div class="form-group mb-2">
                     <label class="form-label mb-1">Type Product</label>
@@ -66,8 +61,6 @@
                   </div>
                 </div>
               </div>
-
-              {{-- tombol sejajar --}}
               <div class="row align-items mt-2">
                 <div class="col-xl-12 d-flex justify-content flex-wrap">
                   <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
@@ -81,18 +74,18 @@
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
 
-        {{-- TABLE CARD --}}
         <div class="card mb-4">
           <div class="card-body shadow-lg">
             <div class="mb-3 d-flex justify-content-between align-items-center">
+              @perm('quality/ace', 'can_add')
               <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modal-ace">
                 <i class="ri-add-line"></i> Add Data
               </button>
+              @endperm
             </div>
 
             @include('ace.modal')
@@ -108,7 +101,6 @@
             </div>
           </div>
 
-          {{-- CONFIRM DELETE MODAL --}}
           <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
             aria-labelledby="confirmDeleteTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -131,7 +123,6 @@
           </div>
 
         </div>
-
       </div>
     </div>
   </div>
@@ -139,51 +130,51 @@
 @endsection
 
 @push('styles')
-<style>
-  #dt-ace thead th {
-    white-space: nowrap;
-    text-align: center;
-    vertical-align: middle;
-    min-width: 120px;
-  }
+  <style>
+    #dt-ace thead th {
+      white-space: nowrap;
+      text-align: center;
+      vertical-align: middle;
+      min-width: 120px;
+    }
 
-  #dt-ace tfoot .ace-summary-row:first-child td {
-    border-top: 2px solid #333 !important;
-  }
+    #dt-ace tfoot .ace-summary-row:first-child td {
+      border-top: 2px solid #333 !important;
+    }
 
-  #dt-ace tfoot .ace-summary-row td {
-    background: #fff;
-    font-size: .95rem;
-    line-height: 1.25;
-    padding: .5rem .75rem;
-    height: auto !important;
-    text-align: center;
-    vertical-align: middle;
-    border-top: 1px solid #dee2e6 !important;
-  }
+    #dt-ace tfoot .ace-summary-row td {
+      background: #fff;
+      font-size: .95rem;
+      line-height: 1.25;
+      padding: .5rem .75rem;
+      height: auto !important;
+      text-align: center;
+      vertical-align: middle;
+      border-top: 1px solid #dee2e6 !important;
+    }
 
-  #dt-ace tfoot td.j-ok {
-    color: #2e7d32;
-    font-weight: 600;
-  }
+    #dt-ace tfoot td.j-ok {
+      color: #2e7d32;
+      font-weight: 600;
+    }
 
-  #dt-ace tfoot td.j-ng {
-    color: #c62828;
-    font-weight: 600;
-  }
-</style>
+    #dt-ace tfoot td.j-ng {
+      color: #c62828;
+      font-weight: 600;
+    }
+  </style>
 @endpush
 
 @push('scripts')
-<script>
-  window.aceRoutes = {
-    data: "{{ route('ace.data') }}",
-    store: "{{ route('ace.store') }}",
-    base: "{{ url('ace') }}",
-    export: "{{ route('ace.export') }}",
-    summary: "{{ route('ace.summary') }}",
-    lookupProducts: "{{ route('lookup.products') }}"
-  };
-</script>
-<script src="{{ asset('assets/js/ace.js') }}" defer></script>
+  <script>
+    window.aceRoutes = {
+      data: "{{ route('ace.data') }}",
+      store: "{{ route('ace.store') }}",
+      base: "{{ url('ace') }}",
+      export: "{{ route('ace.export') }}",
+      summary: "{{ route('ace.summary') }}",
+      lookupProducts: "{{ route('lookup.products') }}"
+    };
+  </script>
+  <script src="{{ asset('assets/js/ace.js') }}" defer></script>
 @endpush

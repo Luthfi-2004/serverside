@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\Blade;
+use App\Support\Perm;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Blade::if('perm', function ($url, $flag = 'can_access') {
+            return Perm::can($url, $flag);
+        });
     }
 }

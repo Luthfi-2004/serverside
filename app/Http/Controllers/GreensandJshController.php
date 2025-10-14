@@ -8,30 +8,49 @@ use App\Models\GreensandJsh;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GreensandExportFull;
 
 class GreensandJshController extends Controller
 {
+    /**
+     * URL izin utama modul (daily/data/export/CRUD)
+     * (Standards dipisah di controller lain: JshStandardController)
+     */
+    private const URL_MAIN = 'quality/greensand';
+
+    /** =================== DATA/API =================== */
     public function dataMM1(Request $request)
     {
+        if (!$this->can('can_read'))
+            abort(403);
         return $this->makeResponse($request, 'MM1');
     }
+
     public function dataMM2(Request $request)
     {
+        if (!$this->can('can_read'))
+            abort(403);
         return $this->makeResponse($request, 'MM2');
     }
+
     public function dataAll(Request $request)
     {
+        if (!$this->can('can_read'))
+            abort(403);
         return $this->makeResponse($request, null);
     }
 
     public function export(Request $r)
     {
+        if (!$this->can('can_read'))
+            abort(403);
+
         $date = $r->query('date');
         $shift = $r->query('shift');
         $keyword = $r->query('keyword');
-        $mm = $r->query('mm'); 
+        $mm = $r->query('mm');
 
         $fname = 'Greensand_'
             . ($mm ? $mm . '_' : '')
@@ -43,6 +62,81 @@ class GreensandJshController extends Controller
         return Excel::download(new GreensandExportFull($date, $shift, $keyword, $mm), $fname);
     }
 
+    /** =================== CRUD =================== */
+    public function store(Request $request)
+    {
+        if (!$this->can('can_add'))
+            abort(403);
+
+        $in = $this->normalizeAllDecimals($request->all());
+        $v = $this->validator($in, 'store');
+        if ($v->fails())
+            return response()->json(['errors' => $v->errors()], 422);
+
+        $mm = $this->normalizeMm($in['mm'] ?? null);
+        $shift = $in['shift'];
+        $day = $this->toYmd($in['date'] ?? null) ?: now('Asia/Jakarta')->toDateString();
+        $mixKe = (int) ($in['mix_ke'] ?? 0);
+
+        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, null)) {
+            return response()->json([
+                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
+            ], 422);
+        }
+
+        $data = $this->mapRequestToModel($in, null, $day);
+        $row = GreensandJsh::create($data);
+
+        return response()->json(['message' => 'Created', 'id' => $row->id]);
+    }
+
+    public function show($id)
+    {
+        if (!$this->can('can_read'))
+            abort(403);
+        $row = GreensandJsh::findOrFail($id);
+        return response()->json(['data' => $row]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!$this->can('can_edit'))
+            abort(403);
+
+        $row = GreensandJsh::findOrFail($id);
+        $in = $this->normalizeAllDecimals($request->all());
+
+        $v = $this->validator($in, 'update');
+        if ($v->fails())
+            return response()->json(['errors' => $v->errors()], 422);
+
+        $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
+        $shift = $row->shift;
+        $mixKe = isset($in['mix_ke']) ? (int) $in['mix_ke'] : (int) $row->mix_ke;
+        $day = $this->dayString($row->date);
+
+        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, (int) $row->id)) {
+            return response()->json([
+                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
+            ], 422);
+        }
+
+        $data = $this->mapRequestToModel($in, $row, $day, true, true);
+        $row->update($data);
+
+        return response()->json(['message' => 'Updated']);
+    }
+
+    public function destroy($id)
+    {
+        if (!$this->can('can_delete'))
+            abort(403);
+        $row = GreensandJsh::findOrFail($id);
+        $row->delete();
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    /** =================== INTERNALS =================== */
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
@@ -119,20 +213,22 @@ class GreensandJshController extends Controller
                 'rating_pasir_es',
             ]);
 
+            $canEdit = $this->can('can_edit');
+            $canDelete = $this->can('can_delete');
+
             return DataTables::of($q)
-                ->addColumn('action', function ($row) {
-                    return '<div class="btn-group btn-group-sm se-2">
-                        <button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>
-                    </div>';
+                ->addColumn('action', function ($row) use ($canEdit, $canDelete) {
+                    $html = '<div class="btn-group btn-group-sm se-2">';
+                    if ($canEdit) {
+                        $html .= '<button class="btn btn-outline-warning btn-sm mr-2 btn-edit-gs" data-id="' . $row->id . '" title="Edit"><i class="fas fa-edit"></i></button>';
+                    }
+                    if ($canDelete) {
+                        $html .= '<button class="btn btn-outline-danger btn-sm btn-delete-gs" data-id="' . $row->id . '" title="Hapus"><i class="fas fa-trash"></i></button>';
+                    }
+                    $html .= '</div>';
+                    return $html;
                 })
-                ->editColumn('mm', function ($row) {
-                    if ($row->mm === 'MM1')
-                        return 1;
-                    if ($row->mm === 'MM2')
-                        return 2;
-                    return $row->mm;
-                })
+                ->editColumn('mm', fn($row) => $row->mm === 'MM1' ? 1 : ($row->mm === 'MM2' ? 2 : $row->mm))
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
@@ -156,80 +252,6 @@ class GreensandJshController extends Controller
         }
     }
 
-    public function store(Request $request)
-    {
-        $in = $this->normalizeAllDecimals($request->all());
-
-        $v = $this->validator($in, 'store');
-        if ($v->fails())
-            return response()->json(['errors' => $v->errors()], 422);
-
-        $mm = $this->normalizeMm($in['mm'] ?? null);
-        $shift = $in['shift'];
-        $day = $this->toYmd($in['date'] ?? null) ?: now('Asia/Jakarta')->toDateString();
-        $mixKe = (int) ($in['mix_ke'] ?? 0);
-
-        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, null)) {
-            return response()->json([
-                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
-            ], 422);
-        }
-
-        $data = $this->mapRequestToModel($in, null, $day);
-        $row = GreensandJsh::create($data);
-        return response()->json(['message' => 'Created', 'id' => $row->id]);
-    }
-
-    public function show($id)
-    {
-        $row = GreensandJsh::findOrFail($id);
-        return response()->json(['data' => $row]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $row = GreensandJsh::findOrFail($id);
-        $in = $this->normalizeAllDecimals($request->all());
-
-        $v = $this->validator($in, 'update');
-        if ($v->fails())
-            return response()->json(['errors' => $v->errors()], 422);
-
-        $mm = $this->normalizeMm($in['mm'] ?? $row->mm);
-        $shift = $row->shift;
-        $mixKe = isset($in['mix_ke']) ? (int) $in['mix_ke'] : (int) $row->mix_ke;
-        $day = $this->dayString($row->date);
-
-        if ($this->isDuplicateMix($mm, $shift, $mixKe, $day, (int) $row->id)) {
-            return response()->json([
-                'errors' => ['mix_ke' => ["Mix ke {$mixKe} sudah dipakai untuk {$mm} di shift {$shift} pada {$day}."]]
-            ], 422);
-        }
-
-        $data = $this->mapRequestToModel($in, $row, $day, true, true);
-        $row->update($data);
-
-        return response()->json(['message' => 'Updated']);
-    }
-
-    public function destroy($id)
-    {
-        $row = GreensandJsh::findOrFail($id);
-        $row->delete();
-        return response()->json(['message' => 'Deleted']);
-    }
-
-    private function normalizeMm($val): ?string
-    {
-        if ($val === null || $val === '')
-            return null;
-        $str = strtoupper((string) $val);
-        if ($str === '1' || $str === 'MM1')
-            return 'MM1';
-        if ($str === '2' || $str === 'MM2')
-            return 'MM2';
-        return null;
-    }
     private function validator(array $in, string $mode = 'store')
     {
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
@@ -247,6 +269,7 @@ class GreensandJshController extends Controller
             'rating_pasir_es' => 'nullable|numeric',
         ]);
     }
+
     private function normalizeAllDecimals(array $in): array
     {
         $numericFields = [
@@ -305,16 +328,23 @@ class GreensandJshController extends Controller
                 $v = trim($v);
                 $v = str_replace(',', '.', $v);
             }
-            if (is_numeric($v)) {
-                $in[$key] = $v;
-            } else {
-                $in[$key] = $v;
-            }
+            $in[$key] = $v; // biarkan numeric/str; DB casting akan handle
         }
         if (array_key_exists('mix_ke', $in) && $in['mix_ke'] === '')
             $in['mix_ke'] = null;
-
         return $in;
+    }
+
+    private function normalizeMm($val): ?string
+    {
+        if ($val === null || $val === '')
+            return null;
+        $str = strtoupper((string) $val);
+        if ($str === '1' || $str === 'MM1')
+            return 'MM1';
+        if ($str === '2' || $str === 'MM2')
+            return 'MM2';
+        return null;
     }
 
     private function dayString($value): string
@@ -322,19 +352,6 @@ class GreensandJshController extends Controller
         if ($value instanceof \DateTimeInterface)
             return Carbon::instance($value)->toDateString();
         return Carbon::parse($value)->toDateString();
-    }
-
-    private function isDuplicateMix(string $mm, string $shift, int $mixKe, string $dayYmd, ?int $ignoreId = null): bool
-    {
-        $q = GreensandJsh::query()
-            ->whereDate('date', $dayYmd)
-            ->where('shift', $shift)
-            ->where('mm', $mm)
-            ->where('mix_ke', $mixKe);
-
-        if ($ignoreId)
-            $q->where('id', '!=', $ignoreId);
-        return $q->exists();
     }
 
     private function toYmd(?string $val): ?string
@@ -354,6 +371,19 @@ class GreensandJshController extends Controller
         }
     }
 
+    private function isDuplicateMix(string $mm, string $shift, int $mixKe, string $dayYmd, ?int $ignoreId = null): bool
+    {
+        $q = GreensandJsh::query()
+            ->whereDate('date', $dayYmd)
+            ->where('shift', $shift)
+            ->where('mm', $mm)
+            ->where('mix_ke', $mixKe);
+
+        if ($ignoreId)
+            $q->where('id', '!=', $ignoreId);
+        return $q->exists();
+    }
+
     private function mapRequestToModel(
         array $in,
         ?GreensandJsh $existing = null,
@@ -363,6 +393,7 @@ class GreensandJshController extends Controller
     ): array {
         $mm = $this->normalizeMm($in['mm'] ?? ($existing->mm ?? null));
 
+        // Tentukan 'date'
         if ($existing && $lockDate) {
             try {
                 $dateTime = $existing->date instanceof \DateTimeInterface
@@ -442,5 +473,39 @@ class GreensandJshController extends Controller
             'lama_bc10_jalan' => $in['lama_bc10_jalan'] ?? ($existing->lama_bc10_jalan ?? null),
             'rating_pasir_es' => $in['rating_pasir_es'] ?? ($existing->rating_pasir_es ?? null),
         ];
+    }
+
+    /**
+     * Permission checker berbasis v_user_permissions (URL root quality/greensand).
+     * $flag: can_access | can_read | can_add | can_edit | can_delete | ...
+     * $url : default null → pakai URL_MAIN.
+     */
+    private function can(string $flag, ?string $url = null): bool
+    {
+        if (config('app.bypass_auth', env('BYPASS_AUTH', false)))
+            return true;
+
+        $user = Auth::user();
+        if (!$user)
+            return false;
+
+        $userIds = array_filter([$user->id ?? null, $user->kode_user ?? null]);
+        $target = $url ?: self::URL_MAIN;
+
+        $urls = [
+            ltrim($target, '/'),
+            '/' . ltrim($target, '/'),
+        ];
+
+        try {
+            return DB::connection('mysql_aicc')
+                ->table('v_user_permissions')
+                ->whereIn('user_id', $userIds)
+                ->whereIn('url', $urls)
+                ->where($flag, 1)
+                ->exists();
+        } catch (\Throwable $e) {
+            return false; // default deny
+        }
     }
 }

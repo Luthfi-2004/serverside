@@ -12,18 +12,32 @@
     .std-param {
       text-align: center;
     }
+
+    .badge-readonly {
+      font-size: .85rem;
+    }
   </style>
 @endpush
+
+@php
+  use App\Support\Perm;
+  $canEdit = Perm::can('quality/ace/standards', 'can_edit');
+@endphp
 
 @section('content')
   <div class="page-content">
     <div class="container-fluid">
 
       <div class="page-title-box d-flex align-items-center justify-content-between">
-        <h4 class="mb-0">ACE Standards</h4>
+        <h4 class="mb-0">
+          ACE Standards
+          @unless($canEdit)
+            <span class="badge badge-secondary ml-2 badge-readonly">Read-only</span>
+          @endunless
+        </h4>
         <div class="page-title-right">
           <ol class="breadcrumb m-0">
-            <li class="breadcrumb-item"><a href="javascript:void(0);">ACE LINE</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('ace.index') }}">ACE LINE</a></li>
             <li class="breadcrumb-item active">Standards</li>
           </ol>
         </div>
@@ -61,6 +75,7 @@
       <form method="POST" action="{{ route('ace.standards.update') }}">
         @csrf
 
+        {{-- MM Sample --}}
         <div class="card mb-4">
           <div class="card-header"><strong>MM Sample</strong></div>
           <div class="card-body">
@@ -103,11 +118,13 @@
                       <td class="std-param">{{ $label }}</td>
                       <td>
                         <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}">
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}"
+                          @disabled(!$canEdit)>
                       </td>
                       <td>
                         <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}">
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}"
+                          @disabled(!$canEdit)>
                       </td>
                       <td class="text-center">
                         @if($min !== null || $max !== null)
@@ -124,6 +141,7 @@
           </div>
         </div>
 
+        {{-- BC13 --}}
         <div class="card mb-4">
           <div class="card-header"><strong>BC13</strong></div>
           <div class="card-body">
@@ -152,11 +170,13 @@
                       <td class="std-param">{{ $label }}</td>
                       <td>
                         <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}">
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_min" value="{{ $min }}"
+                          @disabled(!$canEdit)>
                       </td>
                       <td>
                         <input type="text" inputmode="decimal" lang="en" pattern="^-?\d+([.,]\d+)?$"
-                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}">
+                          class="form-control form-control-sm std-num text-center" name="{{ $key }}_max" value="{{ $max }}"
+                          @disabled(!$canEdit)>
                       </td>
                       <td class="text-center">
                         @if($min !== null || $max !== null)
@@ -174,9 +194,11 @@
         </div>
 
         <div class="d-flex justify-content-end">
-          <button type="submit" class="btn btn-success mb-2">
-            <i class="ri-checkbox-circle-line mr-1"></i> Submit
-          </button>
+          @if($canEdit)
+            <button type="submit" class="btn btn-success mb-2">
+              <i class="ri-checkbox-circle-line mr-1"></i> Submit
+            </button>
+          @endif
         </div>
       </form>
 

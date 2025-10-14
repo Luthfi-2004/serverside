@@ -17,16 +17,16 @@
 
     $.ajaxSetup({ cache: false });
 
-    // ====== UI INIT (Filter Section) ======
+    // Init
     function initPageUI() {
         try {
-            // shiftSelect dari index.blade
+            // Shift
             $("#shiftSelect").select2({
                 width: "100%",
                 placeholder: "Select shift",
             });
 
-            // Type Product filter (Select2 AJAX)
+            // Product
             $("#productSelectFilter").select2({
                 width: "100%",
                 placeholder: "All type",
@@ -82,7 +82,7 @@
             });
     }
 
-    // ====== FLASH util ======
+    // Flash
     function gsFlash(msg, type = "success", timeout = 3000) {
         var holder = document.getElementById("flash-holder");
         if (!holder) return;
@@ -105,7 +105,7 @@
     }
     window.gsFlash = gsFlash;
 
-    // ===== Helpers =====
+    // Helpers
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
         var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -164,7 +164,7 @@
         };
     }
 
-    // ===== Default Filters =====
+    // Defaults
     (function initFiltersDefaults() {
         var $d = $("#filterDate"),
             $s = $("#shiftSelect");
@@ -172,7 +172,7 @@
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // ===== DataTables Columns =====
+    // Columns
     var columns = [
         // Action
         {
@@ -195,8 +195,7 @@
             },
             defaultContent: "",
         },
-
-        // 🔢 NO (Nomor Urut Dinamis, ikut pagination & sort)
+        // No
         {
             data: null,
             render: function (data, type, row, meta) {
@@ -204,14 +203,12 @@
             },
             defaultContent: "",
         },
-
         { data: "date", render: formatDateTimeColumn, defaultContent: "" },
         { data: "shift", defaultContent: "" },
         { data: "product_type_name", defaultContent: "-" },
         { data: "sample_start", render: toHm, defaultContent: "" },
         { data: "sample_finish", render: toHm, defaultContent: "" },
-
-        // MM Sample
+        // MM
         { data: "p", render: fmt, defaultContent: "" },
         { data: "c", render: fmt, defaultContent: "" },
         { data: "gt", render: fmt, defaultContent: "" },
@@ -227,15 +224,13 @@
         { data: "tp50_weight", render: fmt, defaultContent: "" },
         { data: "ssi", render: fmt, defaultContent: "" },
         { data: "most", render: fmt, defaultContent: "" },
-
-        // Additive Additional
+        // Additive
         { data: "dw29_vas", render: fmt, defaultContent: "" },
         { data: "dw29_debu", render: fmt, defaultContent: "" },
         { data: "dw31_vas", render: fmt, defaultContent: "" },
         { data: "dw31_id", render: fmt, defaultContent: "" },
         { data: "dw31_moldex", render: fmt, defaultContent: "" },
         { data: "dw31_sc", render: fmt, defaultContent: "" },
-
         // BC13
         { data: "no_mix", render: fmt, defaultContent: "" },
         { data: "bc13_cb", render: fmt, defaultContent: "" },
@@ -243,7 +238,7 @@
         { data: "bc13_m", render: fmt, defaultContent: "" },
     ];
 
-    // ===== Init DataTable =====
+    // Table
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -253,7 +248,7 @@
         scrollCollapse: true,
         deferRender: true,
         pageLength: 25,
-        order: [[2, "desc"]], // urut kolom tanggal (setelah Action & No)
+        order: [[2, "desc"]], // Order
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -284,7 +279,7 @@
         }
     }
 
-    // ===== Filter buttons =====
+    // Filters
     $("#btnSearch").on("click", function () {
         reloadTable(function () {
             gsFlash("Filter diterapkan.", "info");
@@ -305,7 +300,7 @@
         gsFlash("Menyiapkan file Excel…", "info");
     });
 
-    // ===== Modal: Add (clear all) =====
+    // Add
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         var form = document.getElementById("aceForm");
         if (form && form.reset) form.reset();
@@ -316,7 +311,6 @@
         $("#aceFormAlert").addClass("d-none").empty();
 
         var $ps = $("#productSelectModal");
-        // bersihin isi & cache supaya gak kebawa dari edit sebelumnya
         if ($ps.data("select2")) $ps.empty().trigger("change");
         $ps.val(null).trigger("change");
         $ps.removeData("selected-id").removeData("selected-text");
@@ -324,7 +318,7 @@
         $("#productTypeName").val("");
     });
 
-    // ===== Edit =====
+    // Edit
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
@@ -339,8 +333,7 @@
                 var $ps = $("#productSelectModal");
 
                 if (row.product_type_id && row.product_type_name) {
-                    // ✅ ada type product → tampilkan pilihan yg benar tanpa buka dropdown
-                    if ($ps.data("select2")) $ps.empty(); // buang option lama biar gak nyangkut
+                    if ($ps.data("select2")) $ps.empty();
                     var opt = new Option(
                         row.product_type_name,
                         row.product_type_id,
@@ -348,17 +341,12 @@
                         true
                     );
                     $ps.append(opt).trigger("change");
-
-                    // simpan cache utk modal script (kalau dipakai)
                     $ps.data("selected-id", row.product_type_id);
                     $ps.data("selected-text", row.product_type_name);
                     $ps.attr("data-selected-id", row.product_type_id);
                     $ps.attr("data-selected-text", row.product_type_name);
-
-                    // hidden name ikut diisi
                     $("#productTypeName").val(row.product_type_name);
                 } else {
-                    // ❌ kosong → benar-benar kosongkan & hilangkan jejak sebelumnya
                     if ($ps.data("select2")) $ps.empty().trigger("change");
                     $ps.val(null).trigger("change");
                     $ps.removeData("selected-id").removeData("selected-text");
@@ -377,7 +365,7 @@
             });
     });
 
-    // ===== Delete =====
+    // Delete
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
@@ -404,7 +392,7 @@
             });
     });
 
-    // ===== Submit (Create/Update) =====
+    // Submit
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         var mode = $("#ace_mode").val(),
@@ -465,7 +453,7 @@
             });
     });
 
-    // ===== Fill form (Edit) =====
+    // Fill
     function fillForm(data) {
         if (!data) return;
         Object.keys(data).forEach(function (k) {
@@ -479,7 +467,7 @@
         if (data.shift) $("#mShift").val(data.shift);
     }
 
-    // ===== Kickstart UI =====
+    // Start
     $(function () {
         initPageUI();
     });

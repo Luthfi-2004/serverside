@@ -25,7 +25,6 @@ class LoginController extends Controller
             'usr' => 'Username',
         ]);
 
-        // Ambil user dari aicc-master.tb_user
         $user = User::where('usr', $credentials['usr'])->first();
 
         if (!$user || !$this->checkPassword($credentials['password'], (string) $user->pswd)) {
@@ -34,7 +33,6 @@ class LoginController extends Controller
                 ->onlyInput('usr');
         }
 
-        // Optional: blokir user tidak aktif
         if ($this->isInactive($user)) {
             return back()
                 ->withErrors(['usr' => 'Akun tidak aktif.'])
@@ -58,33 +56,23 @@ class LoginController extends Controller
 
     private function isInactive($user): bool
     {
-        // Sesuaikan logic kalau kolom is_active bukan boolean
         return isset($user->is_active) && (string)$user->is_active === '0';
     }
 
-    /**
-     * Verifikasi password fleksibel:
-     * - bcrypt/argon2: Hash::check
-     * - md5: bandingkan md5
-     * - plain: bandingkan string biasa (tidak disarankan)
-     */
     private function checkPassword(string $plain, string $stored): bool
     {
         if ($stored === '') {
             return false;
         }
 
-        // bcrypt/argon2?
         if (Str::startsWith($stored, ['$2y$', '$argon2i$', '$argon2id$'])) {
             return Hash::check($plain, $stored);
         }
 
-        // md5 32 hex?
         if (strlen($stored) === 32 && ctype_xdigit($stored)) {
             return hash_equals(strtolower($stored), md5($plain));
         }
 
-        // fallback: plain text
         return hash_equals($stored, $plain);
     }
 }

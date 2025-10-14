@@ -34,12 +34,10 @@
                 </select>
                 <input type="hidden" name="product_type_name" id="productTypeName">
               </div>
-
               <div class="col-md-4 mb-3">
                 <label class="form-label mb-1">Sample Start</label>
                 <input type="time" name="sample_start" id="mStart" class="form-control" placeholder="Input Sample Start">
               </div>
-
               <div class="col-md-4 mb-3">
                 <label class="form-label mb-1">Sample Finish</label>
                 <input type="time" name="sample_finish" id="mFinish" class="form-control" placeholder="Input Sample Finish">
@@ -67,7 +65,6 @@
         </ul>
 
         <div class="tab-content">
-          {{-- TAB MM --}}
           <div class="tab-pane fade show active" id="tab-mm" role="tabpanel">
             <div class="row">
               @php
@@ -89,7 +86,6 @@
                   ['most', 'MOIST'],
                 ];
               @endphp
-
               @foreach($mmFields as [$name, $label])
                 @php $labelText = str_replace('_', ' ', $label); @endphp
                 <div class="col-md-3 mb-3">
@@ -106,7 +102,6 @@
             </div>
           </div>
 
-          {{-- TAB ADD --}}
           <div class="tab-pane fade" id="tab-add" role="tabpanel">
             <div class="row">
               @php
@@ -119,7 +114,6 @@
                   ['dw31_sc', 'DW31_SC'],
                 ];
               @endphp
-
               @foreach($addFields as [$name, $label])
                 @php $labelText = str_replace('_', ' ', $label); @endphp
                 <div class="col-md-3 mb-3">
@@ -136,14 +130,12 @@
             </div>
           </div>
 
-          {{-- TAB BC13 --}}
           <div class="tab-pane fade" id="tab-bc13" role="tabpanel">
             <div class="row">
               <div class="col-md-3 mb-3">
                 <label class="mb-1">NO Mix</label>
                 <input type="number" step="1" min="0" name="no_mix" id="mNoMix" class="form-control" placeholder="Input Sample NO Mix">
               </div>
-
               @php
                 $bc13Fields = [
                   ['bc13_cb', 'BC13_CB'],
@@ -151,7 +143,6 @@
                   ['bc13_m', 'BC13_M'],
                 ];
               @endphp
-
               @foreach($bc13Fields as [$name, $label])
                 @php $labelText = str_replace('_', ' ', $label); @endphp
                 <div class="col-md-3 mb-3">
@@ -188,7 +179,6 @@
   function initProductSelectModal() {
     var $el = $('#productSelectModal');
     if ($el.data('select2')) return;
-
     $el.select2({
       width: '100%',
       placeholder: 'Pilih product',
@@ -211,7 +201,6 @@
       templateResult: function (item) { return item.text || ''; },
       templateSelection: function (item) { return item.text || item.id || ''; }
     });
-
     $el.on('select2:select', function (e) {
       const data = e.params?.data || {};
       $('#productTypeName').val(data.text || data.name || '');
@@ -223,25 +212,18 @@
 
   $('#modal-ace').on('shown.bs.modal', function () {
     initProductSelectModal();
-
     var $el  = $('#productSelectModal');
     var mode = (($('#ace_mode').val() || 'create') + '').toLowerCase();
-
     if (mode === 'update') {
-      // ✅ ambil dari cache .data() (bukan .attr)
       var id   = $el.data('selected-id');
       var text = $el.data('selected-text');
-
       if (id && text) {
-        // buang option lama lalu inject yang baru
         $el.empty();
         var opt = new Option(text, id, true, true);
         $el.append(opt).trigger('change.select2');
         $('#productTypeName').val(text);
       }
-      // ❌ jangan buka dropdown di mode edit
     } else {
-      // mode create – kosongkan & buka dropdown
       $el.val(null).trigger('change');
       $('#productTypeName').val('');
       $el.select2('open');
@@ -261,5 +243,4 @@
   if ($('#modal-ace').is(':visible')) { initProductSelectModal(); }
 })();
 </script>
-
 @endpush
