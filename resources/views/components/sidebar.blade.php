@@ -32,7 +32,7 @@
         <li class="menu-title">Green Sand</li>
 
         {{-- JSH LINE (group hanya muncul kalau boleh akses modul) --}}
-        @perm('quality/greensand')
+        @perm('quality/greensand/jsh-greensand-check')
         <li class="{{ ($isJshIndex || $isJshGfn || $isJshStd) ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -53,7 +53,7 @@
             </li>
 
             {{-- Standards hanya muncul kalau punya can_read di URL standards --}}
-            @perm('quality/greensand/standards', 'can_read')
+            @perm('quality/greensand/jsh-greensand-std', 'can_read')
             <li class="{{ $isJshStd ? 'mm-active' : '' }}">
               <a href="{{ route('greensand.standards') }}" class="{{ $isJshStd ? 'active' : '' }}">
                 Standards
@@ -65,7 +65,7 @@
         @endperm
 
         {{-- ACE LINE (group hanya muncul kalau boleh akses modul) --}}
-        @perm('quality/ace')
+        @perm('quality/greensand/ace-greensand-check')
         <li class="{{ ($isAceIndex || $isAceGfn || $isAceStd) ? 'mm-active' : '' }}">
           <a href="javascript:void(0);" class="has-arrow waves-effect">
             <i class="ri-flask-line"></i>
@@ -85,7 +85,7 @@
               </a>
             </li>
 
-            @perm('quality/ace/standards', 'can_read')
+            @perm('quality/greensand/ace-greensand-std', 'can_read')
             <li class="{{ $isAceStd ? 'mm-active' : '' }}">
               <a href="{{ route('ace.standards') }}" class="{{ $isAceStd ? 'active' : '' }}">
                 Standards

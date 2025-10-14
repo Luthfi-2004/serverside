@@ -91,7 +91,7 @@
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="d-flex align-items-center flex-wrap">
-              @perm('quality/aceline-gfn', 'can_add')
+              @perm('quality/greensand/ace-gfn', 'can_add')
               <button id="btn-add-greensand" type="button" class="btn btn-success btn-sm mr-2 mb-2" data-toggle="modal"
                 data-target="#modal-greensand">
                 <i class="ri-add-line"></i> Add Data
@@ -99,7 +99,7 @@
               @endperm
 
               @if(!empty($displayRecap))
-              @perm('quality/aceline-gfn', 'can_delete')
+              @perm('quality/greensand/ace-gfn', 'can_delete')
               <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs" data-toggle="modal"
                 data-target="#confirmDeleteModal" data-gfn-date="{{ $displayRecap['gfn_date'] }}"
                 data-shift="{{ $displayRecap['shift'] }}">

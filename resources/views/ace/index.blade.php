@@ -81,7 +81,7 @@
         <div class="card mb-4">
           <div class="card-body shadow-lg">
             <div class="mb-3 d-flex justify-content-between align-items-center">
-              @perm('quality/ace', 'can_add')
+              @perm('quality/greensand/ace-greensand-check', 'can_add')
               <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modal-ace">
                 <i class="ri-add-line"></i> Add Data
               </button>

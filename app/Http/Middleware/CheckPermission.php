@@ -8,64 +8,95 @@ use Illuminate\Support\Facades\DB;
 
 class CheckPermission
 {
-    // Endpoint yang tidak perlu dicek ke v_user_permissions
     private array $whitelist = [
-        '',                       // dashboard
-        'lookup/products',        // ajax lookup
-        'debug/wip-products',     // debug
+        '', 'lookup/products', 'debug/wip-products',
     ];
 
-    // Root modul yang ada di menu permission
-    private array $moduleRoots = [
-        'greensand',
-        'ace',
-        'jsh-gfn',
-        'aceline-gfn',
-    ];
+    /**
+     * Pemetaan "nama route/prefix" -> "URL izin di v_user_permissions"
+     * Sesuaikan dgn yang kamu punya di DB (lihat screenshot kamu).
+     */
+    private function resolvePermUrl(Request $request): ?string
+    {
+        $route = $request->route();
+        $name  = $route?->getName();         // contoh: "greensand.data.mm1", "ace.index", "greensand.standards"
+        $path  = trim($request->path(), '/'); // contoh: "greensand/data/mm1"
+
+        // 1) By route name (paling akurat)
+        if ($name) {
+            // JSH daily (greensand.* kecuali standards)
+            if (str_starts_with($name, 'greensand.') && !in_array($name, ['greensand.standards','greensand.standards.update'])) {
+                return 'quality/greensand/jsh-greensand-check';
+            }
+            if ($name === 'greensand.standards' || $name === 'greensand.standards.update') {
+                return 'quality/greensand/jsh-greensand-std';
+            }
+
+            // JSH GFN
+            if (str_starts_with($name, 'jshgfn.')) {
+                return 'quality/greensand/jsh-gfn';
+            }
+
+            // ACE daily (ace.* kecuali standards)
+            if (str_starts_with($name, 'ace.') && !in_array($name, ['ace.standards','ace.standards.update'])) {
+                return 'quality/greensand/ace-greensand-check';
+            }
+            if ($name === 'ace.standards' || $name === 'ace.standards.update') {
+                return 'quality/greensand/ace-greensand-std';
+            }
+
+            // ACELINE GFN
+            if (str_starts_with($name, 'acelinegfn.')) {
+                return 'quality/greensand/ace-gfn';
+            }
+        }
+
+        // 2) Fallback by path (kalau perlu)
+        if (str_starts_with($path, 'greensand/standards')) {
+            return 'quality/greensand/jsh-greensand-std';
+        }
+        if (str_starts_with($path, 'greensand')) {
+            return 'quality/greensand/jsh-greensand-check';
+        }
+        if (str_starts_with($path, 'jsh-gfn')) {
+            return 'quality/greensand/jsh-gfn';
+        }
+        if ($path === 'ace' || str_starts_with($path, 'ace/summary') || str_starts_with($path, 'ace/data') || preg_match('#^ace/\d+#', $path)) {
+            return 'quality/greensand/ace-greensand-check';
+        }
+        if (str_starts_with($path, 'ace/standards')) {
+            return 'quality/greensand/ace-greensand-std';
+        }
+        if (str_starts_with($path, 'aceline-gfn')) {
+            return 'quality/greensand/ace-gfn';
+        }
+
+        // kalau gak terpetakan, balikin null -> akan dianggap tidak punya izin
+        return null;
+    }
 
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check()) {
-            return redirect()->route('login');
+        if (!auth()->check()) return redirect()->route('login');
+
+        $rawPath = trim($request->path(), '/');
+        if ($rawPath === '' || in_array($rawPath, $this->whitelist, true)) {
+            return $next($request);
         }
+
+        $permUrl = $this->resolvePermUrl($request);
+        if (!$permUrl) {
+            abort(403, 'Permission URL mapping not found.');
+        }
+
+        // kandidat url: tanpa & dengan leading slash (untuk toleransi)
+        $candidates = [ ltrim($permUrl, '/'), '/' . ltrim($permUrl, '/') ];
 
         $user = auth()->user();
+        $userIds = array_filter([$user->id ?? null, $user->kode_user ?? null]);
 
-        // 1) Whitelist cepat
-        $rawPath = trim($request->path(), '/'); // "" | "greensand/data/mm1" | "lookup/products"
-        if (in_array($rawPath, $this->whitelist, true)) {
-            return $next($request);
-        }
-        if ($rawPath === '') { // dashboard
-            return $next($request);
-        }
-
-        // 2) Normalisasi ke "menu root" (segment pertama yang dikenali)
-        $seg = explode('/', $rawPath);
-        $first = $seg[0] ?? '';
-        $root  = in_array($first, $this->moduleRoots, true) ? $first : null;
-
-        // Jika ketemu root modul, pakai root untuk cek permission; jika tidak, pakai rawPath apa adanya
-        $target = $root ? "quality/{$root}" : $rawPath;
-
-        // Bangun kandidat url untuk toleransi variasi slash
-        $candidates = [
-            ltrim($target, '/'),        // "quality/greensand"
-            '/' . ltrim($target, '/'),  // "/quality/greensand"
-        ];
-
-        // 3) Siapkan kandidat user_id: id & kode_user (kalau ada)
-        $userIds = [];
-        if (isset($user->id)) {
-            $userIds[] = $user->id;
-        }
-        if (!empty($user->kode_user)) {
-            $userIds[] = $user->kode_user;
-        }
-
-        // 4) Cek ke v_user_permissions -> can_access=1
         try {
-            $perm = DB::connection('mysql_aicc')
+            $has = DB::connection('mysql_aicc')
                 ->table('v_user_permissions')
                 ->whereIn('user_id', $userIds)
                 ->where('can_access', 1)
@@ -74,15 +105,12 @@ class CheckPermission
                         $q->orWhere('url', $u);
                     }
                 })
-                ->first();
+                ->exists();
         } catch (\Throwable $e) {
             abort(500, 'Permission view error: ' . $e->getMessage());
         }
 
-        if (!$perm) {
-            abort(403, 'Anda tidak memiliki izin untuk mengakses halaman ini.');
-        }
-
+        if (!$has) abort(403, 'Anda tidak memiliki izin untuk mengakses halaman ini.');
         return $next($request);
     }
 }

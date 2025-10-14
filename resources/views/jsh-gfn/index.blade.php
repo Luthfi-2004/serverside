@@ -99,7 +99,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <div class="d-flex align-items-center flex-wrap">
-                            @perm('quality/jsh-gfn', 'can_add')
+                            @perm('quality/greensand/jsh-gfn', 'can_add')
                             <button id="btn-add-greensand" type="button"
                                 class="btn btn-success btn-sm btn-add-gs mr-2 mb-2" data-toggle="modal"
                                 data-target="#modal-greensand">
@@ -108,7 +108,7 @@
                             @endperm
 
                             @if(!empty($displayRecap))
-                            @perm('quality/jsh-gfn', 'can_delete')
+                            @perm('quality/greensand/jsh-gfn', 'can_delete')
                             <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs"
                                 data-toggle="modal" data-target="#confirmDeleteModal"
                                 data-gfn-date="{{ $displayRecap['gfn_date'] }}"

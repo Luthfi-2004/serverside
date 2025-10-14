@@ -92,7 +92,7 @@
                 <div class="card mb-4">
                     <div class="card-body shadow-lg">
                         <div class="mb-3 d-flex justify-content-between align-items-center">
-                            @perm('quality/greensand', 'can_add')
+                            @perm('quality/greensand/jsh-greensand-check', 'can_add')
                             <button type="button" class="btn btn-success btn-sm btn-add-gs">
                                 <i class="ri-add-line"></i> Add Data
                             </button>
