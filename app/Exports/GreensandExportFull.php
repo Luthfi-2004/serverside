@@ -13,17 +13,13 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
-class GreensandExportFull implements
-    FromQuery,
-    WithMapping,
-    WithHeadings,
-    WithEvents
+class GreensandExportFull implements FromQuery, WithMapping, WithHeadings, WithEvents
 {
     public function __construct(
         protected ?string $date = null,
         protected ?string $shift = null,
         protected ?string $keyword = null,
-        protected ?string $mm = null // "MM1" | "MM2" | null (null = All)
+        protected ?string $mm = null
     ) {
     }
 
@@ -74,6 +70,9 @@ class GreensandExportFull implements
         'rcs_avg',
         'add_bentonite_ma',
         'total_sand',
+        'add_water_bc10',
+        'lama_bc10_jalan',
+        'rating_pasir_es',
     ];
 
     public function headings(): array
@@ -125,6 +124,9 @@ class GreensandExportFull implements
                 '',
                 '',
                 '',
+                'Additional',
+                '',
+                '',
             ],
             [
                 '',
@@ -172,6 +174,9 @@ class GreensandExportFull implements
                 'RCS Avg',
                 'Add Bentonite MA',
                 'Total Sand',
+                'Add Water BC10',
+                'Lama BC10 Jalan',
+                'Rating Pasir ES',
             ],
         ];
     }
@@ -180,20 +185,23 @@ class GreensandExportFull implements
     {
         $q = GreensandJsh::query();
 
-        if ($this->mm)
+        if ($this->mm) {
             $q->where('mm', $this->mm);
+        }
         if ($this->date) {
             try {
                 $q->whereDate('date', Carbon::parse($this->date)->toDateString());
             } catch (\Throwable $e) {
             }
         }
-        if ($this->shift)
+        if ($this->shift) {
             $q->where('shift', $this->shift);
+        }
         if ($this->keyword) {
             $kw = $this->keyword;
             $q->where(function (Builder $x) use ($kw) {
-                $x->where('mix_ke', 'like', "%{$kw}%")->orWhere('rs_type', 'like', "%{$kw}%");
+                $x->where('mix_ke', 'like', "%{$kw}%")
+                    ->orWhere('rs_type', 'like', "%{$kw}%");
             });
         }
 
@@ -227,7 +235,6 @@ class GreensandExportFull implements
             $row->mix_ke,
             $row->mix_start,
             $row->mix_finish,
-
             $row->mm_p,
             $row->mm_c,
             $row->mm_gt,
@@ -242,18 +249,15 @@ class GreensandExportFull implements
             $row->mm_cb_weight,
             $row->mm_tp50_weight,
             $row->mm_ssi,
-
             $row->add_m3,
             $row->add_vsd,
             $row->add_sc,
-
             $row->bc12_cb,
             $row->bc12_m,
             $row->bc11_ac,
             $row->bc11_vsd,
             $row->bc16_cb,
             $row->bc16_m,
-
             $row->rs_time,
             $row->rs_type,
             $row->bc9_moist,
@@ -262,7 +266,6 @@ class GreensandExportFull implements
             $row->bc9_temp,
             $row->bc10_temp,
             $row->bc11_temp,
-
             $row->add_water_mm,
             $row->add_water_mm_2,
             $row->temp_sand_mm_1,
@@ -271,6 +274,9 @@ class GreensandExportFull implements
             $row->rcs_avg,
             $row->add_bentonite_ma,
             $row->total_sand,
+            $row->add_water_bc10,
+            $row->lama_bc10_jalan,
+            $row->rating_pasir_es,
         ];
     }
 
@@ -316,6 +322,9 @@ class GreensandExportFull implements
             'rcs_avg' => 43,
             'add_bentonite_ma' => 44,
             'total_sand' => 45,
+            'add_water_bc10' => 46,
+            'lama_bc10_jalan' => 47,
+            'rating_pasir_es' => 48,
         ];
     }
 
@@ -351,6 +360,9 @@ class GreensandExportFull implements
             'bc9_temp',
             'bc10_temp',
             'bc11_temp',
+            'add_water_bc10',
+            'lama_bc10_jalan',
+            'rating_pasir_es',
         ];
     }
 
@@ -378,20 +390,23 @@ class GreensandExportFull implements
     {
         $q = GreensandJsh::query();
 
-        if ($this->mm)
+        if ($this->mm) {
             $q->where('mm', $this->mm);
+        }
         if ($this->date) {
             try {
                 $q->whereDate('date', Carbon::parse($this->date)->toDateString());
             } catch (\Throwable $e) {
             }
         }
-        if ($this->shift)
+        if ($this->shift) {
             $q->where('shift', $this->shift);
+        }
         if ($this->keyword) {
             $kw = $this->keyword;
             $q->where(function (Builder $x) use ($kw) {
-                $x->where('mix_ke', 'like', "%{$kw}%")->orWhere('rs_type', 'like', "%{$kw}%");
+                $x->where('mix_ke', 'like', "%{$kw}%")
+                    ->orWhere('rs_type', 'like', "%{$kw}%");
             });
         }
 
@@ -423,22 +438,19 @@ class GreensandExportFull implements
     {
         return [
             AfterSheet::class => function (AfterSheet $e) {
-                /** @var Worksheet $s */
                 $s = $e->sheet->getDelegate();
 
-                // Merge header A..F vertikal (row 1–2)
                 foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $col) {
                     $s->mergeCells("{$col}1:{$col}2");
                 }
-                // Grup horizontal (row-1)
-                $s->mergeCells('G1:T1');   // MM Sample (14)
-                $s->mergeCells('U1:W1');   // Additive (3)
-                $s->mergeCells('X1:AC1');  // BC Sample (6)
-                $s->mergeCells('AD1:AK1'); // Return Sand (8)
-                $s->mergeCells('AL1:AS1'); // Moulding Data (8)
-    
-                // Header style
-                $s->getStyle('A1:AS2')->applyFromArray([
+                $s->mergeCells('G1:T1');
+                $s->mergeCells('U1:W1');
+                $s->mergeCells('X1:AC1');
+                $s->mergeCells('AD1:AK1');
+                $s->mergeCells('AL1:AS1');
+                $s->mergeCells('AT1:AV1');
+
+                $s->getStyle('A1:AV2')->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                     'alignment' => [
                         'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -456,7 +468,6 @@ class GreensandExportFull implements
                 $s->getRowDimension(1)->setRowHeight(26);
                 $s->getRowDimension(2)->setRowHeight(26);
 
-                // Width helper (supports AA..AS)
                 $setWidthSpan = function (string $startCol, string $endCol, float $width) use ($s) {
                     $start = Coordinate::columnIndexFromString($startCol);
                     $end = Coordinate::columnIndexFromString($endCol);
@@ -466,7 +477,6 @@ class GreensandExportFull implements
                     }
                 };
 
-                // Widths
                 $s->getDefaultColumnDimension()->setWidth(24);
                 $s->getColumnDimension('A')->setWidth(26);
                 $s->getColumnDimension('B')->setWidth(18);
@@ -479,12 +489,11 @@ class GreensandExportFull implements
                 $setWidthSpan('X', 'AC', 16);
                 $setWidthSpan('AD', 'AK', 16);
                 $setWidthSpan('AL', 'AS', 20);
+                $setWidthSpan('AT', 'AV', 20);
 
-                // Zoom + Freeze
                 $s->getSheetView()->setZoomScale(120);
                 $s->freezePane('A3');
 
-                // Spacer antar MM (hanya di ALL)
                 if ($this->mm === null) {
                     $dataLastBeforeSpacer = $s->getHighestRow();
                     $gapBetweenMM = 3;
@@ -497,10 +506,8 @@ class GreensandExportFull implements
                     }
                 }
 
-                // Recalculate last data row after spacer
                 $dataLast = $s->getHighestRow();
 
-                // ===== SUMMARY: ONLY IN ALL (mm == null) =====
                 $summaryStart = null;
                 if ($this->mm === null) {
                     $summary = $this->computeSummary();
@@ -511,8 +518,9 @@ class GreensandExportFull implements
 
                     $rows = ['MIN' => [], 'MAX' => [], 'AVG' => [], 'JUDGE' => []];
                     foreach ($summary as $field => $vals) {
-                        if (!isset($map[$field]))
+                        if (!isset($map[$field])) {
                             continue;
+                        }
                         $col = Coordinate::stringFromColumnIndex($map[$field]);
                         $rows['MIN'][$col] = $vals['min'] ?? '';
                         $rows['MAX'][$col] = $vals['max'] ?? '';
@@ -526,7 +534,7 @@ class GreensandExportFull implements
                         foreach ($valueMap as $col => $val) {
                             $s->setCellValue("{$col}{$rowNum}", $val);
                         }
-                        $s->getStyle("A{$rowNum}:AS{$rowNum}")->applyFromArray([
+                        $s->getStyle("A{$rowNum}:AV{$rowNum}")->applyFromArray([
                             'alignment' => [
                                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
                                 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
@@ -540,9 +548,8 @@ class GreensandExportFull implements
                     $writeRow('AVG', $rows['AVG'], $summaryStart + 2);
                     $writeRow('JUDGE', $rows['JUDGE'], $summaryStart + 3);
 
-                    // OK/NG colors
                     $judgeRow = $summaryStart + 3;
-                    for ($i = 7; $i <= 45; $i++) {
+                    for ($i = 7; $i <= 48; $i++) {
                         $col = Coordinate::stringFromColumnIndex($i);
                         $val = (string) $s->getCell("{$col}{$judgeRow}")->getValue();
                         if ($val === 'OK' || $val === 'NG') {
@@ -553,24 +560,20 @@ class GreensandExportFull implements
                     }
                 }
 
-                // ===== Alignment: header, data, (summary only in ALL) =====
-                $s->getStyle('A1:AS2')->getAlignment()
+                $s->getStyle('A1:AV2')->getAlignment()
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
                     ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
-                // Data center: A3..last data row
-                $s->getStyle("A3:AS{$dataLast}")->getAlignment()
+                $s->getStyle("A3:AV{$dataLast}")->getAlignment()
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
                     ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
-                // Summary center (only if exists)
                 if ($summaryStart !== null) {
-                    $s->getStyle("A{$summaryStart}:AS" . ($summaryStart + 3))->getAlignment()
+                    $s->getStyle("A{$summaryStart}:AV" . ($summaryStart + 3))->getAlignment()
                         ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
                         ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
                 }
 
-                // Borders full area
                 $endRow = $s->getHighestRow();
                 $lastCol = $s->getHighestColumn();
                 $s->getStyle("A1:{$lastCol}{$endRow}")->applyFromArray([
