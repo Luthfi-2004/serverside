@@ -276,7 +276,7 @@ $(function () {
                 });
         });
 
-    // SUBMIT: tampilkan SEMUA error klien (MM + mix_ke) sekaligus
+    // SUBMIT: tampilkan SEMUA error klien (MM + mix_ke) sekaligus + SPINNER tombol submit
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -320,7 +320,7 @@ $(function () {
                 return; // stop di sini, TANPA AJAX; pesan sudah ditampilkan semua
             }
 
-            // lanjut submit AJAX
+            // lanjut submit AJAX + SPINNER ala ace.js
             const mode = $("#gs_mode").val();
             const id = $("#gs_id").val();
             const date = $("#filterDate").val() || "";
@@ -330,7 +330,13 @@ $(function () {
                     date
                 )}`;
 
-            $("#gsSubmitBtn").prop("disabled", true);
+            const $btn = $("#gsSubmitBtn");
+            $btn.prop("disabled", true)
+                .data("orig", $btn.html())
+                .html(
+                    '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
+                );
+
             const req =
                 mode === "edit"
                     ? $.post(
@@ -376,7 +382,12 @@ $(function () {
                     console.error(xhr.responseText || xhr);
                 })
                 .always(() => {
-                    $("#gsSubmitBtn").prop("disabled", false);
+                    const $btn = $("#gsSubmitBtn");
+                    const orig = $btn.data("orig");
+                    if (typeof orig !== "undefined") {
+                        $btn.html(orig).removeData("orig");
+                    }
+                    $btn.prop("disabled", false);
                 });
         });
 
