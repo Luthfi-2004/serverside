@@ -1,6 +1,5 @@
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
-    <!-- novalidate: matikan HTML5 validation agar JS bisa jalan dulu -->
     <form id="gsForm" class="modal-content" autocomplete="off" novalidate>
       @csrf
       <input type="hidden" name="id" id="gs_id">
@@ -10,10 +9,8 @@
         <h5 class="modal-title" id="gsModalLabel"><span id="gsModalMode">Add</span> Green Sand</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
       </div>
-
       <div class="modal-body">
         <div id="gsFormAlert" class="alert alert-danger d-none mb-3"></div>
-
         <div class="card mb-3">
           <div class="card-body">
             <div class="row">
@@ -21,7 +18,6 @@
                 <label class="form-label mb-1 d-block">MM</label>
                 <div class="btn-group btn-group-sm d-flex" data-toggle="buttons" id="mm_group">
                   <label class="btn btn-outline-secondary w-100" id="mm1_btn">
-                    <!-- HAPUS required di radio -->
                     <input type="radio" name="mm" value="1" class="d-none"> 1
                   </label>
                   <label class="btn btn-outline-secondary w-100" id="mm2_btn">
@@ -30,7 +26,6 @@
                 </div>
                 <div id="mm_error" class="invalid-feedback d-block" style="display:none;"></div>
               </div>
-
               <div class="col-md-3 mb-3">
                 <label class="form-label mb-1">Mix Ke</label>
                 <input type="text" name="mix_ke" id="mix_ke" class="form-control js-num-int" inputmode="numeric" pattern="^[0-9]+$" placeholder="Input Mix Ke">
@@ -49,7 +44,6 @@
             </div>
           </div>
         </div>
-
         <ul class="nav nav-tabs mb-3" role="tablist">
           <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tab-mm" role="tab"><i class="ri-flask-line mr-1"></i> MM Sample</a></li>
           <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-additive" role="tab"><i class="ri-pie-chart-2-line mr-1"></i> Additive</a></li>
@@ -57,9 +51,7 @@
           <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-return" role="tab"><i class="ri-recycle-line mr-1"></i> Return Sand</a></li>
           <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-moulding" role="tab"><i class="ri-hammer-line mr-1"></i> Data Moulding</a></li>
         </ul>
-
         <div class="tab-content">
-          {{-- MM SAMPLE: semua angka (koma/titik ok) --}}
           <div class="tab-pane fade show active" id="tab-mm" role="tabpanel">
             <div class="row">
               @php
@@ -97,8 +89,6 @@
               @endforeach
             </div>
           </div>
-
-          {{-- ADDITIVE: semua angka --}}
           <div class="tab-pane fade" id="tab-additive" role="tabpanel">
             <div class="row">
               @foreach(['add_m3' => 'M3', 'add_vsd' => 'VSD', 'add_sc' => 'SC'] as $name => $label)
@@ -109,8 +99,6 @@
               @endforeach
             </div>
           </div>
-
-          {{-- BC SAMPLE: semua angka --}}
           <div class="tab-pane fade" id="tab-bc" role="tabpanel">
             <div class="row">
               @foreach(['bc12_cb' => 'BC 12 (CB)', 'bc11_ac' => 'BC 11 (AC)', 'bc16_cb' => 'BC 16 (CB)', 'bc12_m' => 'BC 12 (M)', 'bc11_vsd' => 'BC 11 (VSD)', 'bc16_m' => 'BC 16 (M)'] as $name => $label)
@@ -121,8 +109,6 @@
               @endforeach
             </div>
           </div>
-
-          {{-- RETURN SAND: time + rs_type + angka --}}
           <div class="tab-pane fade" id="tab-return" role="tabpanel">
             <div class="row mb-3">
               <div class="col-md-6">
@@ -143,8 +129,6 @@
               @endforeach
             </div>
           </div>
-
-          {{-- DATA MOULDING: semua angka --}}
           <div class="tab-pane fade" id="tab-moulding" role="tabpanel">
             <div class="row">
               @foreach([
@@ -184,20 +168,18 @@
   function allowNumericInput(el, allowDecimal) {
     el.addEventListener('input', function () {
       let v = el.value;
-      v = v.replace(/[^0-9,.\-]/g, '');  // non-digit
-      v = v.replace(/(?!^)-/g, '');      // minus hanya di awal
+      v = v.replace(/[^0-9,.\-]/g, '');  
+      v = v.replace(/(?!^)-/g, '');     
       if (!allowDecimal) v = v.replace(/[.,]/g, '');
       el.value = v;
     });
   }
 
-  // pasang filter angka saat modal tampil
   $('#modal-greensand').on('shown.bs.modal', function () {
     document.querySelectorAll('#modal-greensand .js-num').forEach(inp => allowNumericInput(inp, true));
     document.querySelectorAll('#modal-greensand .js-num-int').forEach(inp => allowNumericInput(inp, false));
   });
 
-  // edge case: kalau modal sudah kebuka saat init
   if ($('#modal-greensand').is(':visible')) {
     document.querySelectorAll('#modal-greensand .js-num').forEach(inp => allowNumericInput(inp, true));
     document.querySelectorAll('#modal-greensand .js-num-int').forEach(inp => allowNumericInput(inp, false));
