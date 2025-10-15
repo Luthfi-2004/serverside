@@ -56,7 +56,6 @@
                 </ul>
 
                 <div class="tab-content">
-                    {{-- MM SAMPLE --}}
                     <div class="tab-pane fade show active" id="tab-mm" role="tabpanel">
                         <div class="row">
                             @php
@@ -91,8 +90,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- ADDITIVE --}}
                     <div class="tab-pane fade" id="tab-additive" role="tabpanel">
                         <div class="row">
                             @foreach(['add_m3' => 'M3', 'add_vsd' => 'VSD', 'add_sc' => 'SC'] as $name => $label)
@@ -103,8 +100,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- BC SAMPLE --}}
                     <div class="tab-pane fade" id="tab-bc" role="tabpanel">
                         <div class="row">
                             @foreach(['bc12_cb' => 'BC 12 (CB)', 'bc11_ac' => 'BC 11 (AC)', 'bc16_cb' => 'BC 16 (CB)', 'bc12_m' => 'BC 12 (M)', 'bc11_vsd' => 'BC 11 (VSD)', 'bc16_m' => 'BC 16 (M)'] as $name => $label)
@@ -115,8 +110,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- RETURN SAND --}}
                     <div class="tab-pane fade" id="tab-return" role="tabpanel">
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -137,8 +130,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- MOULDING --}}
                     <div class="tab-pane fade" id="tab-moulding" role="tabpanel">
                         <div class="row">
                             @foreach([
@@ -163,7 +154,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="modal-footer d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary mr-2" data-dismiss="modal"><i class="ri-close-line me-1"></i> Cancel</button>
                 <button type="submit" class="btn btn-success" id="gsSubmitBtn"><i class="ri-checkbox-circle-line me-1"></i> Submit</button>

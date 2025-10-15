@@ -14,15 +14,7 @@ use App\Exports\GreensandExportFull;
 
 class GreensandJshController extends Controller
 {
-    /**
-     * URL izin untuk modul JSH Daily (data/export/CRUD) — pakai URL spesifik.
-     * Pastikan ada di tb_menus + tb_user_permissions.
-     *
-     * Contoh row tb_menus.url: `quality/greensand/jsh-greensand-check`
-     */
     private const URL_MAIN = 'quality/greensand/jsh-greensand-check';
-
-    /** =================== DATA/API =================== */
     public function dataMM1(Request $request)
     {
         if (!$this->can('can_read'))
@@ -63,8 +55,6 @@ class GreensandJshController extends Controller
 
         return Excel::download(new GreensandExportFull($date, $shift, $keyword, $mm), $fname);
     }
-
-    /** =================== CRUD =================== */
     public function store(Request $request)
     {
         if (!$this->can('can_add'))
@@ -139,8 +129,6 @@ class GreensandJshController extends Controller
         $row->delete();
         return response()->json(['message' => 'Deleted']);
     }
-
-    /** =================== INTERNALS =================== */
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
@@ -476,11 +464,6 @@ class GreensandJshController extends Controller
             'rating_pasir_es' => $in['rating_pasir_es'] ?? ($existing->rating_pasir_es ?? null),
         ];
     }
-
-    /**
-     * Permission checker ke v_user_permissions.
-     * Default: pakai URL_MAIN (quality/greensand/jsh-greensand-check).
-     */
     private function can(string $flag, ?string $url = null): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false)))
@@ -503,7 +486,7 @@ class GreensandJshController extends Controller
                 ->where($flag, 1)
                 ->exists();
         } catch (\Throwable $e) {
-            return false; // default deny
+            return false; 
         }
     }
 }

@@ -45,8 +45,6 @@
             'BC16 M' => 'bc16_m',
         ];
         $COL_RS = ['RS Time', 'Type', 'Moist BC9', 'Moist BC10', 'Moist BC11', 'Temp BC9', 'Temp BC10', 'Temp BC11'];
-
-        // UPDATE: tambah 3 kolom baru di akhir
         $COL_MD = [
             'Add Water MM1',
             'Add Water MM2',
@@ -56,9 +54,9 @@
             'RCS Avg',
             'Add Bentonite MA',
             'Total Sand',
-            'Add Water BC10',     // NEW
-            'Lama BC 10 jalan',   // NEW
-            'Rating Pasir Es',    // NEW
+            'Add Water BC10',    
+            'Lama BC 10 jalan',  
+            'Rating Pasir Es',   
         ];
 
         $__std = DB::table('tb_greensand_std_jsh')->first();

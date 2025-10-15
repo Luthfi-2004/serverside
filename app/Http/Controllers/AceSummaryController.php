@@ -20,8 +20,6 @@ class AceSummaryController extends Controller
             $q->where('shift', $shift);
         if ($pid)
             $q->where('product_type_id', $pid);
-
-        // urutan dan nama field harus sinkron dengan ace.js (colIndex di bawah)
         $keys = [
             'p',
             'c',
@@ -45,8 +43,6 @@ class AceSummaryController extends Controller
         ];
 
         $nonNumeric = ['machine_no', 'most', 'no_mix'];
-
-        // ambil standar (kalau mau judge berdasarkan standar tabel)
         $std = DB::table('tb_greensand_std_ace')->first();
 
         $rows = [];

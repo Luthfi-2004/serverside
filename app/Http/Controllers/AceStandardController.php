@@ -4,18 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AceStandard;
-// tambahkan ini biar bisa panggil Perm di controller
 use App\Support\Perm;
 
 class AceStandardController extends Controller
 {
-    // URL permission khusus untuk halaman standards ACE
     private string $permUrlNoQual = 'greensand/ace-greensand-std';
     private string $permUrlWithQual = 'quality/greensand/ace-greensand-std';
 
     public function index()
     {
-        // baca izin read
         if (
             !Perm::can($this->permUrlNoQual, 'can_read')
             && !Perm::can($this->permUrlWithQual, 'can_read')
@@ -26,8 +23,6 @@ class AceStandardController extends Controller
         $std = AceStandard::first();
         if (!$std)
             $std = AceStandard::create([]);
-
-        // hitung canEdit sekali di controller
         $canEdit =
             Perm::can($this->permUrlNoQual, 'can_edit') ||
             Perm::can($this->permUrlWithQual, 'can_edit');

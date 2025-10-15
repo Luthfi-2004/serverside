@@ -75,8 +75,6 @@ class AceGfnPageController extends Controller
 
         $date  = $request->input('gfn_date');
         $shift = $request->input('shift');
-
-        // 🔒 Hanya izinkan input untuk tanggal hari ini (backend guard)
         $today = now('Asia/Jakarta')->toDateString();
         if ($date !== $today) {
             return back()
@@ -84,8 +82,6 @@ class AceGfnPageController extends Controller
                 ->withInput()
                 ->with('open_modal', true);
         }
-
-        // Cegah duplikasi per tanggal + shift
         $dupe = AceTotalGfn::query()
             ->whereDate('gfn_date', $date)
             ->where('shift', $shift)

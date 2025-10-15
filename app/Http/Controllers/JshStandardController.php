@@ -9,10 +9,6 @@ use Illuminate\Support\Facades\DB;
 
 class JshStandardController extends Controller
 {
-    /**
-     * Daftar URL permission yang dianggap valid untuk halaman Standards JSH.
-     * Sesuaikan dengan data di v_user_permissions.
-     */
     private const PERM_URLS = [
         'greensand/jsh-greensand-std',
         'quality/greensand/jsh-greensand-std',
@@ -23,17 +19,11 @@ class JshStandardController extends Controller
         if (!$this->can('can_read')) {
             abort(403);
         }
-
-        // untuk badge & tombol submit di Blade
         $canEdit = $this->can('can_edit');
-
-        // pastikan ada satu baris std
         $std = JshStandard::query()->first();
         if (!$std) {
             $std = JshStandard::create([]);
         }
-
-        // label parameter
         $groupDefs = [
             'MM Sample' => [
                 'mm_p' => 'P',
@@ -61,8 +51,6 @@ class JshStandardController extends Controller
                 'bc16_m' => 'BC16 M',
             ],
         ];
-
-        // helper format angka: ganti koma -> titik, hapus trailing nol
         $fmt = function ($v) {
             if ($v === null || $v === '')
                 return null;
@@ -71,8 +59,6 @@ class JshStandardController extends Controller
                 $s = rtrim(rtrim($s, '0'), '.');
             return $s;
         };
-
-        // bangun array groups untuk Blade (tiap item sudah punya min/max terformat)
         $groups = [];
         foreach ($groupDefs as $groupName => $fields) {
             $items = [];
@@ -94,14 +80,11 @@ class JshStandardController extends Controller
 
     public function update(Request $r)
     {
-        // submit butuh can_edit
         if (!$this->can('can_edit')) {
             abort(403);
         }
 
         $std = JshStandard::query()->firstOrCreate([]);
-
-        // normalisasi & swap min/max bila perlu
         $data = [];
         foreach (JshStandard::fields() as $f) {
             $minKey = $f . '_min';
@@ -120,8 +103,6 @@ class JshStandardController extends Controller
             $data[$minKey] = $min;
             $data[$maxKey] = $max;
         }
-
-        // validasi numeric
         $rules = [];
         foreach (JshStandard::fields() as $f) {
             $rules[$f . '_min'] = ['nullable', 'numeric'];
@@ -135,8 +116,6 @@ class JshStandardController extends Controller
         $std->update($data);
         return back()->with('status', 'Standards updated.');
     }
-
-    /** ===== Permission helper (cek multi-URL + variasi slash) ===== */
     private function can(string $flag): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false))) {
@@ -152,8 +131,8 @@ class JshStandardController extends Controller
         $urls = [];
         foreach (self::PERM_URLS as $u) {
             $clean = ltrim($u, '/');
-            $urls[] = $clean;           // "greensand/jsh-greensand-std"
-            $urls[] = '/' . $clean;     // "/greensand/jsh-greensand-std"
+            $urls[] = $clean;           
+            $urls[] = '/' . $clean;   
         }
 
         try {

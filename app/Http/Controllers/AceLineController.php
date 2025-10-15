@@ -329,8 +329,6 @@ class AceLineController extends Controller
             $page = max(1, (int) $request->get('page', 1));
             $take = 20;
             $offset = ($page - 1) * $take;
-
-            // 🔹 pastikan koneksi DB WIP digunakan
             $query = DB::connection('mysql_wip')
                 ->table('products')
                 ->select(['id', 'no', 'name'])
@@ -343,8 +341,6 @@ class AceLineController extends Controller
                 ->orderBy('no');
 
             $rows = $query->offset($offset)->limit($take)->get();
-
-            // 🔹 format hasil agar cocok dengan Select2 (id + text)
             $results = $rows->map(function ($r) {
                 return [
                     'id' => $r->id,
