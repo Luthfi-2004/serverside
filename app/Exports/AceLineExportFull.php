@@ -335,7 +335,7 @@ class AceLineExportFull implements FromQuery, WithMapping, WithHeadings, WithEve
                 $s->getColumnDimension('A')->setWidth(10);
                 $s->getColumnDimension('B')->setWidth(14);
                 $s->getColumnDimension('C')->setWidth(10);
-                $s->getColumnDimension('D')->setWidth(24);
+                $s->getColumnDimension('D')->setWidth(30);
                 $s->getColumnDimension('E')->setWidth(16);
                 $s->getColumnDimension('F')->setWidth(16);
                 $setWidthSpan('G', 'U', 16);
