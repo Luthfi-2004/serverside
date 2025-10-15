@@ -1,6 +1,6 @@
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-    <form action="{{ route('acelinegfn.store') }}" method="POST" class="modal-content" autocomplete="off">
+    <form id="form-greensand" action="{{ route('acelinegfn.store') }}" method="POST" class="modal-content" autocomplete="off">
       @csrf
       <div class="modal-header py-2">
         <h5 class="modal-title">Form Add Data GFN ACE LINE</h5>
@@ -8,6 +8,8 @@
       </div>
 
       <div class="modal-body">
+        <div id="gfnDupAlert" class="alert alert-danger d-none mb-2" role="alert"></div>
+
         <div class="row mb-3">
           <div class="col-xl-6 col-lg-6 mb-2">
             <label class="form-label mb-1">Tanggal</label>

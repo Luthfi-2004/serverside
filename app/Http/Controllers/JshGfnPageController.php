@@ -95,66 +95,125 @@ class JshGfnPageController extends Controller
                 ->with('open_modal', true);
         }
 
-        $grams = array_map(
-            fn($v) => ($v === null || $v === '') ? 0.0 : (float) $v,
-            $request->input('grams', [])
-        );
-
-        $totalGram = array_sum($grams);
-        if ($totalGram <= 0) {
-            return back()
-                ->withErrors(['grams' => 'Isikan minimal satu nilai GRAM > 0.'])
-                ->withInput()
-                ->with('open_modal', true);
-        }
-
-        $percentages        = [];
-        $percentageIndices  = [];
-        $sumPI              = 0.0;
-
-        for ($i = 0; $i < 10; $i++) {
-            $g      = $grams[$i];
-            $pct    = $totalGram > 0 ? ($g / $totalGram) * 100 : 0.0;
-            $pctIdx = $pct * $this->indices[$i];
-
-            $percentages[$i]       = round($pct, 2);
-            $percentageIndices[$i] = round($pctIdx, 1);
-            $sumPI += $percentageIndices[$i];
-        }
+        [$grams, $percentages, $percentageIndices, $totalGram, $sumPI] = $this->computeFromGrams($request->input('grams', []));
 
         DB::transaction(function () use ($request, $grams, $percentages, $percentageIndices, $totalGram, $sumPI) {
-
             for ($i = 0; $i < 10; $i++) {
                 JshGfn::create([
-                    'gfn_date'              => $request->gfn_date,
-                    'shift'                 => $request->shift,
-                    'mesh'                  => $this->meshes[$i],
-                    'gram'                  => $grams[$i],
-                    'percentage'            => $percentages[$i],
-                    'index'                 => $this->indices[$i],
-                    'percentage_index'      => $percentageIndices[$i],
-                    'total_gram'            => $totalGram,
-                    'total_percentage_index'=> $sumPI,
+                    'gfn_date'               => $request->gfn_date,
+                    'shift'                  => $request->shift,
+                    'mesh'                   => $this->meshes[$i],
+                    'gram'                   => $grams[$i],
+                    'percentage'             => $percentages[$i],
+                    'index'                  => $this->indices[$i],
+                    'percentage_index'       => $percentageIndices[$i],
+                    'total_gram'             => $totalGram,
+                    'total_percentage_index' => $sumPI,
                 ]);
             }
 
-
             TotalGfn::create([
-                'gfn_date'                 => $request->gfn_date,
-                'shift'                    => $request->shift,
-                'nilai_gfn'                => round($sumPI / 100, 2),
-                'mesh_total140'            => round($percentages[6] ?? 0, 2),
-                'mesh_total70'             => round(($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0), 2),
-                'meshpan'                  => round(($percentages[8] ?? 0) + ($percentages[9] ?? 0), 2),
-                'judge_mesh_140'           => ($percentages[6] >= 3.50 && $percentages[6] <= 8.00) ? 'OK' : 'NG',
-                'judge_mesh_70'            => ((($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0)) >= 64.00) ? 'OK' : 'NG',
-                'judge_meshpan'            => ((($percentages[8] ?? 0) + ($percentages[9] ?? 0)) <= 1.40) ? 'OK' : 'NG',
-                'total_gram'               => $totalGram,
-                'total_percentage_index'   => $sumPI,
+                'gfn_date'               => $request->gfn_date,
+                'shift'                  => $request->shift,
+                'nilai_gfn'              => round($sumPI / 100, 2),
+                'mesh_total140'          => round($percentages[6] ?? 0, 2),
+                'mesh_total70'           => round(($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0), 2),
+                'meshpan'                => round(($percentages[8] ?? 0) + ($percentages[9] ?? 0), 2),
+                'judge_mesh_140'         => ($percentages[6] >= 3.50 && $percentages[6] <= 8.00) ? 'OK' : 'NG',
+                'judge_mesh_70'          => ((($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0)) >= 64.00) ? 'OK' : 'NG',
+                'judge_meshpan'          => ((($percentages[8] ?? 0) + ($percentages[9] ?? 0)) <= 1.40) ? 'OK' : 'NG',
+                'total_gram'             => $totalGram,
+                'total_percentage_index' => $sumPI,
             ]);
         });
 
         return redirect()->route('jshgfn.index')->with('status', 'Data GFN berhasil disimpan.');
+    }
+
+    public function update(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'gfn_date'  => ['required', 'date'],
+            'shift'     => ['required', 'in:D,S,N'],
+            'grams'     => ['required', 'array', 'size:10'],
+            'grams.*'   => ['nullable', 'numeric', 'min:0'],
+        ], [], [
+            'gfn_date' => 'Tanggal',
+            'shift'    => 'Shift',
+            'grams'    => 'Gram',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput()->with('open_modal', true);
+        }
+
+        $gfnDate = $request->input('gfn_date');
+        $shift   = $request->input('shift');
+
+        $today = now('Asia/Jakarta')->toDateString();
+        if ($gfnDate !== $today) {
+            return back()
+                ->withErrors(['gfn_date' => "Edit hanya diperbolehkan untuk tanggal {$today}."])
+                ->withInput()
+                ->with('open_modal', true);
+        }
+
+        $sinceToday = now('Asia/Jakarta')->startOfDay();
+        $existsToday = TotalGfn::whereDate('gfn_date', $gfnDate)
+            ->where('shift', $shift)
+            ->where('created_at', '>=', $sinceToday)
+            ->exists();
+
+        if (!$existsToday) {
+            return back()->withErrors([
+                'gfn_date' => "Data tanggal {$gfnDate} (shift {$shift}) tidak bisa diedit karena bukan data hari ini / belum ada."
+            ])->withInput()->with('open_modal', true);
+        }
+
+        [$grams, $percentages, $percentageIndices, $totalGram, $sumPI] = $this->computeFromGrams($request->input('grams', []));
+
+        DB::transaction(function () use ($gfnDate, $shift, $sinceToday, $grams, $percentages, $percentageIndices, $totalGram, $sumPI) {
+            JshGfn::whereDate('gfn_date', $gfnDate)
+                ->where('shift', $shift)
+                ->where('created_at', '>=', $sinceToday)
+                ->delete();
+
+            TotalGfn::whereDate('gfn_date', $gfnDate)
+                ->where('shift', $shift)
+                ->where('created_at', '>=', $sinceToday)
+                ->delete();
+
+            for ($i = 0; $i < 10; $i++) {
+                JshGfn::create([
+                    'gfn_date'               => $gfnDate,
+                    'shift'                  => $shift,
+                    'mesh'                   => $this->meshes[$i],
+                    'gram'                   => $grams[$i],
+                    'percentage'             => $percentages[$i],
+                    'index'                  => $this->indices[$i],
+                    'percentage_index'       => $percentageIndices[$i],
+                    'total_gram'             => $totalGram,
+                    'total_percentage_index' => $sumPI,
+                ]);
+            }
+
+            TotalGfn::create([
+                'gfn_date'               => $gfnDate,
+                'shift'                  => $shift,
+                'nilai_gfn'              => round($sumPI / 100, 2),
+                'mesh_total140'          => round($percentages[6] ?? 0, 2),
+                'mesh_total70'           => round(($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0), 2),
+                'meshpan'                => round(($percentages[8] ?? 0) + ($percentages[9] ?? 0), 2),
+                'judge_mesh_140'         => ($percentages[6] >= 3.50 && $percentages[6] <= 8.00) ? 'OK' : 'NG',
+                'judge_mesh_70'          => ((($percentages[3] ?? 0) + ($percentages[4] ?? 0) + ($percentages[5] ?? 0)) >= 64.00) ? 'OK' : 'NG',
+                'judge_meshpan'          => ((($percentages[8] ?? 0) + ($percentages[9] ?? 0)) <= 1.40) ? 'OK' : 'NG',
+                'total_gram'             => $totalGram,
+                'total_percentage_index' => $sumPI,
+            ]);
+        });
+
+        return redirect()->route('jshgfn.index', ['date' => $gfnDate, 'shift' => $shift])
+            ->with('status', 'Data GFN berhasil diupdate.');
     }
 
     public function deleteTodaySet(Request $request)
@@ -267,5 +326,40 @@ class JshGfnPageController extends Controller
         ] : null;
 
         return [$ordered, $displayRecap];
+    }
+
+    private function computeFromGrams(array $rawGrams): array
+    {
+        $grams = array_map(
+            fn($v) => ($v === null || $v === '') ? 0.0 : (float) $v,
+            $rawGrams
+        );
+
+        if (count($grams) !== 10) {
+            $grams = array_pad($grams, 10, 0.0);
+            $grams = array_slice($grams, 0, 10);
+        }
+
+        $totalGram = array_sum($grams);
+        if ($totalGram <= 0) {
+            // balikin ke caller biar bisa kasih error nice
+            return [$grams, array_fill(0,10,0.0), array_fill(0,10,0.0), 0.0, 0.0];
+        }
+
+        $percentages       = [];
+        $percentageIndices = [];
+        $sumPI             = 0.0;
+
+        for ($i = 0; $i < 10; $i++) {
+            $g      = $grams[$i];
+            $pct    = $totalGram > 0 ? ($g / $totalGram) * 100 : 0.0;
+            $pctIdx = $pct * $this->indices[$i];
+
+            $percentages[$i]       = round($pct, 2);
+            $percentageIndices[$i] = round($pctIdx, 1);
+            $sumPI += $percentageIndices[$i];
+        }
+
+        return [$grams, $percentages, $percentageIndices, $totalGram, $sumPI];
     }
 }

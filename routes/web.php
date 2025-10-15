@@ -52,6 +52,7 @@ Route::middleware(['auth', \App\Http\Middleware\CheckPermission::class])->group(
     Route::prefix('jsh-gfn')->name('jshgfn.')->group(function () {
         Route::get('/', [JshGfnPageController::class, 'index'])->name('index');
         Route::post('/', [JshGfnPageController::class, 'store'])->name('store');
+        Route::put('/update', [JshGfnPageController::class, 'update'])->name('update');
         Route::post('/delete-today', [JshGfnPageController::class, 'deleteTodaySet'])->name('deleteToday');
         Route::get('/export', [JshGfnPageController::class, 'export'])->name('export');
         Route::get('/check-exists', [JshGfnPageController::class, 'checkExists'])->name('check-exists');
@@ -74,6 +75,7 @@ Route::middleware(['auth', \App\Http\Middleware\CheckPermission::class])->group(
     Route::prefix('aceline-gfn')->name('acelinegfn.')->group(function () {
         Route::get('/', [AceGfnPageController::class, 'index'])->name('index');
         Route::post('/store', [AceGfnPageController::class, 'store'])->name('store');
+        Route::put('/update', [AceGfnPageController::class, 'update'])->name('update');
         Route::post('/delete-today', [AceGfnPageController::class, 'deleteTodaySet'])->name('deleteToday');
         Route::get('/export', [AceGfnPageController::class, 'export'])->name('export');
         Route::get('/check-exists', [AceGfnPageController::class, 'checkExists'])->name('check-exists');

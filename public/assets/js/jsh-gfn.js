@@ -1,10 +1,9 @@
 (function () {
     var $ = window.jQuery;
-
-    // ===== Guards =====
     if (!$) return;
 
-    // ===== Utilities =====
+    var GFN_MODE = "create"; // "create" | "edit"
+
     function pad(n) {
         return String(n).padStart(2, "0");
     }
@@ -31,7 +30,6 @@
         });
     }
 
-    // ===== Select2 init (tanpa “kunci” filter) =====
     function initSelect2() {
         if (!$.fn.select2) return;
         $(".select2").select2({
@@ -40,14 +38,12 @@
                 var ph = $(this).data("placeholder");
                 return ph && ph.length ? ph : "-- Select --";
             },
+            width: "100%",
         });
     }
 
-    // ===== Datepicker init =====
     function initDatepickers() {
         if (!$.fn.datepicker) return;
-
-        // FILTER bebas
         var $f = $("#fDate");
         if ($f.length) {
             $f.datepicker({
@@ -56,23 +52,20 @@
                 orientation: "bottom",
             });
         }
-
-        // MODAL: kunci ke hari ini
         var $g = $("#gfnDate");
         if ($g.length) {
-            var todayDate = new Date();
+            var td = new Date();
             $g.datepicker({
                 format: "yyyy-mm-dd",
                 autoclose: true,
                 orientation: "bottom",
                 container: "#modal-greensand",
-                startDate: todayDate,
-                endDate: todayDate,
-            }).datepicker("setDate", todayDate);
+                startDate: td,
+                endDate: td,
+            }).datepicker("setDate", td);
         }
     }
 
-    // ===== Seed filter default (boleh diubah user) =====
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
@@ -85,7 +78,6 @@
         }
     }
 
-    // ===== Sync nilai filter → modal =====
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
@@ -100,7 +92,6 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
-    // ===== Filter header icon (collapse state) =====
     (function initFilterIcon() {
         var $c = $("#filterCollapse"),
             $i = $("#filterIcon"),
@@ -119,12 +110,9 @@
         $c.on("hidden.bs.collapse", function () {
             setIcon(false);
         });
-        $h.on("click", function () {
-            /* handled by bs collapse */
-        });
+        $h.on("click", function () {});
     })();
 
-    // ===== Recalc table (form GFN) =====
     function recalc() {
         var tb = document.getElementById("gfnBody");
         if (!tb) return;
@@ -164,28 +152,24 @@
         if (elTPI) elTPI.textContent = fmt(tpi, 1);
     }
 
-    // ===== Flot Chart =====
     function renderGFNCharts() {
         if (!$.plot) return;
         var $line = $("#gfn-line");
         if (!$line.length) return;
-
         var dataObj = window.gfnChartData || {};
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
         if (!rows.length) {
             $line.empty();
             return;
         }
-
         var ticks = [],
             lineData = [];
         for (var i = 0; i < rows.length; i++) {
             var x = i + 1;
-            var pct = parseFloat(rows[i]?.percentage) || 0;
+            var pct = parseFloat(rows[i] && rows[i].percentage) || 0;
             ticks.push([x, String(x)]);
             lineData.push([x, pct]);
         }
-
         var plot;
         try {
             plot = $.plot(
@@ -217,7 +201,6 @@
         } catch (e) {
             return;
         }
-
         try {
             var ctx = plot.getCanvas().getContext("2d");
             var s = plot.getData()[0] || { data: [] };
@@ -239,7 +222,6 @@
         _resizeTimer = setTimeout(renderGFNCharts, 150);
     }
 
-    // ===== Duplicate guard (before submit) =====
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
@@ -269,8 +251,9 @@
         var host = document.getElementById("gfnDupAlert");
         if (host) host.classList.add("d-none");
     }
+
     async function checkDuplicate(date, shift) {
-        if (!(window.jshRoutes && jshRoutes.gfnExists)) return false; // fallback
+        if (!(window.jshRoutes && jshRoutes.gfnExists)) return false;
         var url =
             jshRoutes.gfnExists +
             "?date=" +
@@ -289,16 +272,70 @@
         }
     }
 
-    // ===== Event bindings =====
+    function openEditModalFromDisplay() {
+        var dataObj = window.gfnChartData || {};
+        var recap = dataObj.recap || null;
+        var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
+        if (!recap || !rows.length) return;
 
-    // biarkan user ketik koma/titik → recalc realtime
-    document.addEventListener("input", function (e) {
-        if (e.target && e.target.classList.contains("gfn-gram")) {
-            recalc();
+        GFN_MODE = "edit";
+
+        var $m = $("#modal-greensand");
+        var $form = $m.find("form#form-greensand");
+
+        $m.find(".modal-title").text("Edit Data GFN Green Sand");
+        $m.find('button[type="submit"]').html(
+            '<i class="ri-save-3-line me-1"></i> Update'
+        );
+
+        if (window.jshRoutes && jshRoutes.gfnUpdate) {
+            $form.attr("action", jshRoutes.gfnUpdate);
         }
-    });
 
-    // clamp 0..1000 + normalisasi koma→titik saat blur/change
+        if ($form.find('input[name="_method"]').length === 0) {
+            $('<input type="hidden" name="_method" value="PUT">').appendTo(
+                $form
+            );
+        } else {
+            $form.find('input[name="_method"]').val("PUT");
+        }
+
+        var $gd = $("#gfnDate");
+        var d = recap.gfn_date;
+        $gd.val(d);
+        if ($.fn.datepicker) {
+            try {
+                var dd = new Date(d);
+                $gd.datepicker("setStartDate", dd);
+                $gd.datepicker("setEndDate", dd);
+                $gd.datepicker("update", dd);
+            } catch (e) {}
+        }
+
+        var $gs = $('select[name="shift"]');
+        $gs.find("option").prop("disabled", false);
+        $gs.find("option").each(function () {
+            var v = $(this).val();
+            if (v && v !== recap.shift) $(this).prop("disabled", true);
+        });
+        $gs.val(recap.shift).trigger("change");
+
+        var totalGram =
+            recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
+        $("#gfnBody tr[data-row]").each(function (i, tr) {
+            var pct = rows[i] ? parseFloat(rows[i].percentage || 0) : 0;
+            var g = totalGram > 0 ? (pct / 100.0) * totalGram : 0;
+            var inp = tr.querySelector(".gfn-gram");
+            if (inp) inp.value = String(Math.round(g * 100) / 100);
+        });
+
+        recalc();
+        $m.modal("show");
+    }
+
+    document.addEventListener("input", function (e) {
+        if (e.target && e.target.classList.contains("gfn-gram")) recalc();
+    });
     ["blur", "change"].forEach(function (ev) {
         document.addEventListener(ev, function (e) {
             if (e.target && e.target.classList.contains("gfn-gram")) {
@@ -311,13 +348,12 @@
                 }
                 if (n > 1000) n = 1000;
                 if (n < 0) n = 0;
-                e.target.value = String(n); // tidak memformat 2 desimal supaya tidak ganggu typing
+                e.target.value = String(n);
                 recalc();
             }
         });
     });
 
-    // autoload modal bila diminta dari server
     if (window.openModalGFN) {
         $(function () {
             $("#modal-greensand").modal("show");
@@ -325,7 +361,6 @@
         });
     }
 
-    // delete button → isi modal konfirmasi
     $(document).on("click", ".btn-delete-gs", function () {
         var d = $(this).data("gfn-date"),
             s = $(this).data("shift");
@@ -335,7 +370,10 @@
         $("#delShift").val(s || "");
     });
 
-    // modal shown → lock & sync
+    $(document).on("click", ".btn-edit-gs", function () {
+        openEditModalFromDisplay();
+    });
+
     $(document).on("shown.bs.modal", "#modal-greensand", function () {
         if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
             $("#gfnDate")
@@ -349,33 +387,30 @@
                 })
                 .datepicker("setDate", new Date());
         }
-        syncModalFromFilter();
-        var $gd = $("#gfnDate"),
-            $gs = $('select[name="shift"]');
-        if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
-            $gd.val(today());
-            if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
-        }
-        // kunci shift = current shift only
-        var cs = autoShift();
-        if ($gs.length) {
-            $gs.find("option").prop("disabled", false);
-            $gs.find("option").each(function () {
-                var v = $(this).val();
-                if (v && v !== cs) $(this).prop("disabled", true);
-            });
-            $gs.val(cs).trigger("change");
+        if (GFN_MODE === "create") {
+            syncModalFromFilter();
+            var $gd = $("#gfnDate"),
+                $gs = $('select[name="shift"]');
+            if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
+                $gd.val(today());
+                if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
+            }
+            var cs = autoShift();
+            if ($gs.length) {
+                $gs.find("option").prop("disabled", false);
+                $gs.find("option").each(function () {
+                    var v = $(this).val();
+                    if (v && v !== cs) $(this).prop("disabled", true);
+                });
+                $gs.val(cs).trigger("change");
+            }
         }
     });
 
-    // clear form saat Cancel / modal ditutup
     $(document).on("hidden.bs.modal", "#modal-greensand", function () {
-        var $m = $(this);
-
-        // kosongkan input gram
+        var $m = $(this),
+            $form = $m.find("form#form-greensand");
         $m.find(".gfn-gram").val("");
-
-        // kosongkan tanggal & shift (akan di-seed lagi saat shown)
         var $gd = $m.find("#gfnDate");
         $gd.val("");
         if ($.fn.datepicker) {
@@ -384,22 +419,34 @@
             } catch (_) {}
         }
         $m.find('select[name="shift"]').val("").trigger("change.select2");
-
-        // reset kalkulasi
         $m.find(".gfn-percent").text("0,00");
         $m.find(".gfn-percent-index").text("0,0");
         $("#gfn-total-gram").text("0,00");
         $("#gfn-total-percent").text("100,00");
         $("#gfn-total-percent-index").text("0,0");
+
+        GFN_MODE = "create";
+        $m.find(".modal-title").text("Form Add Data GFN Green Sand");
+        $m.find('button[type="submit"]').html(
+            '<i class="ri-checkbox-circle-line me-1"></i> Submit'
+        );
+        if ($form.find('input[name="_method"]').length) {
+            $form.find('input[name="_method"]').remove();
+        }
+        if (window.jshRoutes && jshRoutes.gfnStore) {
+            $form.attr("action", jshRoutes.gfnStore);
+        }
     });
 
-    // form submit → cek duplikat
     $(document).on("submit", "#form-greensand", async function (e) {
         hideWarn();
         var $form = $(this);
         var d = ($form.find("#gfnDate").val() || "").trim();
         var s = ($form.find('select[name="shift"]').val() || "").trim();
-        if (!d) return; // server-side validasi
+        if (!d) return;
+        var isEdit =
+            $form.find('input[name="_method"][value="PUT"]').length > 0;
+        if (isEdit) return; // biar langsung submit PUT
         e.preventDefault();
         var dup = await checkDuplicate(d, s);
         if (dup) {
@@ -414,7 +461,6 @@
         this.submit();
     });
 
-    // ===== DOM ready =====
     $(function () {
         initSelect2();
         initDatepickers();

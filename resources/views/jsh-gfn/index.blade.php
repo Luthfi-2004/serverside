@@ -108,6 +108,12 @@
                             @endperm
 
                             @if(!empty($displayRecap))
+                            @perm('quality/greensand/jsh-gfn', 'can_edit')
+                            <button type="button" class="btn btn-outline-warning btn-sm mb-2 mr-2 btn-edit-gs">
+                                <i class="ri-edit-2-line"></i> Edit Data
+                            </button>
+                            @endperm
+
                             @perm('quality/greensand/jsh-gfn', 'can_delete')
                             <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs"
                                 data-toggle="modal" data-target="#confirmDeleteModal"
@@ -118,6 +124,7 @@
                             @endperm
                             @endif
                         </div>
+
                         <div class="table-responsive">
                             <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                                 <thead class="bg-dark text-white text-center">
@@ -230,14 +237,11 @@
         <div class="modal-content border-0">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="confirmDeleteTitle">Confirm Delete</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">×</span></button>
             </div>
             <div class="modal-body">
-                <p id="confirmDeleteText" class="mb-0">
-                    Are you sure you want to delete this data?
-                </p>
+                <p id="confirmDeleteText" class="mb-0">Are you sure you want to delete this data?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light mr-2" data-dismiss="modal">Cancel</button>
@@ -274,13 +278,14 @@
             recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
         };
         window.jshRoutes = {
-            gfnExists: "{{ route('jshgfn.check-exists') }}"
+            gfnExists: "{{ route('jshgfn.check-exists') }}",
+            gfnStore: "{{ route('jshgfn.store') }}",
+            gfnUpdate: "{{ route('jshgfn.update') }}",
         };
     </script>
-
     @if(session('open_modal'))
         <script>window.openModalGFN = true;</script>
-    @endif>
+    @endif
 
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
@@ -288,7 +293,7 @@
     <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
     <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
 
-    <script src="{{ asset('assets/js/jsh-gfn.js') }}"></script>
+    <script src="{{ asset('assets/js/jsh-gfn.js') }}" defer></script>
 
     <script>
         (function () {
@@ -301,9 +306,7 @@
                     if (!Number.isFinite(ms) || ms < 0) ms = 3000;
                     setTimeout(function () {
                         var hasBs = typeof $.fn.alert === 'function';
-                        if (hasBs) {
-                            try { $el.alert('close'); return; } catch (e) { }
-                        }
+                        if (hasBs) { try { $el.alert('close'); return; } catch (e) { } }
                         $el.fadeOut(200, function () { $(this).remove(); });
                     }, ms);
                 });

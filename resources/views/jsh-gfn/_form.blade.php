@@ -1,15 +1,18 @@
-<div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="modalGreensandLabel" aria-hidden="true">
+<div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="modalGreensandLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <form action="{{ route('jshgfn.store') }}" method="POST" class="modal-content" autocomplete="off">
+        <form id="form-greensand" action="{{ route('jshgfn.store') }}" method="POST" class="modal-content"
+            autocomplete="off">
             @csrf
             <div class="modal-header py-2">
                 <h5 class="modal-title" id="modalGreensandLabel">Form Add Data GFN Green Sand</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close" data-dismiss="modal"
+                    aria-label="Close"><span>&times;</span></button>
             </div>
 
             <div class="modal-body">
+                <div id="gfnDupAlert" class="alert alert-danger d-none mb-2" role="alert"></div>
+
                 <div class="row mb-3">
                     <div class="col-xl-6 col-lg-6 mb-2">
                         <label class="form-label mb-1">Tanggal</label>
@@ -43,17 +46,15 @@
                         </thead>
                         <tbody id="gfnBody">
                             @foreach($meshes as $i => $mesh)
-                                @php
-                                    $oldGram = old('grams.' . $i, '');
-                                    $idx = $indices[$i] ?? 0;
-                                @endphp
+                                @php $oldGram = old('grams.' . $i, '');
+                                $idx = $indices[$i] ?? 0; @endphp
                                 <tr data-row="{{ $i }}" data-index="{{ $idx }}">
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $mesh }}</td>
                                     <td>
-                                        <input type="number" step="0.01" min="0"
-                                            class="form-control form-control-sm text-right gfn-gram"
-                                            name="grams[]" value="{{ $oldGram }}">
+                                        <input type="number" step="0.01" min="0" max="1000"
+                                            class="form-control form-control-sm text-right gfn-gram" name="grams[]"
+                                            value="{{ $oldGram }}">
                                     </td>
                                     <td class="gfn-percent">0,00</td>
                                     <td>{{ $idx }}</td>
@@ -76,7 +77,8 @@
             </div>
 
             <div class="modal-footer py-2">
-                <button type="button" class="btn btn-outline-secondary mr-2 d-flex align-items-center" data-dismiss="modal">
+                <button type="button" class="btn btn-outline-secondary mr-2 d-flex align-items-center"
+                    data-dismiss="modal">
                     <i class="ri-close-line me-1"></i> Cancel
                 </button>
                 <button type="submit" class="btn btn-success d-flex align-items-center">

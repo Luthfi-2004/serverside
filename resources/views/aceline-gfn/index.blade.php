@@ -99,6 +99,12 @@
               @endperm
 
               @if(!empty($displayRecap))
+              @perm('quality/greensand/ace-gfn', 'can_edit')
+              <button type="button" class="btn btn-outline-warning btn-sm mb-2 mr-2 btn-edit-gs">
+                <i class="ri-edit-2-line"></i> Edit Data
+              </button>
+              @endperm
+
               @perm('quality/greensand/ace-gfn', 'can_delete')
               <button type="button" class="btn btn-outline-danger btn-sm mb-2 btn-delete-gs" data-toggle="modal"
                 data-target="#confirmDeleteModal" data-gfn-date="{{ $displayRecap['gfn_date'] }}"
@@ -108,6 +114,7 @@
               @endperm
               @endif
             </div>
+
             <div class="table-responsive">
               <table id="datatable1" class="table table-bordered table-striped nowrap w-100 mt-2">
                 <thead class="bg-dark text-white text-center">
@@ -246,34 +253,34 @@
           'percentage' => round(($r->percentage ?? 0), 2),
           'percentage_index' => round(($r->percentage_index ?? 0), 1),
           'index' => ($r->index ?? 0),
+          // NOTE: gram tidak diexpose (nanti dihitung balik dari % * total_gram saat EDIT)
         ];
       }
     }
     $__recap = $displayRecap ?? null;
   @endphp
 
-  {{-- HANYA data/config di Blade --}}
   <script>
     window.gfnChartData = {
       rows: {!! json_encode($__rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
       recap: {!! json_encode($__recap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
     };
     window.aceRoutes = {
-      gfnExists: "{{ route('acelinegfn.check-exists') }}"
+      gfnExists: "{{ route('acelinegfn.check-exists') }}",
+      gfnStore: "{{ route('acelinegfn.store') }}",
+      gfnUpdate: "{{ route('acelinegfn.update') }}",
     };
   </script>
   @if(session('open_modal'))
     <script>window.openModalGFN = true;</script>
-  @endif>
+  @endif
 
-  {{-- Library grafik Flot (tetap dari Blade) --}}
   <script src="{{ asset('assets/libs/flot-charts/jquery.flot.js') }}"></script>
   <script src="{{ asset('assets/libs/flot-charts/jquery.flot.resize.js') }}"></script>
   <script src="{{ asset('assets/libs/flot-charts/jquery.flot.time.js') }}"></script>
   <script src="{{ asset('assets/libs/flot-charts/jquery.flot.pie.js') }}"></script>
   <script src="{{ asset('assets/libs/jquery.flot.tooltip/js/jquery.flot.tooltip.min.js') }}"></script>
 
-  {{-- App JS --}}
   <script src="{{ asset('assets/js/gfn-aceline.js') }}" defer></script>
 @endpush
 @endsection
