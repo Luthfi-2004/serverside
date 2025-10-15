@@ -147,7 +147,7 @@
                                 ] as $name => $label)
                                     <div class="col-md-3 mb-3">
                                         <label class="mb-1">{{ $label }}</label>
-                                        <input type="text" inputmode="decimal" pattern="^-?[0-9]*[\,\.]?[0-9]+$" name="{{ $name }}" id="{{ $name }}" class="form-control" placeholder="Masukkan {{ $label }}">
+                                        <input type="text" inputmode="decimal" pattern="^-?[0-9]*[\,\.]?[0-9]+$" name="{{ $name }}" id="{{ $name }}" class="form-control" placeholder="Enter Sample {{ $label }}">
                                     </div>
                             @endforeach
                         </div>
