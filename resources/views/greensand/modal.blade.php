@@ -1,6 +1,7 @@
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-labelledby="gsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
-    <form id="gsForm" class="modal-content" autocomplete="off">
+    <!-- novalidate: matikan HTML5 validation agar JS bisa jalan dulu -->
+    <form id="gsForm" class="modal-content" autocomplete="off" novalidate>
       @csrf
       <input type="hidden" name="id" id="gs_id">
       <input type="hidden" name="form_mode" id="gs_mode" value="create">
@@ -20,6 +21,7 @@
                 <label class="form-label mb-1 d-block">MM</label>
                 <div class="btn-group btn-group-sm d-flex" data-toggle="buttons" id="mm_group">
                   <label class="btn btn-outline-secondary w-100" id="mm1_btn">
+                    <!-- HAPUS required di radio -->
                     <input type="radio" name="mm" value="1" class="d-none"> 1
                   </label>
                   <label class="btn btn-outline-secondary w-100" id="mm2_btn">
@@ -28,6 +30,7 @@
                 </div>
                 <div id="mm_error" class="invalid-feedback d-block" style="display:none;"></div>
               </div>
+
               <div class="col-md-3 mb-3">
                 <label class="form-label mb-1">Mix Ke</label>
                 <input type="text" name="mix_ke" id="mix_ke" class="form-control js-num-int" inputmode="numeric" pattern="^[0-9]+$" placeholder="Input Mix Ke">
@@ -119,7 +122,7 @@
             </div>
           </div>
 
-          {{-- RETURN SAND: time + rs_type (boleh huruf) + sisanya angka --}}
+          {{-- RETURN SAND: time + rs_type + angka --}}
           <div class="tab-pane fade" id="tab-return" role="tabpanel">
             <div class="row mb-3">
               <div class="col-md-6">
@@ -181,62 +184,23 @@
   function allowNumericInput(el, allowDecimal) {
     el.addEventListener('input', function () {
       let v = el.value;
-      v = v.replace(/[^0-9,.\-]/g, ''); // filter huruf
-      v = v.replace(/(?!^)-/g, '');     // minus hanya di awal
-      if (!allowDecimal) {
-        v = v.replace(/[.,]/g, '');
-      }
+      v = v.replace(/[^0-9,.\-]/g, '');  // non-digit
+      v = v.replace(/(?!^)-/g, '');      // minus hanya di awal
+      if (!allowDecimal) v = v.replace(/[.,]/g, '');
       el.value = v;
     });
   }
 
-  function normalizeNumbers($form) {
-    $form.find('.js-num').each(function () {
-      const v = (this.value || '').trim();
-      if (v === '') return;
-      this.value = v.replace(',', '.'); // koma -> titik
-    });
-    $form.find('.js-num-int').each(function () {
-      const v = (this.value || '').trim();
-      if (v === '') return;
-      this.value = v.replace(/[^0-9\-]/g, '');
-    });
-  }
-
+  // pasang filter angka saat modal tampil
   $('#modal-greensand').on('shown.bs.modal', function () {
-    // pasang filter angka
-    document.querySelectorAll('#modal-greensand .js-num').forEach(function (inp) {
-      allowNumericInput(inp, true);
-    });
-    document.querySelectorAll('#modal-greensand .js-num-int').forEach(function (inp) {
-      allowNumericInput(inp, false);
-    });
+    document.querySelectorAll('#modal-greensand .js-num').forEach(inp => allowNumericInput(inp, true));
+    document.querySelectorAll('#modal-greensand .js-num-int').forEach(inp => allowNumericInput(inp, false));
   });
 
-  // Normalisasi sebelum submit
-  $('#gsForm').on('submit', function (e) {
-    normalizeNumbers($(this));
-    var bad = [];
-    $(this).find('.js-num').each(function () {
-      const v = (this.value || '').trim();
-      if (v && !/^-?\d+(\.\d+)?$/.test(v.replace(',', '.'))) bad.push(this.name);
-    });
-    $(this).find('.js-num-int').each(function () {
-      const v = (this.value || '').trim();
-      if (v && !/^-?\d+$/.test(v)) bad.push(this.name);
-    });
-    if (bad.length) {
-      e.preventDefault();
-      $('#gsFormAlert').removeClass('d-none').text('Data tidak valid pada field: ' + bad.join(', '));
-    } else {
-      $('#gsFormAlert').addClass('d-none').text('');
-    }
-  });
-
-  // Jika modal sudah terbuka (edge case)
+  // edge case: kalau modal sudah kebuka saat init
   if ($('#modal-greensand').is(':visible')) {
-    document.querySelectorAll('#modal-greensand .js-num').forEach(function (inp) { allowNumericInput(inp, true); });
-    document.querySelectorAll('#modal-greensand .js-num-int').forEach(function (inp) { allowNumericInput(inp, false); });
+    document.querySelectorAll('#modal-greensand .js-num').forEach(inp => allowNumericInput(inp, true));
+    document.querySelectorAll('#modal-greensand .js-num-int').forEach(inp => allowNumericInput(inp, false));
   }
 })();
 </script>

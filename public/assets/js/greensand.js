@@ -1,5 +1,4 @@
 $(function () {
-    // guard
     if (!window.greensandRoutes) {
         console.error(
             "greensandRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -7,24 +6,16 @@ $(function () {
         return;
     }
 
-    // csrf
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
-    // helpers
     const helpers = {
         detectShiftByNow() {
             const hh = new Date().getHours();
             return hh >= 6 && hh < 16 ? "D" : hh >= 16 && hh < 22 ? "S" : "N";
-        },
-        todayDdMmYyyy() {
-            const d = new Date();
-            return `${String(d.getDate()).padStart(2, "0")}-${String(
-                d.getMonth() + 1
-            ).padStart(2, "0")}-${d.getFullYear()}`;
         },
         getActiveTab() {
             const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
@@ -39,22 +30,48 @@ $(function () {
             return m ? m[1] : String(val);
         },
         getKeyword: () => $("#keywordInput").val() || "",
+        normalizeNumbersInForm($form) {
+            $form.find(".js-num").each(function () {
+                const v = (this.value || "").trim();
+                if (!v) return;
+                this.value = v.replace(",", ".");
+            });
+            $form.find(".js-num-int").each(function () {
+                const v = (this.value || "").trim();
+                if (!v) return;
+                this.value = v.replace(/[^0-9\-]/g, "");
+            });
+        },
+        focusFirstError() {
+            const $mmErr = $("#mm_error:visible");
+            if ($mmErr.length) {
+                $("#mm1_btn")[0]?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+                return;
+            }
+            const $invalid = $("#gsForm .is-invalid").first();
+            if ($invalid.length) {
+                $invalid[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+                return;
+            }
+            const $alert = $("#gsFormAlert:not(.d-none)");
+            if ($alert.length)
+                $alert[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+        },
     };
 
-    // globals
     window.__GS_ACTIVE_TAB__ = "mm1";
     let pendingDeleteId = null;
     const instances = { mm1: null, mm2: null, all: null };
 
-    // ui
-    $("#filterHeader")
-        .off("click")
-        .on("click", function () {
-            $("#filterCollapse").stop(true, true).slideToggle(180);
-            $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
-        });
-
-    // error
     const errorHandler = {
         clear() {
             $("#gsForm .form-control, #gsForm .custom-select").removeClass(
@@ -118,10 +135,10 @@ $(function () {
                 if ($alert.length)
                     $alert.removeClass("d-none").text(general.join(" "));
             }
+            helpers.focusFirstError();
         },
     };
 
-    // form
     const formManager = {
         reset() {
             $("#gsForm")[0]?.reset();
@@ -129,12 +146,10 @@ $(function () {
             $("#gs_mode").val("create");
             $("#gsModalMode").text("Add");
 
-            const mmDefault = helpers.getActiveTab() === "mm2" ? "2" : "1";
-            $(`input[name="mm"][value="${mmDefault}"]`).prop("checked", true);
-            $("#mm1_btn,#mm2_btn").removeClass("active");
-            (mmDefault === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass(
-                "active"
-            );
+            // jangan auto-pilih MM
+            $('input[name="mm"]').prop("checked", false);
+            $("#mm1_btn,#mm2_btn").removeClass("active is-invalid");
+            $("#mm_error").hide().text("");
 
             const curShift =
                 $("#shiftSelect").val() || helpers.detectShiftByNow();
@@ -162,7 +177,7 @@ $(function () {
 
             const mmVal = data.mm === "MM2" ? "2" : "1";
             $(`input[name="mm"][value="${mmVal}"]`).prop("checked", true);
-            $("#mm1_btn,#mm2_btn").removeClass("active");
+            $("#mm1_btn,#mm2_btn").removeClass("active is-invalid");
             (mmVal === "1" ? $("#mm1_btn") : $("#mm2_btn")).addClass("active");
 
             $("#mix_ke").val(data.mix_ke || "");
@@ -211,15 +226,29 @@ $(function () {
                 "rcs_avg",
                 "add_bentonite_ma",
                 "total_sand",
-                "add_water_bc10", 
-                "lama_bc10_jalan", 
+                "add_water_bc10",
+                "lama_bc10_jalan",
                 "rating_pasir_es",
             ];
             fields.forEach((f) => $("#" + f).val(data[f] ?? ""));
         },
     };
 
-    // crud
+    // clear error saat user berinteraksi
+    $('#mm_group input[name="mm"]')
+        .off("change")
+        .on("change", function () {
+            $("#mm1_btn,#mm2_btn").removeClass("is-invalid");
+            $("#mm_error").hide().text("");
+        });
+    $("#mix_ke")
+        .off("input")
+        .on("input", function () {
+            $("#mix_ke").removeClass("is-invalid");
+            $("#mix_ke_error").text("").hide();
+        });
+
+    // tombol Add
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -227,6 +256,7 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
+    // tombol Edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -246,20 +276,51 @@ $(function () {
                 });
         });
 
+    // SUBMIT: tampilkan SEMUA error klien (MM + mix_ke) sekaligus
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
             e.preventDefault();
             errorHandler.clear();
 
+            helpers.normalizeNumbersInForm($(this));
+
+            let hasError = false;
+
+            const mmVal = $('input[name="mm"]:checked').val();
+            if (!mmVal) {
+                $("#mm1_btn,#mm2_btn").addClass("is-invalid");
+                $("#mm_error").text("MM wajib dipilih.").show();
+                hasError = true;
+            }
+
+            const mixKeRaw = ($("#mix_ke").val() || "").trim();
+            if (!mixKeRaw) {
+                $("#mix_ke").addClass("is-invalid");
+                $("#mix_ke_error").text("Mix ke wajib diisi.").show();
+                hasError = true;
+            } else if (!/^\d+$/.test(mixKeRaw) || parseInt(mixKeRaw, 10) <= 0) {
+                $("#mix_ke").addClass("is-invalid");
+                $("#mix_ke_error")
+                    .text("Mix ke harus bilangan bulat > 0.")
+                    .show();
+                hasError = true;
+            }
+
             const shift = $("#shiftSelect").val() || "";
             if (!shift) {
                 $("#gsFormAlert")
                     .removeClass("d-none")
                     .text("Shift wajib dipilih dari filter.");
-                return;
+                hasError = true;
             }
 
+            if (hasError) {
+                helpers.focusFirstError();
+                return; // stop di sini, TANPA AJAX; pesan sudah ditampilkan semua
+            }
+
+            // lanjut submit AJAX
             const mode = $("#gs_mode").val();
             const id = $("#gs_id").val();
             const date = $("#filterDate").val() || "";
@@ -286,6 +347,19 @@ $(function () {
             })
                 .fail((xhr) => {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                        // mirror error server
+                        if (xhr.responseJSON.errors.mm) {
+                            $("#mm1_btn,#mm2_btn").addClass("is-invalid");
+                            $("#mm_error")
+                                .text(xhr.responseJSON.errors.mm.join(" "))
+                                .show();
+                        }
+                        if (xhr.responseJSON.errors.mix_ke) {
+                            $("#mix_ke").addClass("is-invalid");
+                            $("#mix_ke_error")
+                                .text(xhr.responseJSON.errors.mix_ke.join(" "))
+                                .show();
+                        }
                         errorHandler.apply(xhr.responseJSON.errors);
                     } else if (xhr.status === 419) {
                         $("#gsFormAlert")
@@ -298,6 +372,7 @@ $(function () {
                             .removeClass("d-none")
                             .text("Gagal menyimpan data.");
                     }
+                    helpers.focusFirstError();
                     console.error(xhr.responseText || xhr);
                 })
                 .always(() => {
@@ -305,7 +380,7 @@ $(function () {
                 });
         });
 
-    // delete
+    // Delete
     $(document)
         .off("click", ".btn-delete-gs")
         .on("click", ".btn-delete-gs", function () {
@@ -345,7 +420,7 @@ $(function () {
                 });
         });
 
-    // select2
+    // Select2
     $(function () {
         $("#shiftSelect").select2({
             width: "100%",
@@ -354,7 +429,7 @@ $(function () {
         });
     });
 
-    // filter
+    // Filter
     $("#filterDate").datepicker({
         format: "yyyy-mm-dd",
         autoclose: true,
@@ -376,7 +451,7 @@ $(function () {
             if (window.gsFlash) gsFlash("Filter direset.", "secondary");
         });
 
-    // columns (Tambahkan mm_tp50_height setelah mm_tp50_weight)
+    // DataTables
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -430,13 +505,11 @@ $(function () {
         { data: "lama_bc10_jalan", name: "lama_bc10_jalan" },
         { data: "rating_pasir_es", name: "rating_pasir_es" },
     ];
-
     const baseColumnsWithDefaults = baseColumns.map((c) => ({
         ...c,
         defaultContent: "",
     }));
 
-    // summary
     const summaryManager = {
         load() {
             if (!window.greensandRoutes.summary) return;
@@ -456,8 +529,6 @@ $(function () {
         },
         render(summary) {
             const $tfoot = this.ensureTfoot();
-
-            // index setelah penambahan mm_tp50_height
             const colIndex = {
                 mm_p: 7,
                 mm_c: 8,
@@ -465,8 +536,7 @@ $(function () {
                 mm_cb_mm: 10,
                 mm_cb_lab: 11,
                 mm_m: 12,
-                // machine_no: 13,          // <-- JANGAN MASUKKAN DI SINI
-                mm_bakunetsu: 14, // <-- sebelumnya 13, geser +1
+                mm_bakunetsu: 14,
                 mm_ac: 15,
                 mm_tc: 16,
                 mm_vsd: 17,
@@ -484,7 +554,6 @@ $(function () {
                 bc11_vsd: 29,
                 bc16_cb: 30,
                 bc16_m: 31,
-                // rs_time (32) & rs_type (33) tidak di-summary
                 bc9_moist: 34,
                 bc10_moist: 35,
                 bc11_moist: 36,
@@ -492,7 +561,6 @@ $(function () {
                 bc10_temp: 38,
                 bc11_temp: 39,
             };
-
             const makeRow = (label, valuesMap) => {
                 let tds = `<td class="text-center font-weight-bold" colspan="7">${label}</td>`;
                 for (let i = 7; i < baseColumns.length; i++) {
@@ -501,7 +569,6 @@ $(function () {
                 }
                 return `<tr class="gs-summary-row">${tds}</tr>`;
             };
-
             const rows = { min: {}, max: {}, avg: {}, judge: {} };
             summary.forEach((s) => {
                 const idx = colIndex[s.field];
@@ -517,7 +584,6 @@ $(function () {
                       }">${s.judge}</span>`
                     : "";
             });
-
             const html =
                 makeRow("MIN", rows.min) +
                 makeRow("MAX", rows.max) +
@@ -528,11 +594,8 @@ $(function () {
         },
     };
 
-    // datatable
     function makeDt($el, url) {
-        // ---- guard: hindari re-init yang bikin header dobel
         if ($.fn.dataTable.isDataTable($el)) return $el.DataTable();
-
         const isAll = $el.attr("id") === "dt-all";
         return $el.DataTable({
             processing: true,
@@ -565,13 +628,12 @@ $(function () {
                 : [[1, "desc"]],
             columns: baseColumnsWithDefaults,
             stateSave: false,
-            orderCellsTop: true, // <<< penting untuk multi-row thead
+            orderCellsTop: true,
             drawCallback: function () {
                 if (isAll) {
                     const $tbody = $(this.api().table().body());
                     $tbody.find("tr.mm-spacer").remove();
                     let prevMM = null;
-
                     $tbody.find("tr").each(function () {
                         const $tr = $(this);
                         const cells = $tr.find("td");
@@ -586,39 +648,34 @@ $(function () {
                         }
                         prevMM = mmText;
                     });
-                    summaryManager.load(); // tfoot
+                    summaryManager.load();
                 }
             },
         });
     }
 
-    // init-dt
+    // init datatable
     instances.mm1 = makeDt($("#dt-mm1"), greensandRoutes.mm1);
 
-    // seed
-    const href = (
+    // tabs
+    const href0 = (
         $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
     ).toLowerCase();
     window.__GS_ACTIVE_TAB__ =
-        href === "#mm2" ? "mm2" : href === "#all" ? "all" : "mm1";
-
-    // tabs
+        href0 === "#mm2" ? "mm2" : href0 === "#all" ? "all" : "mm1";
     $('a[data-toggle="tab"]')
         .off("shown.bs.tab")
         .on("shown.bs.tab", function (e) {
             const href = ($(e.target).attr("href") || "").toLowerCase();
             window.__GS_ACTIVE_TAB__ =
                 href === "#mm2" ? "mm2" : href === "#all" ? "all" : "mm1";
-
             if (href === "#mm2" && !instances.mm2)
                 instances.mm2 = makeDt($("#dt-mm2"), greensandRoutes.mm2);
             if (href === "#all" && !instances.all)
                 instances.all = makeDt($("#dt-all"), greensandRoutes.all);
-
             $.fn.dataTable
                 .tables({ visible: true, api: true })
                 .columns.adjust();
-
             if (href === "#all") setTimeout(() => summaryManager.load(), 100);
         });
 
@@ -638,7 +695,7 @@ $(function () {
         .on("click", function () {
             if (!window.greensandRoutes || !greensandRoutes.export) return;
             const tab = helpers.getActiveTab();
-            const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : ""; // "" = All
+            const mm = tab === "mm1" ? "MM1" : tab === "mm2" ? "MM2" : "";
             const params = {
                 date: $("#filterDate").val() || "",
                 shift: $("#shiftSelect").val() || "",
@@ -650,8 +707,16 @@ $(function () {
             if (window.gsFlash) gsFlash("Menyiapkan file Excel…", "info");
         });
 
-    // init
+    // init filter defaults
     $("#filterDate").datepicker("setDate", new Date());
     $("#shiftSelect").val(helpers.detectShiftByNow()).trigger("change");
     reloadAll();
+
+    // UI kecil: header filter collapsing
+    $("#filterHeader")
+        .off("click")
+        .on("click", function () {
+            $("#filterCollapse").stop(true, true).slideToggle(180);
+            $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
+        });
 });
