@@ -2,24 +2,15 @@
 (function () {
     var $ = window.jQuery;
 
-    if (!$) {
-        console.error("jQuery not found. Please make sure jQuery is loaded before ace.js");
-        return;
-    }
-    if (!window.aceRoutes) {
-        console.error("aceRoutes missing. Define it in Blade before loading ace.js");
-        return;
-    }
+    if (!$) { console.error("jQuery not found. Please make sure jQuery is loaded before ace.js"); return; }
+    if (!window.aceRoutes) { console.error("aceRoutes missing. Define it in Blade before loading ace.js"); return; }
 
     $.ajaxSetup({ cache: false });
 
-    // init ui
+    // UI Init
     function initPageUI() {
         try {
-            $("#shiftSelect").select2({
-                width: "100%",
-                placeholder: "Select shift",
-            });
+            $("#shiftSelect").select2({ width: "100%", placeholder: "Select shift" });
             $("#productSelectFilter").select2({
                 width: "100%",
                 placeholder: "All type",
@@ -27,9 +18,7 @@
                     url: window.aceRoutes.lookupProducts,
                     dataType: "json",
                     delay: 200,
-                    data: function (params) {
-                        return { q: params.term || "", page: params.page || 1 };
-                    },
+                    data: function (params) { return { q: params.term || "", page: params.page || 1 }; },
                     processResults: function (data, params) {
                         params.page = params.page || 1;
                         return {
@@ -40,59 +29,37 @@
                     cache: true,
                 },
                 minimumInputLength: 0,
-                templateResult: function (item) {
-                    return item.text || "";
-                },
-                templateSelection: function (item) {
-                    return item.text || item.id || "";
-                },
+                templateResult: function (item) { return item.text || ""; },
+                templateSelection: function (item) { return item.text || item.id || ""; },
             });
-        } catch (e) {
-            console.error("Select2 init error:", e);
-        }
+        } catch (e) { console.error("Select2 init error:", e); }
 
         try {
-            $("#filterDate").datepicker({
-                format: "yyyy-mm-dd",
-                autoclose: true,
-                orientation: "bottom",
-            });
-        } catch (e) {
-            console.warn("datepicker init error:", e);
-        }
+            $("#filterDate").datepicker({ format: "yyyy-mm-dd", autoclose: true, orientation: "bottom" });
+        } catch (e) { console.warn("datepicker init error:", e); }
 
-        $("#filterHeader")
-            .off("click")
-            .on("click", function () {
-                $("#filterCollapse").slideToggle(120);
-                $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
-            });
+        $("#filterHeader").off("click").on("click", function () {
+            $("#filterCollapse").slideToggle(120);
+            $("#filterIcon").toggleClass("ri-subtract-line ri-add-line");
+        });
     }
 
-    // show flash
+    // Flash Helper
     function gsFlash(msg, type = "success", timeout = 3000) {
         var holder = document.getElementById("flash-holder");
         if (!holder) return;
         var div = document.createElement("div");
         div.className = "alert alert-" + type + " alert-dismissible fade show auto-dismiss";
-        div.innerHTML =
-            msg +
-            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-            '<span aria-hidden="true">&times;</span></button>';
+        div.innerHTML = msg + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
         holder.prepend(div);
         setTimeout(function () {
-            if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
-                try {
-                    jQuery(div).alert("close");
-                    return;
-                } catch (e) {}
-            }
+            if (window.jQuery && jQuery.fn && jQuery.fn.alert) { try { jQuery(div).alert("close"); return; } catch (e) {} }
             if (div.parentNode) div.parentNode.removeChild(div);
         }, timeout);
     }
     window.gsFlash = gsFlash;
 
-    // parse date
+    // Date Normalize
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
         var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -100,58 +67,32 @@
         var m2 = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
         return m2 ? [m2[3], m2[2], m2[1]].join("-") : "";
     }
-
-    // today ymd
+    // Today YMD
     function todayYmd() {
         var d = new Date();
-        return (
-            d.getFullYear() +
-            "-" +
-            String(d.getMonth() + 1).padStart(2, "0") +
-            "-" +
-            String(d.getDate()).padStart(2, "0")
-        );
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     }
-
-    // detect shift
+    // Shift Detect
     function detectShiftByNow() {
         var h = new Date().getHours();
         return h >= 6 && h < 16 ? "D" : h >= 16 && h < 22 ? "S" : "N";
     }
-
-    // format value
-    function fmt(v) {
-        if (v === null || v === undefined || v === "") return "-";
-        if (typeof v === "number") return v.toFixed(2);
-        return v;
-    }
-
-    // to hh:mm
+    // Value Format
+    function fmt(v) { if (v === null || v === undefined || v === "") return "-"; if (typeof v === "number") return v.toFixed(2); return v; }
+    // Time Trim
     function toHm(s) {
         if (!s) return "";
         var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
         return m ? m[1] + ":" + m[2] : String(s).substring(0, 5);
     }
-
-    // format datetime
+    // Date Render
     function formatDateTimeColumn(v, type, row) {
-        if (!v) return "-";
-        if (row.created_time) {
-            var dt = new Date(row.created_time + "+07:00");
-            var dateStr =
-                dt.getFullYear() +
-                "-" +
-                String(dt.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(dt.getDate()).padStart(2, "0");
-            var timeStr =
-                String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0");
-            return dateStr + " " + timeStr;
-        }
-        return String(v).substring(0, 16);
+        if (v) return String(v);
+        if (row && row.created_time) return String(row.created_time);
+        return "-";
     }
 
-    // read filters
+    // Filter State
     function currentFilters() {
         return {
             date: normalizeFilterDate($("#filterDate").val()),
@@ -160,17 +101,16 @@
             _ts: Date.now(),
         };
     }
-
-    // seed defaults
+    // Default Set
     (function initFiltersDefaults() {
         var $d = $("#filterDate"), $s = $("#shiftSelect");
         if (!$d.val()) $d.val(todayYmd()).trigger("change");
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // columns setup
+    // Column Map
     var columns = [
-        // 0 Action
+        // Row Actions
         {
             data: null,
             orderable: false,
@@ -180,118 +120,78 @@
                 var id = row.id || "";
                 return [
                     '<div class="btn-group btn-group-sm" role="group">',
-                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="' +
-                        id +
-                        '"><i class="fas fa-edit"></i></button>',
-                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="' +
-                        id +
-                        '"><i class="fas fa-trash"></i></button>',
+                    '<button type="button" class="btn btn-outline-warning ace-edit btn-sm mr-2" data-id="'+id+'"><i class="fas fa-edit"></i></button>',
+                    '<button type="button" class="btn btn-outline-danger ace-del btn-sm" data-id="'+id+'"><i class="fas fa-trash"></i></button>',
                     "</div>",
                 ].join("");
             },
             defaultContent: "",
         },
-        // 1 No
-        {
-            data: null,
-            render: function (d, t, r, m) {
-                return m.row + m.settings._iDisplayStart + 1;
-            },
-            defaultContent: "",
-        },
-        // 2..31
+        // Data Number
+        { data: "number", defaultContent: "" },
+
+        // Data Fields
         { data: "date", render: formatDateTimeColumn, defaultContent: "" }, // 2
-        { data: "shift", defaultContent: "" }, // 3
-        { data: "product_type_name", defaultContent: "-" }, // 4
-        { data: "sample_start", render: toHm, defaultContent: "" }, // 5
-        { data: "sample_finish", render: toHm, defaultContent: "" }, // 6
-        // MM
-        { data: "p", render: fmt, defaultContent: "" }, // 7
-        { data: "c", render: fmt, defaultContent: "" }, // 8
-        { data: "gt", render: fmt, defaultContent: "" }, // 9
-        { data: "cb_lab", render: fmt, defaultContent: "" }, // 10
-        { data: "moisture", render: fmt, defaultContent: "" }, // 11
-        { data: "machine_no", render: fmt, defaultContent: "" }, // 12
-        { data: "bakunetsu", render: fmt, defaultContent: "" }, // 13
-        { data: "ac", render: fmt, defaultContent: "" }, // 14
-        { data: "tc", render: fmt, defaultContent: "" }, // 15
-        { data: "vsd", render: fmt, defaultContent: "" }, // 16
-        { data: "ig", render: fmt, defaultContent: "" }, // 17
-        { data: "cb_weight", render: fmt, defaultContent: "" }, // 18
-        { data: "tp50_weight", render: fmt, defaultContent: "" }, // 19
-        { data: "ssi", render: fmt, defaultContent: "" }, // 20
-        { data: "most", render: fmt, defaultContent: "" }, // 21
-        // Additive
-        { data: "dw29_vas", render: fmt, defaultContent: "" }, // 22
-        { data: "dw29_debu", render: fmt, defaultContent: "" }, // 23
-        { data: "dw31_vas", render: fmt, defaultContent: "" }, // 24
-        { data: "dw31_id", render: fmt, defaultContent: "" }, // 25
-        { data: "dw31_moldex", render: fmt, defaultContent: "" }, // 26
-        { data: "dw31_sc", render: fmt, defaultContent: "" }, // 27
-        // BC13
-        { data: "no_mix", render: fmt, defaultContent: "" }, // 28
-        { data: "bc13_cb", render: fmt, defaultContent: "" }, // 29
-        { data: "bc13_c", render: fmt, defaultContent: "" }, // 30
-        { data: "bc13_m", render: fmt, defaultContent: "" }, // 31
+        { data: "shift", defaultContent: "" },                              // 3
+        { data: "product_type_name", defaultContent: "-" },                 // 4
+        { data: "sample_start", render: toHm, defaultContent: "" },         // 5
+        { data: "sample_finish", render: toHm, defaultContent: "" },        // 6
+        // MM Fields
+        { data: "p", render: fmt, defaultContent: "" },                     // 7
+        { data: "c", render: fmt, defaultContent: "" },                     // 8
+        { data: "gt", render: fmt, defaultContent: "" },                    // 9
+        { data: "cb_lab", render: fmt, defaultContent: "" },                // 10
+        { data: "moisture", render: fmt, defaultContent: "" },              // 11
+        { data: "machine_no", render: fmt, defaultContent: "" },            // 12
+        { data: "bakunetsu", render: fmt, defaultContent: "" },             // 13
+        { data: "ac", render: fmt, defaultContent: "" },                    // 14
+        { data: "tc", render: fmt, defaultContent: "" },                    // 15
+        { data: "vsd", render: fmt, defaultContent: "" },                   // 16
+        { data: "ig", render: fmt, defaultContent: "" },                    // 17
+        { data: "cb_weight", render: fmt, defaultContent: "" },             // 18
+        { data: "tp50_weight", render: fmt, defaultContent: "" },           // 19
+        { data: "ssi", render: fmt, defaultContent: "" },                   // 20
+        { data: "most", render: fmt, defaultContent: "" },                  // 21
+        // Additive Set
+        { data: "dw29_vas", render: fmt, defaultContent: "" },              // 22
+        { data: "dw29_debu", render: fmt, defaultContent: "" },             // 23
+        { data: "dw31_vas", render: fmt, defaultContent: "" },              // 24
+        { data: "dw31_id", render: fmt, defaultContent: "" },               // 25
+        { data: "dw31_moldex", render: fmt, defaultContent: "" },           // 26
+        { data: "dw31_sc", render: fmt, defaultContent: "" },               // 27
+        // BC13 Set
+        { data: "no_mix", render: fmt, defaultContent: "" },                // 28
+        { data: "bc13_cb", render: fmt, defaultContent: "" },               // 29
+        { data: "bc13_c", render: fmt, defaultContent: "" },                // 30
+        { data: "bc13_m", render: fmt, defaultContent: "" },                // 31
     ];
 
-    // summary manager
+    // Summary Rows
     var summaryManager = {
-        // ensure tfoot
         ensureTfoot: function () {
             var $table = $("#dt-ace");
             var $tfoot = $table.find("tfoot#ace-foot");
             if (!$tfoot.length) $tfoot = $('<tfoot id="ace-foot"/>').appendTo($table);
             return $tfoot;
         },
-        // load summary
         load: function () {
             if (!window.aceRoutes.summary) return;
             var f = currentFilters();
-            $.get(window.aceRoutes.summary, {
-                date: f.date,
-                shift: f.shift,
-                product_type_id: f.product_type_id,
-            })
+            $.get(window.aceRoutes.summary, { date: f.date, shift: f.shift, product_type_id: f.product_type_id })
                 .done(function (res) {
                     var list = Array.isArray(res.summary) ? res.summary : [];
                     summaryManager.render(list);
                 })
-                .fail(function () {
-                    summaryManager.render([]);
-                });
+                .fail(function () { summaryManager.render([]); });
         },
-        // render footer
         render: function (summary) {
             var $tfoot = this.ensureTfoot();
-
-            // column index
             var colIndex = {
-                p: 7,
-                c: 8,
-                gt: 9,
-                cb_lab: 10,
-                moisture: 11,
-                bakunetsu: 13,
-                ac: 14,
-                tc: 15,
-                vsd: 16,
-                ig: 17,
-                cb_weight: 18,
-                tp50_weight: 19,
-                ssi: 20,
-                dw29_vas: 22,
-                dw29_debu: 23,
-                dw31_vas: 24,
-                dw31_id: 25,
-                dw31_moldex: 26,
-                dw31_sc: 27,
-                bc13_cb: 29,
-                bc13_c: 30,
-                bc13_m: 31,
+                p: 7, c: 8, gt: 9, cb_lab: 10, moisture: 11, bakunetsu: 13,
+                ac: 14, tc: 15, vsd: 16, ig: 17, cb_weight: 18, tp50_weight: 19,
+                ssi: 20, dw29_vas: 22, dw29_debu: 23, dw31_vas: 24, dw31_id: 25,
+                dw31_moldex: 26, dw31_sc: 27, bc13_cb: 29, bc13_c: 30, bc13_m: 31,
             };
-
-            // build row
             function makeRow(label, valuesMap) {
                 var tds = '<td class="text-center font-weight-bold" colspan="7">' + label + "</td>";
                 for (var i = 7; i < columns.length; i++) {
@@ -300,35 +200,24 @@
                 }
                 return '<tr class="ace-summary-row">' + tds + "</tr>";
             }
-
             var rows = { min: {}, max: {}, avg: {}, judge: {} };
             summary.forEach(function (s) {
-                var idx = colIndex[s.field];
-                if (idx == null) return;
-
-                rows.min[idx] = (s.min ?? "") === "" ? "" : s.min;
-                rows.max[idx] = (s.max ?? "") === "" ? "" : s.max;
-                rows.avg[idx] = (s.avg ?? "") === "" ? "" : s.avg;
-
-                if (s.judge) {
-                    var cls = s.judge === "NG" ? "j-ng" : "j-ok";
-                    rows.judge[idx] = '<span class="' + cls + '">' + s.judge + "</span>";
-                } else {
-                    rows.judge[idx] = "";
-                }
+                var idx = colIndex[s.field]; if (idx == null) return;
+                rows.min[idx]   = (s.min ?? "") === "" ? "" : s.min;
+                rows.max[idx]   = (s.max ?? "") === "" ? "" : s.max;
+                rows.avg[idx]   = (s.avg ?? "") === "" ? "" : s.avg;
+                rows.judge[idx] = s.judge ? '<span class="' + (s.judge === "NG" ? "j-ng" : "j-ok") + '">' + s.judge + "</span>" : "";
             });
-
-            var html =
+            $tfoot.html(
                 makeRow("MIN", rows.min) +
                 makeRow("MAX", rows.max) +
                 makeRow("AVG", rows.avg) +
-                makeRow("JUDGE", rows.judge);
-
-            $tfoot.html(html);
+                makeRow("JUDGE", rows.judge)
+            );
         },
     };
 
-    // datatable init
+    // Table Init
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -338,7 +227,10 @@
         scrollCollapse: true,
         deferRender: true,
         pageLength: 25,
-        order: [[2, "desc"]],
+
+        // Sort Default
+        order: [[2, "asc"], [1, "asc"]],
+
         ajax: {
             url: aceRoutes.data,
             type: "GET",
@@ -357,41 +249,31 @@
         },
         columns: columns,
         columnDefs: [{ targets: "_all", className: "align-middle text-center" }],
-        drawCallback: function () {
-            summaryManager.load();
-        },
-        initComplete: function () {
-            summaryManager.load();
-        },
+        drawCallback: function () { summaryManager.load(); },
+        initComplete: function () { summaryManager.load(); },
     });
 
-    // reload table
+    // Table Reload
     function reloadTable(cb) {
         if (window.aceTable) {
-            window.aceTable.ajax.reload(function () {
-                if (typeof cb === "function") cb();
-            }, false);
+            window.aceTable.ajax.reload(function () { if (typeof cb === "function") cb(); }, false);
         }
     }
 
-    // filters apply
+    // Filter Apply
     $("#btnSearch").on("click", function () {
-        reloadTable(function () {
-            gsFlash("Filter diterapkan.", "info");
-        });
+        reloadTable(function () { gsFlash("Filter diterapkan.", "info"); });
     });
 
-    // filters reset
+    // Filter Reset
     $("#btnRefresh").on("click", function () {
         $("#filterDate").val(todayYmd());
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
         $("#productSelectFilter").val("").trigger("change");
-        reloadTable(function () {
-            gsFlash("Filter direset.", "secondary");
-        });
+        reloadTable(function () { gsFlash("Filter direset.", "secondary"); });
     });
 
-    // export excel
+    // Excel Export
     $("#btnExport").on("click", function () {
         if (!aceRoutes.export) return;
         var q = $.param(currentFilters());
@@ -399,7 +281,7 @@
         gsFlash("Menyiapkan file Excel…", "info");
     });
 
-    // add modal
+    // Modal Open
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         var form = document.getElementById("aceForm");
         if (form && form.reset) form.reset();
@@ -417,11 +299,9 @@
         $("#productTypeName").val("");
     });
 
-    // edit modal
+    // Edit Click
     $("#dt-ace").on("click", ".ace-edit", function () {
-        var id = $(this).data("id");
-        if (!id) return;
-
+        var id = $(this).data("id"); if (!id) return;
         $.get(aceRoutes.base + "/" + id)
             .done(function (row) {
                 $("#aceFormAlert").addClass("d-none").empty();
@@ -455,7 +335,7 @@
             });
     });
 
-    // delete flow
+    // Delete Flow
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
@@ -470,9 +350,7 @@
         })
             .done(function () {
                 $("#confirmDeleteModal").modal("hide");
-                reloadTable(function () {
-                    gsFlash("Data berhasil dihapus.", "success");
-                });
+                reloadTable(function () { gsFlash("Data berhasil dihapus.", "success"); });
             })
             .fail(function (xhr) {
                 gsFlash("Hapus data gagal.", "danger");
@@ -480,36 +358,25 @@
             });
     });
 
-    // submit form
+    // Form Submit
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
-        var mode = $("#ace_mode").val(),
-            id = $("#ace_id").val();
+        var mode = $("#ace_mode").val(), id = $("#ace_id").val();
 
         $("#mStart").val(toHm($("#mStart").val()));
         $("#mFinish").val(toHm($("#mFinish").val()));
 
-        var url = aceRoutes.store,
-            method = "POST";
-        if (mode === "update" && id) {
-            url = aceRoutes.base + "/" + id;
-            method = "POST";
-        }
+        var url = aceRoutes.store, method = "POST";
+        if (mode === "update" && id) { url = aceRoutes.base + "/" + id; method = "POST"; }
         var fd = new FormData(this);
         if (mode === "update") fd.append("_method", "PUT");
 
         var $btn = $("#aceSubmitBtn");
-        $btn
-            .prop("disabled", true)
-            .data("orig", $btn.html())
+        $btn.prop("disabled", true).data("orig", $btn.html())
             .html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
 
         $.ajax({
-            url,
-            type: method,
-            data: fd,
-            processData: false,
-            contentType: false,
+            url, type: method, data: fd, processData: false, contentType: false,
             headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
         })
             .done(function () {
@@ -529,7 +396,7 @@
             });
     });
 
-    // fill form
+    // Form Filler
     function fillForm(data) {
         if (!data) return;
         Object.keys(data).forEach(function (k) {
@@ -539,12 +406,10 @@
         $("#mStart").val(data.sample_start || "");
         $("#mFinish").val(data.sample_finish || "");
         $("#mNoMix").val(data.no_mix || "");
-        if (data.date) $("#mDate").val(data.date);
+
+        if (data.date) { $("#mDate").val(String(data.date).substring(0, 10)); }
         if (data.shift) $("#mShift").val(data.shift);
     }
 
-    // dom ready
-    $(function () {
-        initPageUI();
-    });
+    $(function () { initPageUI(); });
 })();
