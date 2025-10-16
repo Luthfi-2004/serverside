@@ -12,10 +12,12 @@ use App\Exports\AceLineExportFull;
 
 class AceLineController extends Controller
 {
+    // format ymd
     private function ymd(?string $s): ?string
     {
-        if (!$s)
+        if (!$s) {
             return null;
+        }
         try {
             return Carbon::parse($s)->format('Y-m-d');
         } catch (\Throwable $e) {
@@ -23,17 +25,21 @@ class AceLineController extends Controller
         }
     }
 
+    // deteksi shift
     private function detectShift(?Carbon $now = null): string
     {
         $now = $now ? $now->copy() : Carbon::now('Asia/Jakarta');
         $h = (int) $now->format('H');
-        if ($h >= 6 && $h < 16)
+        if ($h >= 6 && $h < 16) {
             return 'D';
-        if ($h >= 16 && $h < 22)
+        }
+        if ($h >= 16 && $h < 22) {
             return 'S';
+        }
         return 'N';
     }
 
+    // validasi rules
     private function rules(): array
     {
         $numeric = [
@@ -75,11 +81,13 @@ class AceLineController extends Controller
             'machine_no' => ['nullable', 'string', 'max:50'],
         ];
 
-        foreach ($numeric as $f)
+        foreach ($numeric as $f) {
             $rules[$f] = ['nullable', 'numeric'];
+        }
         return $rules;
     }
 
+    // ambil isian
     private function fillable(Request $r): array
     {
         $data = $r->only([
@@ -116,21 +124,26 @@ class AceLineController extends Controller
             'bc13_c',
             'bc13_m',
         ]);
-        if (!empty($data['date']))
+        if (!empty($data['date'])) {
             $data['date'] = $this->ymd($data['date']);
+        }
         return $data;
     }
 
+    // datatable data
     public function data(Request $request)
     {
         $q = AceLine::query();
 
-        if ($d = $this->ymd($request->get('date')))
+        if ($d = $this->ymd($request->get('date'))) {
             $q->whereRaw('DATE(`date`) = ?', [$d]);
-        if ($s = $request->get('shift'))
+        }
+        if ($s = $request->get('shift')) {
             $q->where('shift', $s);
-        if ($pt = $request->get('product_type_id'))
+        }
+        if ($pt = $request->get('product_type_id')) {
             $q->where('product_type_id', $pt);
+        }
 
         return DataTables::of($q)
             ->filter(function ($builder) use ($request) {
@@ -143,25 +156,33 @@ class AceLineController extends Controller
                 }
             })
             ->editColumn('date', function (AceLine $r) {
-                if ($r->date)
+                if ($r->date) {
                     return Carbon::parse($r->date)->format('Y-m-d');
-                return $r->created_at ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i') : null;
+                }
+                return $r->created_at
+                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i')
+                    : null;
             })
             ->addColumn('created_time', function (AceLine $r) {
-                return $r->created_at ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null;
+                return $r->created_at
+                    ? Carbon::parse($r->created_at)->setTimezone('Asia/Jakarta')->format('Y-m-d H:i:s')
+                    : null;
             })
             ->make(true);
     }
 
+    // simpan data
     public function store(Request $request)
     {
         $request->validate($this->rules());
         $data = $this->fillable($request);
 
-        if (empty($data['date']))
+        if (empty($data['date'])) {
             $data['date'] = Carbon::now('Asia/Jakarta')->format('Y-m-d');
-        if (empty($data['shift']))
+        }
+        if (empty($data['shift'])) {
             $data['shift'] = $this->detectShift();
+        }
 
         if (empty($data['number'])) {
             $max = AceLine::whereRaw('DATE(`date`) = ?', [$data['date']])->max('number');
@@ -172,47 +193,59 @@ class AceLineController extends Controller
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Saved']);
     }
 
+    // tampil satu
     public function show($id)
     {
         $row = AceLine::findOrFail($id);
-        if ($row->sample_start)
+        if ($row->sample_start) {
             $row->sample_start = Carbon::parse($row->sample_start)->format('H:i');
-        if ($row->sample_finish)
+        }
+        if ($row->sample_finish) {
             $row->sample_finish = Carbon::parse($row->sample_finish)->format('H:i');
+        }
         return response()->json($row);
     }
 
+    // update data
     public function update(Request $request, $id)
     {
         $request->validate($this->rules());
         $row = AceLine::findOrFail($id);
         $data = $this->fillable($request);
-        if (!array_key_exists('number', $data))
+        if (!array_key_exists('number', $data)) {
             unset($data['number']);
-        if (!array_key_exists('date', $data))
+        }
+        if (!array_key_exists('date', $data)) {
             unset($data['date']);
-        if (!array_key_exists('shift', $data))
+        }
+        if (!array_key_exists('shift', $data)) {
             unset($data['shift']);
+        }
         $row->update($data);
         return response()->json(['ok' => true, 'id' => $row->id, 'message' => 'Updated']);
     }
 
+    // hapus data
     public function destroy($id)
     {
         AceLine::findOrFail($id)->delete();
         return response()->json(['ok' => true, 'message' => 'Deleted']);
     }
 
+    // ringkas data
     public function summary(Request $request)
     {
         $q = AceLine::query();
 
-        if ($d = $this->ymd($request->get('date')))
+        if ($d = $this->ymd($request->get('date'))) {
             $q->whereRaw('DATE(`date`) = ?', [$d]);
-        if ($s = $request->get('shift'))
+        }
+        if ($s = $request->get('shift')) {
             $q->where('shift', $s);
-        if ($pt = $request->get('product_type_id'))
+        }
+        if ($pt = $request->get('product_type_id')) {
             $q->where('product_type_id', $pt);
+        }
 
         $numericCols = [
             'p',
@@ -275,12 +308,15 @@ class AceLineController extends Controller
         ];
 
         $judgeVal = function ($val, array $rule): string {
-            if ($val === null)
+            if ($val === null) {
                 return '';
-            if (isset($rule['min']) && $val < $rule['min'])
+            }
+            if (isset($rule['min']) && $val < $rule['min']) {
                 return 'NG';
-            if (isset($rule['max']) && $val > $rule['max'])
+            }
+            if (isset($rule['max']) && $val > $rule['max']) {
                 return 'NG';
+            }
             return 'OK';
         };
 
@@ -294,8 +330,9 @@ class AceLineController extends Controller
             $val = $agg?->{"avg_{$name}"};
             $j = $judgeVal(is_null($val) ? null : (float) $val, $spec[$name]);
             $rowJudge[$name] = $j;
-            if ($j !== '')
+            if ($j !== '') {
                 $okFlags[] = ($j === 'OK');
+            }
         }
 
         $overall = count($okFlags) ? (array_sum($okFlags) === count($okFlags) ? 'OK' : 'NG') : '—';
@@ -307,6 +344,7 @@ class AceLineController extends Controller
         ]);
     }
 
+    // export excel
     public function export(Request $request)
     {
         $ymd = $this->ymd($request->get('date'));
@@ -322,6 +360,7 @@ class AceLineController extends Controller
         return Excel::download(new AceLineExportFull($ymd, $shift, $ptId), $fname);
     }
 
+    // lookup produk
     public function lookupProducts(Request $request)
     {
         try {
@@ -329,6 +368,7 @@ class AceLineController extends Controller
             $page = max(1, (int) $request->get('page', 1));
             $take = 20;
             $offset = ($page - 1) * $take;
+
             $query = DB::connection('mysql_wip')
                 ->table('products')
                 ->select(['id', 'no', 'name'])
@@ -341,6 +381,7 @@ class AceLineController extends Controller
                 ->orderBy('no');
 
             $rows = $query->offset($offset)->limit($take)->get();
+
             $results = $rows->map(function ($r) {
                 return [
                     'id' => $r->id,
@@ -364,5 +405,4 @@ class AceLineController extends Controller
             ]);
         }
     }
-
 }

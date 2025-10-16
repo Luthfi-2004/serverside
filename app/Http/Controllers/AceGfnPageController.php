@@ -15,6 +15,7 @@ class AceGfnPageController extends Controller
     private array $meshes = ['18,5', '26', '36', '50', '70', '100', '140', '200', '280', 'PAN'];
     private array $indices = [10, 20, 30, 40, 50, 70, 100, 140, 200, 300];
 
+    // tampil data
     public function index(Request $req)
     {
         $date = $req->query('date');
@@ -56,6 +57,7 @@ class AceGfnPageController extends Controller
         ]);
     }
 
+    // simpan data
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -76,12 +78,14 @@ class AceGfnPageController extends Controller
         $date = $request->input('gfn_date');
         $shift = $request->input('shift');
         $today = now('Asia/Jakarta')->toDateString();
+
         if ($date !== $today) {
             return back()
                 ->withErrors(['gfn_date' => "Input hanya diperbolehkan untuk tanggal {$today}."])
                 ->withInput()
                 ->with('open_modal', true);
         }
+
         $dupe = AceTotalGfn::query()
             ->whereDate('gfn_date', $date)
             ->where('shift', $shift)
@@ -129,7 +133,7 @@ class AceGfnPageController extends Controller
         return redirect()->route('acelinegfn.index')->with('status', 'Data GFN ACE LINE berhasil disimpan.');
     }
 
-    /** NEW: Update (edit) data HARI INI untuk kombinasi (gfn_date, shift) yang sedang ditampilkan */
+    // update data
     public function update(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -149,9 +153,8 @@ class AceGfnPageController extends Controller
 
         $gfnDate = $request->input('gfn_date');
         $shift = $request->input('shift');
-
-        // hanya boleh edit data hari ini (konsisten dengan store/delete)
         $today = now('Asia/Jakarta')->toDateString();
+
         if ($gfnDate !== $today) {
             return back()
                 ->withErrors(['gfn_date' => "Edit hanya diperbolehkan untuk tanggal {$today}."])
@@ -159,7 +162,6 @@ class AceGfnPageController extends Controller
                 ->with('open_modal', true);
         }
 
-        // pastikan data hari ini ada (dibuat hari ini)
         $sinceToday = now('Asia/Jakarta')->startOfDay();
         $existsToday = AceTotalGfn::whereDate('gfn_date', $gfnDate)
             ->where('shift', $shift)
@@ -174,9 +176,7 @@ class AceGfnPageController extends Controller
 
         [$grams, $percentages, $percentageIndices, $totalGram, $sumPI] = $this->computeFromGrams($request->input('grams', []));
 
-        DB::transaction(function () use ($gfnDate, $shift, $sinceToday, $grams, $percentages, $percentageIndices, $totalGram, $sumPI, $request) {
-
-            // replace data: hapus record hari ini untuk kombinasi tsb, lalu insert ulang
+        DB::transaction(function () use ($gfnDate, $shift, $sinceToday, $grams, $percentages, $percentageIndices, $totalGram, $sumPI) {
             AceGfn::whereDate('gfn_date', $gfnDate)
                 ->where('shift', $shift)
                 ->where('created_at', '>=', $sinceToday)
@@ -220,6 +220,7 @@ class AceGfnPageController extends Controller
             ->with('status', 'Data GFN ACE LINE berhasil diupdate.');
     }
 
+    // hapus data
     public function deleteTodaySet(Request $request)
     {
         $gfnDate = $request->input('gfn_date');
@@ -257,6 +258,7 @@ class AceGfnPageController extends Controller
         return redirect()->route('acelinegfn.index')->with('status', 'Data hari ini berhasil dihapus.');
     }
 
+    // export excel
     public function export(Request $request)
     {
         $date = $request->query('date');
@@ -266,6 +268,7 @@ class AceGfnPageController extends Controller
         return Excel::download(new AceGfnExport(date: $date, shift: $shift), $filename);
     }
 
+    // cek data
     public function checkExists(Request $r)
     {
         $date = $r->query('date');
@@ -283,6 +286,7 @@ class AceGfnPageController extends Controller
         return response()->json(['exists' => $exists]);
     }
 
+    // tampil recap
     private function setDisplayForLatest($gfnDate, $shift): array
     {
         $rows = AceGfn::query()
@@ -294,9 +298,11 @@ class AceGfnPageController extends Controller
             ->keyBy('mesh');
 
         $ordered = collect();
+
         for ($i = 0; $i < 10; $i++) {
             $mesh = $this->meshes[$i];
             $r = $rows->get($mesh);
+
             if ($r) {
                 $ordered->push($r);
             } else {
@@ -333,7 +339,7 @@ class AceGfnPageController extends Controller
         return [$ordered, $displayRecap];
     }
 
-    /** helper hitung ulang dari array grams[] */
+    // hitung ulang
     private function computeFromGrams(array $rawGrams): array
     {
         $grams = array_map(
@@ -342,14 +348,13 @@ class AceGfnPageController extends Controller
         );
 
         if (count($grams) !== 10) {
-            // jaga-jaga
             $grams = array_pad($grams, 10, 0.0);
             $grams = array_slice($grams, 0, 10);
         }
 
         $totalGram = array_sum($grams);
+
         if ($totalGram <= 0) {
-            // biar validasi diformat sama dengan store()
             abort(back()->withErrors(['grams' => 'Isikan minimal satu nilai GRAM > 0.'])->withInput()->with('open_modal', true));
         }
 

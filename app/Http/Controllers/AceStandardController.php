@@ -11,6 +11,7 @@ class AceStandardController extends Controller
     private string $permUrlNoQual = 'greensand/ace-greensand-std';
     private string $permUrlWithQual = 'quality/greensand/ace-greensand-std';
 
+    // tampil halaman
     public function index()
     {
         if (
@@ -21,8 +22,10 @@ class AceStandardController extends Controller
         }
 
         $std = AceStandard::first();
-        if (!$std)
+        if (!$std) {
             $std = AceStandard::create([]);
+        }
+
         $canEdit =
             Perm::can($this->permUrlNoQual, 'can_edit') ||
             Perm::can($this->permUrlWithQual, 'can_edit');
@@ -30,9 +33,9 @@ class AceStandardController extends Controller
         return view('ace.standards', compact('std', 'canEdit'));
     }
 
+    // update standar
     public function update(Request $r)
     {
-        // cek can_edit juga pakai 2 URL
         if (
             !Perm::can($this->permUrlNoQual, 'can_edit')
             && !Perm::can($this->permUrlWithQual, 'can_edit')
@@ -85,6 +88,7 @@ class AceStandardController extends Controller
             $rules[$k . '_min'] = ['nullable', 'numeric'];
             $rules[$k . '_max'] = ['nullable', 'numeric'];
         }
+
         $v = \Validator::make($data, $rules);
         if ($v->fails()) {
             return back()->withErrors($v)->withInput();

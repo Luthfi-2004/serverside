@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class GreensandSummaryController extends Controller
 {
-
+    // ringkas jsh
     public function jsh(Request $request)
     {
         $q = GreensandJsh::query();
@@ -25,24 +25,47 @@ class GreensandSummaryController extends Controller
             $kw = $request->keyword;
             $q->where(function ($x) use ($kw) {
                 $x->where('mix_ke', 'like', "%{$kw}%")
-                  ->orWhere('rs_type', 'like', "%{$kw}%");
+                    ->orWhere('rs_type', 'like', "%{$kw}%");
             });
         }
 
         $fields = [
-           
-            'mm_p','mm_c','mm_gt','mm_cb_mm','mm_cb_lab','mm_m',
-            'mm_bakunetsu','mm_ac','mm_tc','mm_vsd','mm_ig',
-            'mm_cb_weight','mm_tp50_weight','mm_tp50_height','mm_ssi',
-            'add_m3','add_vsd','add_sc',
-            'bc12_cb','bc12_m','bc11_ac','bc11_vsd','bc16_cb','bc16_m',
-            'bc9_moist','bc10_moist','bc11_moist',
-            'bc9_temp','bc10_temp','bc11_temp',
+            'mm_p',
+            'mm_c',
+            'mm_gt',
+            'mm_cb_mm',
+            'mm_cb_lab',
+            'mm_m',
+            'mm_bakunetsu',
+            'mm_ac',
+            'mm_tc',
+            'mm_vsd',
+            'mm_ig',
+            'mm_cb_weight',
+            'mm_tp50_weight',
+            'mm_tp50_height',
+            'mm_ssi',
+            'add_m3',
+            'add_vsd',
+            'add_sc',
+            'bc12_cb',
+            'bc12_m',
+            'bc11_ac',
+            'bc11_vsd',
+            'bc16_cb',
+            'bc16_m',
+            'bc9_moist',
+            'bc10_moist',
+            'bc11_moist',
+            'bc9_temp',
+            'bc10_temp',
+            'bc11_temp',
         ];
 
+        // ambil spesifikasi
         $spec = JshStandard::specMap();
 
-      
+        // agregasi nilai
         $agg = [];
         foreach ($fields as $f) {
             $agg[] = DB::raw("MIN($f) as min_$f");
@@ -51,6 +74,7 @@ class GreensandSummaryController extends Controller
         }
         $row = $q->select($agg)->first();
 
+        // susun hasil
         $result = [];
         foreach ($fields as $f) {
             $min = $row?->{"min_$f"};
@@ -68,10 +92,10 @@ class GreensandSummaryController extends Controller
 
             $result[] = [
                 'field' => $f,
-                'min'   => $min,
-                'max'   => $max,
-                'avg'   => $avg !== null ? round($avg, 2) : null,
-                'spec'  => $spec[$f] ?? null,
+                'min' => $min,
+                'max' => $max,
+                'avg' => $avg !== null ? round($avg, 2) : null,
+                'spec' => $spec[$f] ?? null,
                 'judge' => $judge,
             ];
         }
@@ -79,14 +103,21 @@ class GreensandSummaryController extends Controller
         return response()->json(['summary' => $result]);
     }
 
+    // parse ymd
     private function toYmd(?string $val): ?string
     {
-        if (!$val) return null;
+        if (!$val)
+            return null;
         foreach (['d-m-Y', 'Y-m-d', 'd/m/Y'] as $fmt) {
-            try { return \Carbon\Carbon::createFromFormat($fmt, $val)->toDateString(); }
-            catch (\Throwable $e) {}
+            try {
+                return \Carbon\Carbon::createFromFormat($fmt, $val)->toDateString();
+            } catch (\Throwable $e) {
+            }
         }
-        try { return \Carbon\Carbon::parse($val)->toDateString(); }
-        catch (\Throwable $e) { return null; }
+        try {
+            return \Carbon\Carbon::parse($val)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

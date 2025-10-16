@@ -14,6 +14,7 @@ class JshStandardController extends Controller
         'quality/greensand/jsh-greensand-std',
     ];
 
+    // tampil halaman
     public function index()
     {
         if (!$this->can('can_read')) {
@@ -78,6 +79,7 @@ class JshStandardController extends Controller
         return view('greensand.standards', compact('groups', 'canEdit'));
     }
 
+    // update standar
     public function update(Request $r)
     {
         if (!$this->can('can_edit')) {
@@ -116,6 +118,8 @@ class JshStandardController extends Controller
         $std->update($data);
         return back()->with('status', 'Standards updated.');
     }
+
+    // cek izin
     private function can(string $flag): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false))) {
@@ -131,8 +135,8 @@ class JshStandardController extends Controller
         $urls = [];
         foreach (self::PERM_URLS as $u) {
             $clean = ltrim($u, '/');
-            $urls[] = $clean;           
-            $urls[] = '/' . $clean;   
+            $urls[] = $clean;
+            $urls[] = '/' . $clean;
         }
 
         try {

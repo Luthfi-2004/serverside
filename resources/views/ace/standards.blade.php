@@ -1,24 +1,6 @@
 @extends('layouts.app')
 @section('title', 'ACE Standards')
 
-@push('styles')
-  <base href="{{ url('/') }}/">
-  <style>
-    .std-table th,
-    .std-table td {
-      vertical-align: middle !important;
-    }
-
-    .std-param {
-      text-align: center;
-    }
-
-    .badge-readonly {
-      font-size: .85rem;
-    }
-  </style>
-@endpush
-
 @section('content')
   <div class="page-content">
     <div class="container-fluid">
@@ -201,6 +183,24 @@
     </div>
   </div>
 @endsection
+
+@push('styles')
+  <base href="{{ url('/') }}/">
+  <style>
+    .std-table th,
+    .std-table td {
+      vertical-align: middle !important;
+    }
+
+    .std-param {
+      text-align: center;
+    }
+
+    .badge-readonly {
+      font-size: .85rem;
+    }
+  </style>
+@endpush
 
 @push('scripts')
   <script src="{{ asset('assets/js/standards.js') }}" defer></script>

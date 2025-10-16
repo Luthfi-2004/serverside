@@ -1,4 +1,6 @@
+// Greensand UI
 $(function () {
+    // Routes cek
     if (!window.greensandRoutes) {
         console.error(
             "greensandRoutes tidak ditemukan. Pastikan Blade sudah @push('scripts')."
@@ -6,17 +8,21 @@ $(function () {
         return;
     }
 
+    // AJAX setup
     $.ajaxSetup({
         headers: {
             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
         },
     });
 
+    // Helper util
     const helpers = {
+        // Deteksi shift
         detectShiftByNow() {
             const hh = new Date().getHours();
             return hh >= 6 && hh < 16 ? "D" : hh >= 16 && hh < 22 ? "S" : "N";
         },
+        // Tab aktif
         getActiveTab() {
             const st = (window.__GS_ACTIVE_TAB__ || "").toLowerCase();
             if (["mm1", "mm2", "all"].includes(st)) return st;
@@ -24,12 +30,15 @@ $(function () {
             const id = href.startsWith("#") ? href.slice(1) : href;
             return ["mm1", "mm2", "all"].includes(id) ? id : "mm1";
         },
+        // Ambil waktu
         pickTime(val) {
             if (!val) return "";
             const m = String(val).match(/T?(\d{2}:\d{2})(?::\d{2})?/);
             return m ? m[1] : String(val);
         },
+        // Ambil keyword
         getKeyword: () => $("#keywordInput").val() || "",
+        // Normalisasi angka
         normalizeNumbersInForm($form) {
             $form.find(".js-num").each(function () {
                 const v = (this.value || "").trim();
@@ -42,6 +51,7 @@ $(function () {
                 this.value = v.replace(/[^0-9\-]/g, "");
             });
         },
+        // Fokus error
         focusFirstError() {
             const $mmErr = $("#mm_error:visible");
             if ($mmErr.length) {
@@ -68,11 +78,14 @@ $(function () {
         },
     };
 
+    // Status awal
     window.__GS_ACTIVE_TAB__ = "mm1";
     let pendingDeleteId = null;
     const instances = { mm1: null, mm2: null, all: null };
 
+    // Error handler
     const errorHandler = {
+        // Bersih error
         clear() {
             $("#gsForm .form-control, #gsForm .custom-select").removeClass(
                 "is-invalid"
@@ -82,6 +95,7 @@ $(function () {
             const $alert = $("#gsFormAlert");
             if ($alert.length) $alert.addClass("d-none").text("");
         },
+        // Terapkan error
         apply(errs) {
             const map = {
                 mm: {
@@ -139,18 +153,21 @@ $(function () {
         },
     };
 
+    // Form manajer
     const formManager = {
+        // Reset form
         reset() {
             $("#gsForm")[0]?.reset();
             $("#gs_id").val("");
             $("#gs_mode").val("create");
             $("#gsModalMode").text("Add");
 
-            // jangan auto-pilih MM
+            // Reset pilihan
             $('input[name="mm"]').prop("checked", false);
             $("#mm1_btn,#mm2_btn").removeClass("active is-invalid");
             $("#mm_error").hide().text("");
 
+            // Info shift
             const curShift =
                 $("#shiftSelect").val() || helpers.detectShiftByNow();
             const label =
@@ -159,6 +176,7 @@ $(function () {
 
             errorHandler.clear();
         },
+        // Isi data
         fill(data) {
             $("#gs_id").val(data.id);
             $("#gs_mode").val("edit");
@@ -234,7 +252,7 @@ $(function () {
         },
     };
 
-    // clear error saat user berinteraksi
+    // Bersih interaksi
     $('#mm_group input[name="mm"]')
         .off("change")
         .on("change", function () {
@@ -248,7 +266,7 @@ $(function () {
             $("#mix_ke_error").text("").hide();
         });
 
-    // tombol Add
+    // Tombol tambah
     $(document)
         .off("click", ".btn-add-gs")
         .on("click", ".btn-add-gs", function () {
@@ -256,7 +274,7 @@ $(function () {
             $("#modal-greensand").modal("show");
         });
 
-    // tombol Edit
+    // Tombol edit
     $(document)
         .off("click", ".btn-edit-gs")
         .on("click", ".btn-edit-gs", function () {
@@ -276,7 +294,7 @@ $(function () {
                 });
         });
 
-    // SUBMIT: tampilkan SEMUA error klien (MM + mix_ke) sekaligus + SPINNER tombol submit
+    // Submit form
     $("#gsForm")
         .off("submit")
         .on("submit", function (e) {
@@ -287,6 +305,7 @@ $(function () {
 
             let hasError = false;
 
+            // Validasi mm
             const mmVal = $('input[name="mm"]:checked').val();
             if (!mmVal) {
                 $("#mm1_btn,#mm2_btn").addClass("is-invalid");
@@ -294,6 +313,7 @@ $(function () {
                 hasError = true;
             }
 
+            // Validasi mix
             const mixKeRaw = ($("#mix_ke").val() || "").trim();
             if (!mixKeRaw) {
                 $("#mix_ke").addClass("is-invalid");
@@ -307,6 +327,7 @@ $(function () {
                 hasError = true;
             }
 
+            // Validasi shift
             const shift = $("#shiftSelect").val() || "";
             if (!shift) {
                 $("#gsFormAlert")
@@ -315,12 +336,13 @@ $(function () {
                 hasError = true;
             }
 
+            // Cegah kirim
             if (hasError) {
                 helpers.focusFirstError();
-                return; // stop di sini, TANPA AJAX; pesan sudah ditampilkan semua
+                return;
             }
 
-            // lanjut submit AJAX + SPINNER ala ace.js
+            // Susun payload
             const mode = $("#gs_mode").val();
             const id = $("#gs_id").val();
             const date = $("#filterDate").val() || "";
@@ -330,6 +352,7 @@ $(function () {
                     date
                 )}`;
 
+            // Tombol spinner
             const $btn = $("#gsSubmitBtn");
             $btn.prop("disabled", true)
                 .data("orig", $btn.html())
@@ -337,6 +360,7 @@ $(function () {
                     '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
                 );
 
+            // Kirim request
             const req =
                 mode === "edit"
                     ? $.post(
@@ -345,15 +369,16 @@ $(function () {
                       )
                     : $.post(greensandRoutes.store, formData);
 
+            // Sukses simpan
             req.done(() => {
                 $("#modal-greensand").modal("hide");
                 reloadAll();
                 if (window.gsFlash)
                     gsFlash("Data berhasil disimpan.", "success");
             })
+                // Gagal simpan
                 .fail((xhr) => {
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                        // mirror error server
                         if (xhr.responseJSON.errors.mm) {
                             $("#mm1_btn,#mm2_btn").addClass("is-invalid");
                             $("#mm_error")
@@ -381,6 +406,7 @@ $(function () {
                     helpers.focusFirstError();
                     console.error(xhr.responseText || xhr);
                 })
+                // Pulihkan tombol
                 .always(() => {
                     const $btn = $("#gsSubmitBtn");
                     const orig = $btn.data("orig");
@@ -391,7 +417,7 @@ $(function () {
                 });
         });
 
-    // Delete
+    // Aksi hapus
     $(document)
         .off("click", ".btn-delete-gs")
         .on("click", ".btn-delete-gs", function () {
@@ -399,6 +425,7 @@ $(function () {
             $("#confirmDeleteModal").modal("show");
         });
 
+    // Konfirmasi hapus
     $("#confirmDeleteYes")
         .off("click")
         .on("click", function () {
@@ -431,7 +458,7 @@ $(function () {
                 });
         });
 
-    // Select2
+    // Select2 init
     $(function () {
         $("#shiftSelect").select2({
             width: "100%",
@@ -440,7 +467,7 @@ $(function () {
         });
     });
 
-    // Filter
+    // Filter init
     $("#filterDate").datepicker({
         format: "yyyy-mm-dd",
         autoclose: true,
@@ -462,7 +489,7 @@ $(function () {
             if (window.gsFlash) gsFlash("Filter direset.", "secondary");
         });
 
-    // DataTables
+    // Kolom dasar
     const baseColumns = [
         { data: "action", orderable: false, searchable: false },
         { data: "date", name: "date" },
@@ -516,11 +543,14 @@ $(function () {
         { data: "lama_bc10_jalan", name: "lama_bc10_jalan" },
         { data: "rating_pasir_es", name: "rating_pasir_es" },
     ];
+
+    // Kolom default
     const baseColumnsWithDefaults = baseColumns.map((c) => ({
         ...c,
         defaultContent: "",
     }));
 
+    // Ringkasan tabel
     const summaryManager = {
         load() {
             if (!window.greensandRoutes.summary) return;
@@ -532,12 +562,14 @@ $(function () {
                 .done((res) => this.render(res?.summary || []))
                 .fail(() => this.render([]));
         },
+        // Pastikan tfoot
         ensureTfoot() {
             const $table = $("#dt-all");
             let $tfoot = $table.find("tfoot");
             if (!$tfoot.length) $tfoot = $("<tfoot/>").appendTo($table);
             return $tfoot;
         },
+        // Render ringkasan
         render(summary) {
             const $tfoot = this.ensureTfoot();
             const colIndex = {
@@ -605,6 +637,7 @@ $(function () {
         },
     };
 
+    // Buat datatable
     function makeDt($el, url) {
         if ($.fn.dataTable.isDataTable($el)) return $el.DataTable();
         const isAll = $el.attr("id") === "dt-all";
@@ -665,10 +698,10 @@ $(function () {
         });
     }
 
-    // init datatable
+    // Init datatable
     instances.mm1 = makeDt($("#dt-mm1"), greensandRoutes.mm1);
 
-    // tabs
+    // Tab bootstrap
     const href0 = (
         $(".nav-tabs .nav-link.active").attr("href") || "#mm1"
     ).toLowerCase();
@@ -690,7 +723,7 @@ $(function () {
             if (href === "#all") setTimeout(() => summaryManager.load(), 100);
         });
 
-    // reload
+    // Reload tabel
     function reloadAll() {
         $.fn.dataTable
             .tables({ visible: false, api: true })
@@ -700,7 +733,7 @@ $(function () {
     }
     window.reloadAll = reloadAll;
 
-    // export
+    // Ekspor excel
     $("#btnExport")
         .off("click")
         .on("click", function () {
@@ -718,12 +751,12 @@ $(function () {
             if (window.gsFlash) gsFlash("Menyiapkan file Excel…", "info");
         });
 
-    // init filter defaults
+    // Default filter
     $("#filterDate").datepicker("setDate", new Date());
     $("#shiftSelect").val(helpers.detectShiftByNow()).trigger("change");
     reloadAll();
 
-    // UI kecil: header filter collapsing
+    // UI filter
     $("#filterHeader")
         .off("click")
         .on("click", function () {

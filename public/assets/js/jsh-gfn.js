@@ -1,12 +1,16 @@
 (function () {
+    // Guard jQuery
     var $ = window.jQuery;
     if (!$) return;
 
-    var GFN_MODE = "create"; // "create" | "edit"
+    // Global mode
+    var GFN_MODE = "create"; 
 
+    // Helper pad
     function pad(n) {
         return String(n).padStart(2, "0");
     }
+    // Helper today
     function today() {
         var d = new Date();
         return (
@@ -17,10 +21,12 @@
             pad(d.getDate())
         );
     }
+    // Helper shift
     function autoShift() {
         var h = new Date().getHours();
         return h >= 6 && h < 17 ? "D" : h >= 22 || h < 6 ? "N" : "S";
     }
+    // Helper format
     function fmt(n, d) {
         if (d === void 0) d = 2;
         if (!isFinite(n)) n = 0;
@@ -30,6 +36,7 @@
         });
     }
 
+    // Select2 init
     function initSelect2() {
         if (!$.fn.select2) return;
         $(".select2").select2({
@@ -42,8 +49,11 @@
         });
     }
 
+    // Datepicker init
     function initDatepickers() {
         if (!$.fn.datepicker) return;
+
+        // Filter tanggal
         var $f = $("#fDate");
         if ($f.length) {
             $f.datepicker({
@@ -52,6 +62,8 @@
                 orientation: "bottom",
             });
         }
+
+        // Modal tanggal
         var $g = $("#gfnDate");
         if ($g.length) {
             var td = new Date();
@@ -66,9 +78,11 @@
         }
     }
 
+    // Seed filter
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
+
         if ($fd.length && (!$fd.val() || !$fd.val().trim())) {
             $fd.val(today());
             if ($.fn.datepicker) $fd.datepicker("update", $fd.val());
@@ -78,13 +92,17 @@
         }
     }
 
+    // Modal sinkron
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
+
         var fd = $("#filterForm #fDate").val();
         var sh = $('#filterForm select[name="shift"]').val();
+
         var $gd = $m.find("#gfnDate");
         var $gs = $m.find('select[name="shift"]');
+
         if (fd) {
             $gd.val(fd);
             if ($.fn.datepicker) $gd.datepicker("update", fd);
@@ -92,32 +110,34 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
+    // Filter ikon
     (function initFilterIcon() {
         var $c = $("#filterCollapse"),
             $i = $("#filterIcon"),
             $h = $("#filterHeader");
+
         function setIcon(open) {
             if (!$i.length) return;
             $i.removeClass("ri-add-line ri-subtract-line").addClass(
                 open ? "ri-subtract-line" : "ri-add-line"
             );
         }
+
         if (!$c.length) return;
         setIcon($c.hasClass("show"));
-        $c.on("shown.bs.collapse", function () {
-            setIcon(true);
-        });
-        $c.on("hidden.bs.collapse", function () {
-            setIcon(false);
-        });
+        $c.on("shown.bs.collapse", function () { setIcon(true); });
+        $c.on("hidden.bs.collapse", function () { setIcon(false); });
         $h.on("click", function () {});
     })();
 
+    // Hitung tabel
     function recalc() {
         var tb = document.getElementById("gfnBody");
         if (!tb) return;
+
         var rows = tb.querySelectorAll("tr[data-row]"),
             tg = 0;
+
         rows.forEach(function (tr) {
             var raw =
                 (tr.querySelector(".gfn-gram") &&
@@ -126,8 +146,9 @@
             var g = parseFloat(String(raw).replace(",", "."));
             if (!isNaN(g)) tg += g;
         });
-        var tp = 0,
-            tpi = 0;
+
+        var tp = 0, tpi = 0;
+
         rows.forEach(function (tr) {
             var idx = parseFloat(tr.dataset.index || "0");
             var raw =
@@ -137,13 +158,16 @@
             var g = parseFloat(String(raw).replace(",", "."));
             var p = tg > 0 ? (g / tg) * 100 : 0,
                 pi = p * idx;
+
             var cP = tr.querySelector(".gfn-percent"),
                 cPI = tr.querySelector(".gfn-percent-index");
             if (cP) cP.textContent = fmt(p, 2);
             if (cPI) cPI.textContent = fmt(pi, 1);
+
             tp += p;
             tpi += pi;
         });
+
         var elTG = document.getElementById("gfn-total-gram");
         var elTP = document.getElementById("gfn-total-percent");
         var elTPI = document.getElementById("gfn-total-percent-index");
@@ -152,24 +176,28 @@
         if (elTPI) elTPI.textContent = fmt(tpi, 1);
     }
 
+    // Chart render
     function renderGFNCharts() {
         if (!$.plot) return;
+
         var $line = $("#gfn-line");
         if (!$line.length) return;
+
         var dataObj = window.gfnChartData || {};
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
         if (!rows.length) {
             $line.empty();
             return;
         }
-        var ticks = [],
-            lineData = [];
+
+        var ticks = [], lineData = [];
         for (var i = 0; i < rows.length; i++) {
             var x = i + 1;
             var pct = parseFloat(rows[i] && rows[i].percentage) || 0;
             ticks.push([x, String(x)]);
             lineData.push([x, pct]);
         }
+
         var plot;
         try {
             plot = $.plot(
@@ -201,6 +229,7 @@
         } catch (e) {
             return;
         }
+
         try {
             var ctx = plot.getCanvas().getContext("2d");
             var s = plot.getData()[0] || { data: [] };
@@ -216,12 +245,15 @@
             ctx.restore();
         } catch (_) {}
     }
+
+    // Resize debounce
     var _resizeTimer = null;
     function onWinResize() {
         if (_resizeTimer) clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(renderGFNCharts, 150);
     }
 
+    // Alert host
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
@@ -238,6 +270,7 @@
         }
         return host;
     }
+    // Alert tampil
     function showWarn(msg) {
         var host = ensureWarnHost();
         if (host) {
@@ -247,11 +280,13 @@
             alert(msg || "Data sudah ada.");
         }
     }
+    // Alert sembunyi
     function hideWarn() {
         var host = document.getElementById("gfnDupAlert");
         if (host) host.classList.add("d-none");
     }
 
+    // Cek duplikat
     async function checkDuplicate(date, shift) {
         if (!(window.jshRoutes && jshRoutes.gfnExists)) return false;
         var url =
@@ -272,6 +307,7 @@
         }
     }
 
+    // Edit modal
     function openEditModalFromDisplay() {
         var dataObj = window.gfnChartData || {};
         var recap = dataObj.recap || null;
@@ -283,23 +319,25 @@
         var $m = $("#modal-greensand");
         var $form = $m.find("form#form-greensand");
 
+        // Judul tombol
         $m.find(".modal-title").text("Edit Data GFN Green Sand");
         $m.find('button[type="submit"]').html(
             '<i class="ri-save-3-line me-1"></i> Update'
         );
 
+        // Action form
         if (window.jshRoutes && jshRoutes.gfnUpdate) {
             $form.attr("action", jshRoutes.gfnUpdate);
         }
 
+        // Method override
         if ($form.find('input[name="_method"]').length === 0) {
-            $('<input type="hidden" name="_method" value="PUT">').appendTo(
-                $form
-            );
+            $('<input type="hidden" name="_method" value="PUT">').appendTo($form);
         } else {
             $form.find('input[name="_method"]').val("PUT");
         }
 
+        // Kunci tanggal
         var $gd = $("#gfnDate");
         var d = recap.gfn_date;
         $gd.val(d);
@@ -312,6 +350,7 @@
             } catch (e) {}
         }
 
+        // Kunci shift
         var $gs = $('select[name="shift"]');
         $gs.find("option").prop("disabled", false);
         $gs.find("option").each(function () {
@@ -320,6 +359,7 @@
         });
         $gs.val(recap.shift).trigger("change");
 
+        // Estimasi gram
         var totalGram =
             recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
         $("#gfnBody tr[data-row]").each(function (i, tr) {
@@ -333,9 +373,11 @@
         $m.modal("show");
     }
 
+    // Input recalc
     document.addEventListener("input", function (e) {
         if (e.target && e.target.classList.contains("gfn-gram")) recalc();
     });
+    // Input clamp
     ["blur", "change"].forEach(function (ev) {
         document.addEventListener(ev, function (e) {
             if (e.target && e.target.classList.contains("gfn-gram")) {
@@ -354,6 +396,7 @@
         });
     });
 
+    // Flag pembuka
     if (window.openModalGFN) {
         $(function () {
             $("#modal-greensand").modal("show");
@@ -361,6 +404,7 @@
         });
     }
 
+    // Tombol hapus
     $(document).on("click", ".btn-delete-gs", function () {
         var d = $(this).data("gfn-date"),
             s = $(this).data("shift");
@@ -370,10 +414,12 @@
         $("#delShift").val(s || "");
     });
 
+    // Tombol edit
     $(document).on("click", ".btn-edit-gs", function () {
         openEditModalFromDisplay();
     });
 
+    // Modal shown
     $(document).on("shown.bs.modal", "#modal-greensand", function () {
         if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
             $("#gfnDate")
@@ -389,12 +435,15 @@
         }
         if (GFN_MODE === "create") {
             syncModalFromFilter();
+
             var $gd = $("#gfnDate"),
                 $gs = $('select[name="shift"]');
+
             if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
                 $gd.val(today());
                 if ($.fn.datepicker) $gd.datepicker("update", $gd.val());
             }
+
             var cs = autoShift();
             if ($gs.length) {
                 $gs.find("option").prop("disabled", false);
@@ -407,16 +456,16 @@
         }
     });
 
+    // Modal hidden
     $(document).on("hidden.bs.modal", "#modal-greensand", function () {
         var $m = $(this),
             $form = $m.find("form#form-greensand");
+
         $m.find(".gfn-gram").val("");
         var $gd = $m.find("#gfnDate");
         $gd.val("");
         if ($.fn.datepicker) {
-            try {
-                $gd.datepicker("update", "");
-            } catch (_) {}
+            try { $gd.datepicker("update", ""); } catch (_) {}
         }
         $m.find('select[name="shift"]').val("").trigger("change.select2");
         $m.find(".gfn-percent").text("0,00");
@@ -425,11 +474,13 @@
         $("#gfn-total-percent").text("100,00");
         $("#gfn-total-percent-index").text("0,0");
 
+        // Reset mode
         GFN_MODE = "create";
         $m.find(".modal-title").text("Form Add Data GFN Green Sand");
         $m.find('button[type="submit"]').html(
             '<i class="ri-checkbox-circle-line me-1"></i> Submit'
         );
+
         if ($form.find('input[name="_method"]').length) {
             $form.find('input[name="_method"]').remove();
         }
@@ -438,15 +489,19 @@
         }
     });
 
+    // Submit form
     $(document).on("submit", "#form-greensand", async function (e) {
         hideWarn();
+
         var $form = $(this);
         var d = ($form.find("#gfnDate").val() || "").trim();
         var s = ($form.find('select[name="shift"]').val() || "").trim();
         if (!d) return;
+
         var isEdit =
             $form.find('input[name="_method"][value="PUT"]').length > 0;
         if (isEdit) return; // biar langsung submit PUT
+
         e.preventDefault();
         var dup = await checkDuplicate(d, s);
         if (dup) {
@@ -461,6 +516,7 @@
         this.submit();
     });
 
+    // DOM ready
     $(function () {
         initSelect2();
         initDatepickers();

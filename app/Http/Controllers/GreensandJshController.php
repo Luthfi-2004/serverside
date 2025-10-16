@@ -15,6 +15,8 @@ use App\Exports\GreensandExportFull;
 class GreensandJshController extends Controller
 {
     private const URL_MAIN = 'quality/greensand/jsh-greensand-check';
+
+    // data mm1
     public function dataMM1(Request $request)
     {
         if (!$this->can('can_read'))
@@ -22,6 +24,7 @@ class GreensandJshController extends Controller
         return $this->makeResponse($request, 'MM1');
     }
 
+    // data mm2
     public function dataMM2(Request $request)
     {
         if (!$this->can('can_read'))
@@ -29,6 +32,7 @@ class GreensandJshController extends Controller
         return $this->makeResponse($request, 'MM2');
     }
 
+    // data semua
     public function dataAll(Request $request)
     {
         if (!$this->can('can_read'))
@@ -36,6 +40,7 @@ class GreensandJshController extends Controller
         return $this->makeResponse($request, null);
     }
 
+    // ekspor excel
     public function export(Request $r)
     {
         if (!$this->can('can_read'))
@@ -55,6 +60,8 @@ class GreensandJshController extends Controller
 
         return Excel::download(new GreensandExportFull($date, $shift, $keyword, $mm), $fname);
     }
+
+    // simpan data
     public function store(Request $request)
     {
         if (!$this->can('can_add'))
@@ -82,6 +89,7 @@ class GreensandJshController extends Controller
         return response()->json(['message' => 'Created', 'id' => $row->id]);
     }
 
+    // tampil satu
     public function show($id)
     {
         if (!$this->can('can_read'))
@@ -91,6 +99,7 @@ class GreensandJshController extends Controller
         return response()->json(['data' => $row]);
     }
 
+    // perbarui data
     public function update(Request $request, $id)
     {
         if (!$this->can('can_edit'))
@@ -120,6 +129,7 @@ class GreensandJshController extends Controller
         return response()->json(['message' => 'Updated']);
     }
 
+    // hapus data
     public function destroy($id)
     {
         if (!$this->can('can_delete'))
@@ -129,6 +139,8 @@ class GreensandJshController extends Controller
         $row->delete();
         return response()->json(['message' => 'Deleted']);
     }
+
+    // buat response
     private function makeResponse(Request $request, ?string $mmFilter)
     {
         try {
@@ -242,6 +254,7 @@ class GreensandJshController extends Controller
         }
     }
 
+    // validasi input
     private function validator(array $in, string $mode = 'store')
     {
         $in['mm'] = $this->normalizeMm($in['mm'] ?? null);
@@ -260,6 +273,7 @@ class GreensandJshController extends Controller
         ]);
     }
 
+    // normalisasi desimal
     private function normalizeAllDecimals(array $in): array
     {
         $numericFields = [
@@ -326,6 +340,7 @@ class GreensandJshController extends Controller
         return $in;
     }
 
+    // normalisasi mm
     private function normalizeMm($val): ?string
     {
         if ($val === null || $val === '')
@@ -338,6 +353,7 @@ class GreensandJshController extends Controller
         return null;
     }
 
+    // format tanggal
     private function dayString($value): string
     {
         if ($value instanceof \DateTimeInterface)
@@ -345,6 +361,7 @@ class GreensandJshController extends Controller
         return Carbon::parse($value)->toDateString();
     }
 
+    // ke ymd
     private function toYmd(?string $val): ?string
     {
         if (!$val)
@@ -362,6 +379,7 @@ class GreensandJshController extends Controller
         }
     }
 
+    // cek duplikat
     private function isDuplicateMix(string $mm, string $shift, int $mixKe, string $dayYmd, ?int $ignoreId = null): bool
     {
         $q = GreensandJsh::query()
@@ -375,6 +393,7 @@ class GreensandJshController extends Controller
         return $q->exists();
     }
 
+    // map request
     private function mapRequestToModel(
         array $in,
         ?GreensandJsh $existing = null,
@@ -464,6 +483,8 @@ class GreensandJshController extends Controller
             'rating_pasir_es' => $in['rating_pasir_es'] ?? ($existing->rating_pasir_es ?? null),
         ];
     }
+
+    // cek izin
     private function can(string $flag, ?string $url = null): bool
     {
         if (config('app.bypass_auth', env('BYPASS_AUTH', false)))
@@ -486,7 +507,7 @@ class GreensandJshController extends Controller
                 ->where($flag, 1)
                 ->exists();
         } catch (\Throwable $e) {
-            return false; 
+            return false;
         }
     }
 }

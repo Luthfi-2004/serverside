@@ -3,21 +3,17 @@
     var $ = window.jQuery;
 
     if (!$) {
-        console.error(
-            "jQuery not found. Please make sure jQuery is loaded before ace.js"
-        );
+        console.error("jQuery not found. Please make sure jQuery is loaded before ace.js");
         return;
     }
     if (!window.aceRoutes) {
-        console.error(
-            "aceRoutes missing. Define it in Blade before loading ace.js"
-        );
+        console.error("aceRoutes missing. Define it in Blade before loading ace.js");
         return;
     }
 
     $.ajaxSetup({ cache: false });
 
-    // ===== UI INIT =====
+    // init ui
     function initPageUI() {
         try {
             $("#shiftSelect").select2({
@@ -37,14 +33,8 @@
                     processResults: function (data, params) {
                         params.page = params.page || 1;
                         return {
-                            results: Array.isArray(data.results)
-                                ? data.results
-                                : [],
-                            pagination: {
-                                more: !!(
-                                    data.pagination && data.pagination.more
-                                ),
-                            },
+                            results: Array.isArray(data.results) ? data.results : [],
+                            pagination: { more: !!(data.pagination && data.pagination.more) },
                         };
                     },
                     cache: true,
@@ -79,16 +69,16 @@
             });
     }
 
-    // ===== FLASH =====
+    // show flash
     function gsFlash(msg, type = "success", timeout = 3000) {
         var holder = document.getElementById("flash-holder");
         if (!holder) return;
         var div = document.createElement("div");
-        div.className =
-            "alert alert-" + type + " alert-dismissible fade show auto-dismiss";
+        div.className = "alert alert-" + type + " alert-dismissible fade show auto-dismiss";
         div.innerHTML =
             msg +
-            '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+            '<span aria-hidden="true">&times;</span></button>';
         holder.prepend(div);
         setTimeout(function () {
             if (window.jQuery && jQuery.fn && jQuery.fn.alert) {
@@ -102,7 +92,7 @@
     }
     window.gsFlash = gsFlash;
 
-    // ===== HELPERS =====
+    // parse date
     function normalizeFilterDate(s) {
         if (!s || typeof s !== "string") return "";
         var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -110,6 +100,8 @@
         var m2 = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
         return m2 ? [m2[3], m2[2], m2[1]].join("-") : "";
     }
+
+    // today ymd
     function todayYmd() {
         var d = new Date();
         return (
@@ -120,20 +112,28 @@
             String(d.getDate()).padStart(2, "0")
         );
     }
+
+    // detect shift
     function detectShiftByNow() {
         var h = new Date().getHours();
         return h >= 6 && h < 16 ? "D" : h >= 16 && h < 22 ? "S" : "N";
     }
+
+    // format value
     function fmt(v) {
         if (v === null || v === undefined || v === "") return "-";
         if (typeof v === "number") return v.toFixed(2);
         return v;
     }
+
+    // to hh:mm
     function toHm(s) {
         if (!s) return "";
         var m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(s));
         return m ? m[1] + ":" + m[2] : String(s).substring(0, 5);
     }
+
+    // format datetime
     function formatDateTimeColumn(v, type, row) {
         if (!v) return "-";
         if (row.created_time) {
@@ -145,13 +145,13 @@
                 "-" +
                 String(dt.getDate()).padStart(2, "0");
             var timeStr =
-                String(dt.getHours()).padStart(2, "0") +
-                ":" +
-                String(dt.getMinutes()).padStart(2, "0");
+                String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0");
             return dateStr + " " + timeStr;
         }
         return String(v).substring(0, 16);
     }
+
+    // read filters
     function currentFilters() {
         return {
             date: normalizeFilterDate($("#filterDate").val()),
@@ -161,15 +161,14 @@
         };
     }
 
-    // default filter seed
+    // seed defaults
     (function initFiltersDefaults() {
-        var $d = $("#filterDate"),
-            $s = $("#shiftSelect");
+        var $d = $("#filterDate"), $s = $("#shiftSelect");
         if (!$d.val()) $d.val(todayYmd()).trigger("change");
         if (!$s.val()) $s.val(detectShiftByNow()).trigger("change");
     })();
 
-    // ===== COLUMNS (HARUS SINKRON DENGAN colIndex DI SUMMARY) =====
+    // columns setup
     var columns = [
         // 0 Action
         {
@@ -212,7 +211,7 @@
         { data: "gt", render: fmt, defaultContent: "" }, // 9
         { data: "cb_lab", render: fmt, defaultContent: "" }, // 10
         { data: "moisture", render: fmt, defaultContent: "" }, // 11
-        { data: "machine_no", render: fmt, defaultContent: "" }, // 12 (non-numeric untuk judge)
+        { data: "machine_no", render: fmt, defaultContent: "" }, // 12
         { data: "bakunetsu", render: fmt, defaultContent: "" }, // 13
         { data: "ac", render: fmt, defaultContent: "" }, // 14
         { data: "tc", render: fmt, defaultContent: "" }, // 15
@@ -221,7 +220,7 @@
         { data: "cb_weight", render: fmt, defaultContent: "" }, // 18
         { data: "tp50_weight", render: fmt, defaultContent: "" }, // 19
         { data: "ssi", render: fmt, defaultContent: "" }, // 20
-        { data: "most", render: fmt, defaultContent: "" }, // 21 (non-numeric untuk judge)
+        { data: "most", render: fmt, defaultContent: "" }, // 21
         // Additive
         { data: "dw29_vas", render: fmt, defaultContent: "" }, // 22
         { data: "dw29_debu", render: fmt, defaultContent: "" }, // 23
@@ -230,21 +229,22 @@
         { data: "dw31_moldex", render: fmt, defaultContent: "" }, // 26
         { data: "dw31_sc", render: fmt, defaultContent: "" }, // 27
         // BC13
-        { data: "no_mix", render: fmt, defaultContent: "" }, // 28 (non-numeric untuk judge)
+        { data: "no_mix", render: fmt, defaultContent: "" }, // 28
         { data: "bc13_cb", render: fmt, defaultContent: "" }, // 29
         { data: "bc13_c", render: fmt, defaultContent: "" }, // 30
         { data: "bc13_m", render: fmt, defaultContent: "" }, // 31
     ];
 
-    // ===== SUMMARY MANAGER (renders <tfoot id="ace-foot">) =====
+    // summary manager
     var summaryManager = {
+        // ensure tfoot
         ensureTfoot: function () {
             var $table = $("#dt-ace");
             var $tfoot = $table.find("tfoot#ace-foot");
-            if (!$tfoot.length)
-                $tfoot = $('<tfoot id="ace-foot"/>').appendTo($table);
+            if (!$tfoot.length) $tfoot = $('<tfoot id="ace-foot"/>').appendTo($table);
             return $tfoot;
         },
+        // load summary
         load: function () {
             if (!window.aceRoutes.summary) return;
             var f = currentFilters();
@@ -261,18 +261,17 @@
                     summaryManager.render([]);
                 });
         },
+        // render footer
         render: function (summary) {
             var $tfoot = this.ensureTfoot();
 
-            // mapping index kolom (harus match array `columns` di atas)
+            // column index
             var colIndex = {
-                // mulai dari 7 (kolom data pertama setelah sample_finish)
                 p: 7,
                 c: 8,
                 gt: 9,
                 cb_lab: 10,
                 moisture: 11,
-                // machine_no: 12,   // non-numeric → tidak dijudge, tetap boleh tampil MIN/MAX/AVG jika mau, tapi kita kosongkan
                 bakunetsu: 13,
                 ac: 14,
                 tc: 15,
@@ -281,29 +280,22 @@
                 cb_weight: 18,
                 tp50_weight: 19,
                 ssi: 20,
-                // most: 21,         // non-numeric → skip
                 dw29_vas: 22,
                 dw29_debu: 23,
                 dw31_vas: 24,
                 dw31_id: 25,
                 dw31_moldex: 26,
                 dw31_sc: 27,
-                // no_mix: 28,       // non-numeric → skip
                 bc13_cb: 29,
                 bc13_c: 30,
                 bc13_m: 31,
             };
 
+            // build row
             function makeRow(label, valuesMap) {
-                // kolom 0..6 dipakai untuk label (action, No, date, shift, product, start, finish)
-                var tds =
-                    '<td class="text-center font-weight-bold" colspan="7">' +
-                    label +
-                    "</td>";
-                // sisanya (7..31) diisi sesuai valuesMap
+                var tds = '<td class="text-center font-weight-bold" colspan="7">' + label + "</td>";
                 for (var i = 7; i < columns.length; i++) {
-                    var val =
-                        valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
+                    var val = valuesMap && valuesMap[i] != null ? valuesMap[i] : "";
                     tds += '<td class="text-center">' + val + "</td>";
                 }
                 return '<tr class="ace-summary-row">' + tds + "</tr>";
@@ -320,8 +312,7 @@
 
                 if (s.judge) {
                     var cls = s.judge === "NG" ? "j-ng" : "j-ok";
-                    rows.judge[idx] =
-                        '<span class="' + cls + '">' + s.judge + "</span>";
+                    rows.judge[idx] = '<span class="' + cls + '">' + s.judge + "</span>";
                 } else {
                     rows.judge[idx] = "";
                 }
@@ -337,7 +328,7 @@
         },
     };
 
-    // ===== TABLE =====
+    // datatable init
     window.aceTable = $("#dt-ace").DataTable({
         serverSide: true,
         processing: true,
@@ -365,11 +356,8 @@
             },
         },
         columns: columns,
-        columnDefs: [
-            { targets: "_all", className: "align-middle text-center" },
-        ],
+        columnDefs: [{ targets: "_all", className: "align-middle text-center" }],
         drawCallback: function () {
-            // setelah data digambar ulang → refresh summary footer
             summaryManager.load();
         },
         initComplete: function () {
@@ -377,6 +365,7 @@
         },
     });
 
+    // reload table
     function reloadTable(cb) {
         if (window.aceTable) {
             window.aceTable.ajax.reload(function () {
@@ -385,12 +374,14 @@
         }
     }
 
-    // ===== FILTERS =====
+    // filters apply
     $("#btnSearch").on("click", function () {
         reloadTable(function () {
             gsFlash("Filter diterapkan.", "info");
         });
     });
+
+    // filters reset
     $("#btnRefresh").on("click", function () {
         $("#filterDate").val(todayYmd());
         $("#shiftSelect").val(detectShiftByNow()).trigger("change");
@@ -399,6 +390,8 @@
             gsFlash("Filter direset.", "secondary");
         });
     });
+
+    // export excel
     $("#btnExport").on("click", function () {
         if (!aceRoutes.export) return;
         var q = $.param(currentFilters());
@@ -406,7 +399,7 @@
         gsFlash("Menyiapkan file Excel…", "info");
     });
 
-    // ===== ADD =====
+    // add modal
     $(document).on("click", '[data-target="#modal-ace"]', function () {
         var form = document.getElementById("aceForm");
         if (form && form.reset) form.reset();
@@ -424,7 +417,7 @@
         $("#productTypeName").val("");
     });
 
-    // ===== EDIT =====
+    // edit modal
     $("#dt-ace").on("click", ".ace-edit", function () {
         var id = $(this).data("id");
         if (!id) return;
@@ -439,12 +432,7 @@
                 var $ps = $("#productSelectModal");
                 if (row.product_type_id && row.product_type_name) {
                     if ($ps.data("select2")) $ps.empty();
-                    var opt = new Option(
-                        row.product_type_name,
-                        row.product_type_id,
-                        true,
-                        true
-                    );
+                    var opt = new Option(row.product_type_name, row.product_type_id, true, true);
                     $ps.append(opt).trigger("change");
                     $ps.data("selected-id", row.product_type_id);
                     $ps.data("selected-text", row.product_type_name);
@@ -455,10 +443,7 @@
                     if ($ps.data("select2")) $ps.empty().trigger("change");
                     $ps.val(null).trigger("change");
                     $ps.removeData("selected-id").removeData("selected-text");
-                    $ps.attr("data-selected-id", "").attr(
-                        "data-selected-text",
-                        ""
-                    );
+                    $ps.attr("data-selected-id", "").attr("data-selected-text", "");
                     $("#productTypeName").val("");
                 }
 
@@ -470,7 +455,7 @@
             });
     });
 
-    // ===== DELETE =====
+    // delete flow
     var deleteId = null;
     $("#dt-ace").on("click", ".ace-del", function () {
         deleteId = $(this).data("id") || null;
@@ -481,9 +466,7 @@
         $.ajax({
             url: aceRoutes.base + "/" + deleteId,
             type: "DELETE",
-            headers: {
-                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            },
+            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
         })
             .done(function () {
                 $("#confirmDeleteModal").modal("hide");
@@ -497,7 +480,7 @@
             });
     });
 
-    // ===== SUBMIT =====
+    // submit form
     $("#aceForm").on("submit", function (e) {
         e.preventDefault();
         var mode = $("#ace_mode").val(),
@@ -516,11 +499,10 @@
         if (mode === "update") fd.append("_method", "PUT");
 
         var $btn = $("#aceSubmitBtn");
-        $btn.prop("disabled", true)
+        $btn
+            .prop("disabled", true)
             .data("orig", $btn.html())
-            .html(
-                '<span class="spinner-border spinner-border-sm mr-1"></span> Saving...'
-            );
+            .html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
 
         $.ajax({
             url,
@@ -528,37 +510,26 @@
             data: fd,
             processData: false,
             contentType: false,
-            headers: {
-                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            },
+            headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") },
         })
             .done(function () {
                 $("#modal-ace").modal("hide");
                 reloadTable(function () {
-                    gsFlash(
-                        mode === "update"
-                            ? "Data berhasil diperbarui."
-                            : "Data berhasil disimpan.",
-                        "success"
-                    );
+                    gsFlash(mode === "update" ? "Data berhasil diperbarui." : "Data berhasil disimpan.", "success");
                 });
             })
             .fail(function (xhr) {
-                var msg =
-                    (xhr.responseJSON && xhr.responseJSON.message) ||
-                    "Simpan data gagal.";
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) || "Simpan data gagal.";
                 $("#aceFormAlert").removeClass("d-none").text(msg);
                 gsFlash(msg, "danger");
                 console.error(xhr.responseText || xhr.statusText);
             })
             .always(function () {
-                $btn.prop("disabled", false).html(
-                    $btn.data("orig") || "Submit"
-                );
+                $btn.prop("disabled", false).html($btn.data("orig") || "Submit");
             });
     });
 
-    // ===== FILL FORM =====
+    // fill form
     function fillForm(data) {
         if (!data) return;
         Object.keys(data).forEach(function (k) {
@@ -572,7 +543,7 @@
         if (data.shift) $("#mShift").val(data.shift);
     }
 
-    // ===== START =====
+    // dom ready
     $(function () {
         initPageUI();
     });

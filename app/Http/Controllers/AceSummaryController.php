@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class AceSummaryController extends Controller
 {
+    // ringkas data
     public function __invoke(Request $r)
     {
         $date = $r->query('date');
@@ -20,6 +21,7 @@ class AceSummaryController extends Controller
             $q->where('shift', $shift);
         if ($pid)
             $q->where('product_type_id', $pid);
+
         $keys = [
             'p',
             'c',
@@ -69,6 +71,7 @@ class AceSummaryController extends Controller
                 $judgeRow[$k] = '';
                 continue;
             }
+
             $val = $rows[$k]['avg'];
             if ($val === '' || $val === null) {
                 $judgeRow[$k] = '';
