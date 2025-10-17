@@ -15,67 +15,68 @@
             </ol>
           </div>
         </div>
-
         <div id="flash-holder"></div>
 
         <div class="card mb-3">
-          <div id="filterHeader" class="card-header bg-light d-flex align-items-center justify-content-between">
-            <h5 class="font-size-14 mb-0"><i class="ri-filter-2-line mr-1"></i> Filter Data</h5>
+          <div id="filterHeader" class="card-header bg-light d-flex align-items-center justify-content-between" style="cursor:pointer;">
+            <h5 class="font-size-14 mb-0">
+              <i class="ri-filter-2-line mr-1"></i> Filter Data
+            </h5>
             <i id="filterIcon" class="ri-subtract-line"></i>
           </div>
-          <div id="filterCollapse" class="show">
-            <div class="card-body">
-              <div class="row align-items-end">
-                <div class="col-xl-4 col-lg-4">
-                  <div class="form-group mb-2">
-                    <label>Process Date</label>
-                    <div class="input-group">
-                      <input type="text" class="form-control" id="filterDate" data-provide="datepicker"
-                        data-date-format="yyyy-mm-dd" data-date-autoclose="true" autocomplete="off"
-                        placeholder="YYYY-MM-DD">
-                      <div class="input-group-append">
-                        <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
-                      </div>
+
+        <div id="filterCollapse" class="show">
+          <div class="card-body">
+            <div class="row align-items-end">
+              <div class="col-xl-4 col-lg-4">
+                <div class="form-group mb-2">
+                  <label class="form-label mb-1">Process Date</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="filterDate" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" autocomplete="off" placeholder="YYYY-MM-DD"/>
+                    <div class="input-group-append">
+                      <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
                     </div>
                   </div>
                 </div>
-                <div class="col-xl-4 col-lg-4">
-                  <div class="form-group mb-2">
-                    <label class="form-label mb-1">Shift</label>
-                    <select id="shiftSelect" class="form-control select2" data-placeholder="Select shift"
-                      style="width:100%;">
-                      <option value=""></option>
-                      <option value="D">D</option>
-                      <option value="S">S</option>
-                      <option value="N">N</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-xl-4 col-lg-4">
-                  <div class="form-group mb-2">
-                    <label class="form-label mb-1">Type Product</label>
-                    <select id="productSelectFilter" class="form-control select2" data-placeholder="All type"
-                      style="width:100%;">
-                      <option value=""></option>
-                    </select>
-                  </div>
+              </div>
+
+              <div class="col-xl-4 col-lg-4">
+                <div class="form-group mb-2">
+                  <label class="form-label mb-1">Shift</label>
+                  <select id="shiftSelect" class="form-control select2" data-placeholder="Select shift" style="width:100%;">
+                    <option value=""></option>
+                    <option value="D">D</option>
+                    <option value="S">S</option>
+                    <option value="N">N</option>
+                  </select>
                 </div>
               </div>
-              <div class="row align-items mt-2">
-                <div class="col-xl-12 d-flex justify-content flex-wrap">
-                  <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
-                    <i class="ri-search-line mr-1"></i> Search
-                  </button>
-                  <button id="btnRefresh" type="button" class="btn btn-outline-primary btn-sm mr-2 mb-2">
-                    <i class="ri-refresh-line mr-1"></i> Refresh Filter
-                  </button>
-                  <button id="btnExport" type="button" class="btn btn-outline-success btn-sm mb-2">
-                    <i class="ri-file-excel-2-line mr-1"></i> Export Excel
-                  </button>
+
+              <div class="col-xl-4 col-lg-4">
+                <div class="form-group mb-2">
+                  <label class="form-label mb-1">Type Product</label>
+                  <select id="productSelectFilter" class="form-control select2" data-placeholder="All type" style="width:100%;">
+                    <option value=""></option>
+                  </select>
                 </div>
               </div>
             </div>
+
+            <div class="row align-items mt-2">
+              <div class="col-xl-12 d-flex justify-content-start flex-wrap">
+                <button id="btnSearch" type="button" class="btn btn-primary btn-sm mr-2 mb-2">
+                  <i class="ri-search-line mr-1"></i> Search
+                </button>
+                <button id="btnRefresh" type="button" class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                  <i class="ri-refresh-line mr-1"></i> Refresh Filter
+                </button>
+                <button id="btnExport" type="button" class="btn btn-outline-success btn-sm mb-2">
+                  <i class="ri-file-excel-2-line mr-1"></i> Export Excel
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
         </div>
 
         <div class="card mb-4">
@@ -101,8 +102,7 @@
             </div>
           </div>
 
-          <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
-            aria-labelledby="confirmDeleteTitle" aria-hidden="true">
+          <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteTitle" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
               <div class="modal-content border-0">
                 <div class="modal-header bg-danger text-white">
@@ -130,51 +130,52 @@
 @endsection
 
 @push('styles')
-  <style>
-    #dt-ace thead th {
-      white-space: nowrap;
-      text-align: center;
-      vertical-align: middle;
-      min-width: 120px;
-    }
+<style>
+  #dt-ace { border-collapse: collapse !important; }
+  #dt-ace thead th { white-space: nowrap; text-align: center; vertical-align: middle; min-width: 120px; }
+  #dt-ace td .btn-group .btn { min-width: 32px; }
 
-    #dt-ace tfoot .ace-summary-row:first-child td {
-      border-top: 2px solid #333 !important;
-    }
+  #dt-ace tbody tr.ace-summary-divider td {
+    padding: 0 !important;
+    height: 0 !important;
+    line-height: 0 !important;
+    border-top:  2px solid #333 !important;
+    background: #fff !important;
+  }
 
-    #dt-ace tfoot .ace-summary-row td {
-      background: #fff;
-      font-size: .95rem;
-      line-height: 1.25;
-      padding: .5rem .75rem;
-      height: auto !important;
-      text-align: center;
-      vertical-align: middle;
-      border-top: 1px solid #dee2e6 !important;
-    }
+  #dt-ace tbody tr.ace-summary-row td {
+    background: #fff;
+    font-size: .95rem;
+    line-height: 1.25;
+    padding: .5rem .75rem;
+    text-align: center;
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6 !important;
+  }
 
-    #dt-ace tfoot .j-ok {
-      color: #2e7d32;
-      font-weight: 600;
-    }
+  #dt-ace tbody .j-ok { color: #2e7d32; font-weight: 600; }
+  #dt-ace tbody .j-ng { color: #c62828; font-weight: 600; }
 
-    #dt-ace tfoot .j-ng {
-      color: #c62828;
-      font-weight: 600;
-    }
-  </style>
+  #dt-ace tfoot, #dt-ace tfoot tr, #dt-ace tfoot td, #dt-ace tfoot th {
+    height: 0 !important;
+    line-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+  }
+</style>
 @endpush
 
 @push('scripts')
-  <script>
-    window.aceRoutes = {
-      data: "{{ route('ace.data') }}",
-      store: "{{ route('ace.store') }}",
-      base: "{{ url('ace') }}",
-      export: "{{ route('ace.export') }}",
-      summary: "{{ route('ace.summary') }}",
-      lookupProducts: "{{ route('lookup.products') }}"
-    };
-  </script>
-  <script src="{{ asset('assets/js/ace.js') }}" defer></script>
+<script>
+  window.aceRoutes = {
+    data: "{{ route('ace.data') }}",
+    store: "{{ route('ace.store') }}",
+    base: "{{ url('ace') }}",
+    export: "{{ route('ace.export') }}",
+    summary: "{{ route('ace.summary') }}",
+    lookupProducts: "{{ route('lookup.products') }}"
+  };
+</script>
+<script src="{{ asset('assets/js/ace.js') }}" defer></script>
 @endpush
