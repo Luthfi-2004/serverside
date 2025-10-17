@@ -203,5 +203,5 @@
 @endpush
 
 @push('scripts')
-  <script src="{{ asset('assets/js/standards.js') }}" defer></script>
+  <script src="{{ asset('assets/js/standard.js') }}" defer></script>
 @endpush
