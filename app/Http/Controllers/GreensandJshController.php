@@ -234,10 +234,8 @@ class GreensandJshController extends Controller
                 ->editColumn('date', function ($row) {
                     if (!$row->date)
                         return null;
-                    if ($row->date instanceof \DateTimeInterface)
-                        return $row->date->format('d-m-Y H:i:s');
                     try {
-                        return Carbon::parse($row->date)->format('d-m-Y H:i:s');
+                        return Carbon::parse($row->date)->format('Y-m-d H:i:s');
                     } catch (\Throwable $e) {
                         return (string) $row->date;
                     }

@@ -496,8 +496,16 @@ $(function () {
         { data: "shift", name: "shift" },
         { data: "mm", name: "mm" },
         { data: "mix_ke", name: "mix_ke" },
-        { data: "mix_start", name: "mix_start" },
-        { data: "mix_finish", name: "mix_finish" },
+        {
+            data: "mix_start",
+            name: "mix_start",
+            render: (d) => helpers.pickTime(d),
+        },
+        {
+            data: "mix_finish",
+            name: "mix_finish",
+            render: (d) => helpers.pickTime(d),
+        },
         { data: "mm_p", name: "mm_p" },
         { data: "mm_c", name: "mm_c" },
         { data: "mm_gt", name: "mm_gt" },

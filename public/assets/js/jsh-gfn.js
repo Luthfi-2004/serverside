@@ -1,32 +1,53 @@
+// jsh-gfn.js
 (function () {
-    // Guard jQuery
+    // guard jquery
     var $ = window.jQuery;
     if (!$) return;
 
-    // Global mode
-    var GFN_MODE = "create"; 
-
-    // Helper pad
-    function pad(n) {
-        return String(n).padStart(2, "0");
+    // btn helper
+    function getSubmitBtn() {
+        var $btn = $("#gsSubmitBtn");
+        if (!$btn.length) $btn = $("#form-greensand button[type='submit']");
+        return $btn;
     }
-    // Helper today
+
+    // lock tombol
+    function lockSubmit() {
+        var $btn = getSubmitBtn();
+        if (!$btn.length || $btn.prop("disabled")) return;
+        $btn.prop("disabled", true);
+        $btn.data("orig", $btn.html());
+        $btn.html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
+    }
+
+    // unlock tombol
+    function unlockSubmit() {
+        var $btn = getSubmitBtn();
+        if (!$btn.length) return;
+        var orig = $btn.data("orig");
+        if (orig) $btn.html(orig);
+        $btn.prop("disabled", false);
+    }
+
+    // global mode
+    var GFN_MODE = "create";
+
+    // num pad
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    // get today
     function today() {
         var d = new Date();
-        return (
-            d.getFullYear() +
-            "-" +
-            pad(d.getMonth() + 1) +
-            "-" +
-            pad(d.getDate())
-        );
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
     }
-    // Helper shift
+
+    // auto shift
     function autoShift() {
         var h = new Date().getHours();
         return h >= 6 && h < 17 ? "D" : h >= 22 || h < 6 ? "N" : "S";
     }
-    // Helper format
+
+    // num fmt
     function fmt(n, d) {
         if (d === void 0) d = 2;
         if (!isFinite(n)) n = 0;
@@ -36,7 +57,7 @@
         });
     }
 
-    // Select2 init
+    // init select2
     function initSelect2() {
         if (!$.fn.select2) return;
         $(".select2").select2({
@@ -49,11 +70,11 @@
         });
     }
 
-    // Datepicker init
+    // init datepicker
     function initDatepickers() {
         if (!$.fn.datepicker) return;
 
-        // Filter tanggal
+        // filter tanggal
         var $f = $("#fDate");
         if ($f.length) {
             $f.datepicker({
@@ -63,7 +84,7 @@
             });
         }
 
-        // Modal tanggal
+        // modal tanggal
         var $g = $("#gfnDate");
         if ($g.length) {
             var td = new Date();
@@ -78,7 +99,7 @@
         }
     }
 
-    // Seed filter
+    // seed filter
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
@@ -92,7 +113,7 @@
         }
     }
 
-    // Modal sinkron
+    // sync modal
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
@@ -110,7 +131,7 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
-    // Filter ikon
+    // filter ikon
     (function initFilterIcon() {
         var $c = $("#filterCollapse"),
             $i = $("#filterIcon"),
@@ -130,7 +151,7 @@
         $h.on("click", function () {});
     })();
 
-    // Hitung tabel
+    // tabel hitung
     function recalc() {
         var tb = document.getElementById("gfnBody");
         if (!tb) return;
@@ -176,7 +197,7 @@
         if (elTPI) elTPI.textContent = fmt(tpi, 1);
     }
 
-    // Chart render
+    // chart render
     function renderGFNCharts() {
         if (!$.plot) return;
 
@@ -203,32 +224,17 @@
             plot = $.plot(
                 $line,
                 [
-                    {
-                        data: lineData,
-                        label: "%",
-                        lines: { show: true, lineWidth: 2 },
-                        points: { show: true, radius: 3 },
-                    },
+                    { data: lineData, label: "%", lines: { show: true, lineWidth: 2 }, points: { show: true, radius: 3 } },
                 ],
                 {
                     xaxis: { ticks: ticks },
                     yaxis: { min: 0 },
-                    grid: {
-                        hoverable: true,
-                        clickable: true,
-                        borderWidth: 1,
-                        labelMargin: 10,
-                    },
+                    grid: { hoverable: true, clickable: true, borderWidth: 1, labelMargin: 10 },
                     tooltip: true,
-                    tooltipOpts: {
-                        content: "No %x: %y.2%%",
-                        defaultTheme: false,
-                    },
+                    tooltipOpts: { content: "No %x: %y.2%%", defaultTheme: false },
                 }
             );
-        } catch (e) {
-            return;
-        }
+        } catch (e) { return; }
 
         try {
             var ctx = plot.getCanvas().getContext("2d");
@@ -246,14 +252,14 @@
         } catch (_) {}
     }
 
-    // Resize debounce
+    // resize debounce
     var _resizeTimer = null;
     function onWinResize() {
         if (_resizeTimer) clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(renderGFNCharts, 150);
     }
 
-    // Alert host
+    // warn host
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
@@ -270,7 +276,8 @@
         }
         return host;
     }
-    // Alert tampil
+
+    // warn show
     function showWarn(msg) {
         var host = ensureWarnHost();
         if (host) {
@@ -280,35 +287,35 @@
             alert(msg || "Data sudah ada.");
         }
     }
-    // Alert sembunyi
+
+    // warn hide
     function hideWarn() {
         var host = document.getElementById("gfnDupAlert");
         if (host) host.classList.add("d-none");
     }
 
-    // Cek duplikat
+    // warn destroy
+    function destroyWarn() {
+        var host = document.getElementById("gfnDupAlert");
+        if (host && host.parentNode) host.parentNode.removeChild(host);
+    }
+
+    // dup check
     async function checkDuplicate(date, shift) {
         if (!(window.jshRoutes && jshRoutes.gfnExists)) return false;
-        var url =
-            jshRoutes.gfnExists +
-            "?date=" +
-            encodeURIComponent(date || "") +
-            (shift ? "&shift=" + encodeURIComponent(shift) : "");
+        var url = jshRoutes.gfnExists + "?date=" + encodeURIComponent(date || "") + (shift ? "&shift=" + encodeURIComponent(shift) : "");
         try {
-            var res = await fetch(url, {
-                headers: { Accept: "application/json" },
-                credentials: "same-origin",
-            });
+            var res = await fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" });
             if (!res.ok) return false;
             var j = await res.json();
             return !!(j.exists || j.found || j.duplicate || j.data_exists);
-        } catch (_) {
-            return false;
-        }
+        } catch (_) { return false; }
     }
 
-    // Edit modal
+    // edit prefill
     function openEditModalFromDisplay() {
+        destroyWarn();
+
         var dataObj = window.gfnChartData || {};
         var recap = dataObj.recap || null;
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
@@ -319,26 +326,22 @@
         var $m = $("#modal-greensand");
         var $form = $m.find("form#form-greensand");
 
-        // Judul tombol
+        // judul tombol
         $m.find(".modal-title").text("Edit Data GFN Green Sand");
-        $m.find('button[type="submit"]').html(
-            '<i class="ri-save-3-line me-1"></i> Update'
-        );
+        $m.find('button[type="submit"]').html('<i class="ri-save-3-line me-1"></i> Update');
 
-        // Action form
-        if (window.jshRoutes && jshRoutes.gfnUpdate) {
-            $form.attr("action", jshRoutes.gfnUpdate);
-        }
+        // action form
+        if (window.jshRoutes && jshRoutes.gfnUpdate) $form.attr("action", jshRoutes.gfnUpdate);
 
-        // Method override
+        // method put
         if ($form.find('input[name="_method"]').length === 0) {
             $('<input type="hidden" name="_method" value="PUT">').appendTo($form);
         } else {
             $form.find('input[name="_method"]').val("PUT");
         }
 
-        // Kunci tanggal
-        var $gd = $("#gfnDate");
+        // kunci tanggal
+        var $gd = $m.find("#gfnDate");
         var d = recap.gfn_date;
         $gd.val(d);
         if ($.fn.datepicker) {
@@ -350,8 +353,8 @@
             } catch (e) {}
         }
 
-        // Kunci shift
-        var $gs = $('select[name="shift"]');
+        // kunci shift
+        var $gs = $m.find('select[name="shift"]');
         $gs.find("option").prop("disabled", false);
         $gs.find("option").each(function () {
             var v = $(this).val();
@@ -359,10 +362,9 @@
         });
         $gs.val(recap.shift).trigger("change");
 
-        // Estimasi gram
-        var totalGram =
-            recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
-        $("#gfnBody tr[data-row]").each(function (i, tr) {
+        // estimasi gram
+        var totalGram = recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
+        $m.find("#gfnBody tr[data-row]").each(function (i, tr) {
             var pct = rows[i] ? parseFloat(rows[i].percentage || 0) : 0;
             var g = totalGram > 0 ? (pct / 100.0) * totalGram : 0;
             var inp = tr.querySelector(".gfn-gram");
@@ -371,23 +373,21 @@
 
         recalc();
         $m.modal("show");
+        unlockSubmit();
     }
 
-    // Input recalc
+    // input recalc
     document.addEventListener("input", function (e) {
         if (e.target && e.target.classList.contains("gfn-gram")) recalc();
     });
-    // Input clamp
+
+    // input clamp
     ["blur", "change"].forEach(function (ev) {
         document.addEventListener(ev, function (e) {
             if (e.target && e.target.classList.contains("gfn-gram")) {
                 var s = (e.target.value || "").trim().replace(",", ".");
                 var n = parseFloat(s);
-                if (!Number.isFinite(n)) {
-                    e.target.value = "";
-                    recalc();
-                    return;
-                }
+                if (!Number.isFinite(n)) { e.target.value = ""; recalc(); return; }
                 if (n > 1000) n = 1000;
                 if (n < 0) n = 0;
                 e.target.value = String(n);
@@ -396,48 +396,54 @@
         });
     });
 
-    // Flag pembuka
+    // modal flag
     if (window.openModalGFN) {
         $(function () {
+            destroyWarn();
             $("#modal-greensand").modal("show");
             recalc();
+            unlockSubmit();
         });
     }
 
-    // Tombol hapus
+    // delete fill
     $(document).on("click", ".btn-delete-gs", function () {
-        var d = $(this).data("gfn-date"),
-            s = $(this).data("shift");
+        destroyWarn();
+        var d = $(this).data("gfn-date"), s = $(this).data("shift");
         $("#delDateText").text(d || "—");
         $("#delShiftText").text(s || "—");
         $("#delDate").val(d || "");
         $("#delShift").val(s || "");
     });
 
-    // Tombol edit
+    // edit click
     $(document).on("click", ".btn-edit-gs", function () {
+        destroyWarn();
         openEditModalFromDisplay();
     });
 
-    // Modal shown
+    // modal shown
     $(document).on("shown.bs.modal", "#modal-greensand", function () {
-        if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
-            $("#gfnDate")
-                .datepicker({
-                    format: "yyyy-mm-dd",
-                    autoclose: true,
-                    orientation: "bottom",
-                    container: "#modal-greensand",
-                    startDate: new Date(),
-                    endDate: new Date(),
-                })
-                .datepicker("setDate", new Date());
+        hideWarn();
+        unlockSubmit();
+
+        var $m = $("#modal-greensand");
+        var $gd = $m.find("#gfnDate");
+        var $gs = $m.find('select[name="shift"]');
+
+        if ($.fn.datepicker && $gd.data("datepicker") == null) {
+            $gd.datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true,
+                orientation: "bottom",
+                container: "#modal-greensand",
+                startDate: new Date(),
+                endDate: new Date(),
+            }).datepicker("setDate", new Date());
         }
+
         if (GFN_MODE === "create") {
             syncModalFromFilter();
-
-            var $gd = $("#gfnDate"),
-                $gs = $('select[name="shift"]');
 
             if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
                 $gd.val(today());
@@ -456,67 +462,61 @@
         }
     });
 
-    // Modal hidden
+    // modal clear
     $(document).on("hidden.bs.modal", "#modal-greensand", function () {
-        var $m = $(this),
-            $form = $m.find("form#form-greensand");
+        destroyWarn();
+        unlockSubmit();
+
+        var $m = $("#modal-greensand");
+        var $form = $m.find("form#form-greensand");
 
         $m.find(".gfn-gram").val("");
         var $gd = $m.find("#gfnDate");
         $gd.val("");
-        if ($.fn.datepicker) {
-            try { $gd.datepicker("update", ""); } catch (_) {}
-        }
+        if ($.fn.datepicker) { try { $gd.datepicker("update", ""); } catch (_) {} }
         $m.find('select[name="shift"]').val("").trigger("change.select2");
+
         $m.find(".gfn-percent").text("0,00");
         $m.find(".gfn-percent-index").text("0,0");
         $("#gfn-total-gram").text("0,00");
         $("#gfn-total-percent").text("100,00");
         $("#gfn-total-percent-index").text("0,0");
 
-        // Reset mode
+        // reset mode
         GFN_MODE = "create";
         $m.find(".modal-title").text("Form Add Data GFN Green Sand");
-        $m.find('button[type="submit"]').html(
-            '<i class="ri-checkbox-circle-line me-1"></i> Submit'
-        );
+        $m.find('button[type="submit"]').html('<i class="ri-checkbox-circle-line me-1"></i> Submit');
 
-        if ($form.find('input[name="_method"]').length) {
-            $form.find('input[name="_method"]').remove();
-        }
-        if (window.jshRoutes && jshRoutes.gfnStore) {
-            $form.attr("action", jshRoutes.gfnStore);
-        }
+        if ($form.find('input[name="_method"]').length) $form.find('input[name="_method"]').remove();
+        if (window.jshRoutes && jshRoutes.gfnStore) $form.attr("action", jshRoutes.gfnStore);
     });
 
-    // Submit form
+    // submit form
     $(document).on("submit", "#form-greensand", async function (e) {
         hideWarn();
+        lockSubmit();
 
         var $form = $(this);
         var d = ($form.find("#gfnDate").val() || "").trim();
         var s = ($form.find('select[name="shift"]').val() || "").trim();
         if (!d) return;
 
-        var isEdit =
-            $form.find('input[name="_method"][value="PUT"]').length > 0;
-        if (isEdit) return; // biar langsung submit PUT
+        var isEdit = $form.find('input[name="_method"][value="PUT"]').length > 0;
+        if (isEdit) return;
 
         e.preventDefault();
         var dup = await checkDuplicate(d, s);
+
         if (dup) {
-            showWarn(
-                "Data untuk tanggal " +
-                    d +
-                    (s ? " (shift " + s + ")" : "") +
-                    " sudah ada. Hapus data tersebut dulu sebelum input ulang."
-            );
+            showWarn("Data untuk tanggal " + d + (s ? " (shift " + s + ")" : "") + " sudah ada. Hapus data tersebut dulu sebelum input ulang.");
+            unlockSubmit();
             return;
         }
+
         this.submit();
     });
 
-    // DOM ready
+    // dom ready
     $(function () {
         initSelect2();
         initDatepickers();
@@ -525,6 +525,7 @@
         var btn = document.getElementById("btn-add-greensand");
         if (btn) {
             btn.addEventListener("click", function () {
+                destroyWarn();
                 setTimeout(function () {
                     var el = document.getElementById("modal-greensand");
                     if (el) $(el).modal("show");

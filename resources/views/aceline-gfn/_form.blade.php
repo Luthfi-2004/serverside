@@ -1,6 +1,7 @@
 <div class="modal fade" id="modal-greensand" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-    <form id="form-greensand" action="{{ route('acelinegfn.store') }}" method="POST" class="modal-content" autocomplete="off">
+    <form id="form-greensand" action="{{ route('acelinegfn.store') }}" method="POST" class="modal-content"
+      autocomplete="off">
       @csrf
       <div class="modal-header py-2">
         <h5 class="modal-title">Form Add Data GFN ACE LINE</h5>
@@ -75,7 +76,7 @@
         <button type="button" class="btn btn-outline-secondary mr-2" data-dismiss="modal">
           <i class="ri-close-line me-1"></i> Cancel
         </button>
-        <button type="submit" class="btn btn-success">
+        <button id="gsSubmitBtn" type="submit" class="btn btn-success d-flex align-items-center">
           <i class="ri-checkbox-circle-line me-1"></i> Submit
         </button>
       </div>

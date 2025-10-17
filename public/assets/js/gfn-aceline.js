@@ -1,35 +1,53 @@
+// gfn-aceline.js
 (function () {
-    // Guard jQuery
+    // guard jquery
     var $ = window.jQuery;
     if (!$) return;
 
-    // Global mode
+    // btn helper
+    function getSubmitBtn() {
+        var $btn = $("#gsSubmitBtn");
+        if (!$btn.length) $btn = $("#form-greensand button[type='submit']");
+        return $btn;
+    }
+
+    // lock tombol
+    function lockSubmit() {
+        var $btn = getSubmitBtn();
+        if (!$btn.length || $btn.prop("disabled")) return;
+        $btn.prop("disabled", true);
+        $btn.data("orig", $btn.html());
+        $btn.html('<span class="spinner-border spinner-border-sm mr-1"></span> Saving...');
+    }
+
+    // unlock tombol
+    function unlockSubmit() {
+        var $btn = getSubmitBtn();
+        if (!$btn.length) return;
+        var orig = $btn.data("orig");
+        if (orig) $btn.html(orig);
+        $btn.prop("disabled", false);
+    }
+
+    // global mode
     var GFN_MODE = "create"; // create | edit
 
-    // Helper pad
-    function pad(n) {
-        return String(n).padStart(2, "0");
-    }
+    // num pad
+    function pad(n) { return String(n).padStart(2, "0"); }
 
-    // Helper today
+    // get today
     function today() {
         var d = new Date();
-        return (
-            d.getFullYear() +
-            "-" +
-            pad(d.getMonth() + 1) +
-            "-" +
-            pad(d.getDate())
-        );
+        return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
     }
 
-    // Helper shift
+    // auto shift
     function autoShift() {
         var h = new Date().getHours();
         return h >= 6 && h < 17 ? "D" : h >= 22 || h < 6 ? "N" : "S";
     }
 
-    // Helper format
+    // num fmt
     function fmt(n, d) {
         if (d === void 0) d = 2;
         if (!isFinite(n)) n = 0;
@@ -39,7 +57,7 @@
         });
     }
 
-    // Select2 init
+    // init select2
     function initSelect2() {
         if (!$.fn.select2) return;
         $(".select2").select2({
@@ -52,11 +70,11 @@
         });
     }
 
-    // Datepicker init
+    // init datepicker
     function initDatepickers() {
         if (!$.fn.datepicker) return;
 
-        // Filter bebas
+        // filter bebas
         var $f = $("#fDate");
         if ($f.length) {
             $f.datepicker({
@@ -66,7 +84,7 @@
             });
         }
 
-        // Modal kunci
+        // modal kunci
         var $g = $("#gfnDate");
         if ($g.length) {
             var todayDate = new Date();
@@ -81,7 +99,7 @@
         }
     }
 
-    // Filter seed
+    // seed filter
     function seedFilter() {
         var $fd = $("#filterForm #fDate");
         var $fs = $('#filterForm select[name="shift"]');
@@ -95,7 +113,7 @@
         }
     }
 
-    // Modal sync
+    // sync modal
     function syncModalFromFilter() {
         var $m = $("#modal-greensand");
         if (!$m.length) return;
@@ -113,7 +131,7 @@
         if (sh) $gs.val(sh).trigger("change");
     }
 
-    // Filter ikon
+    // filter ikon
     (function initFilterIcon() {
         var $c = $("#filterCollapse");
         var $i = $("#filterIcon");
@@ -121,24 +139,17 @@
 
         function setIcon(open) {
             if (!$i.length) return;
-            $i.removeClass("ri-add-line ri-subtract-line").addClass(
-                open ? "ri-subtract-line" : "ri-add-line"
-            );
+            $i.removeClass("ri-add-line ri-subtract-line").addClass(open ? "ri-subtract-line" : "ri-add-line");
         }
 
         if (!$c.length) return;
         setIcon($c.hasClass("show"));
-
-        $c.on("shown.bs.collapse", function () {
-            setIcon(true);
-        });
-        $c.on("hidden.bs.collapse", function () {
-            setIcon(false);
-        });
+        $c.on("shown.bs.collapse", function () { setIcon(true); });
+        $c.on("hidden.bs.collapse", function () { setIcon(false); });
         $h.on("click", function () {});
     })();
 
-    // Flash auto
+    // flash auto
     function initAutoDismissFlash() {
         $(".alert.auto-dismiss").each(function () {
             var $el = $(this);
@@ -146,20 +157,13 @@
             if (!Number.isFinite(ms) || ms < 0) ms = 3000;
 
             setTimeout(function () {
-                if (typeof $.fn.alert === "function") {
-                    try {
-                        $el.alert("close");
-                        return;
-                    } catch (e) {}
-                }
-                $el.fadeOut(200, function () {
-                    $(this).remove();
-                });
+                if (typeof $.fn.alert === "function") { try { $el.alert("close"); return; } catch (e) {} }
+                $el.fadeOut(200, function () { $(this).remove(); });
             }, ms);
         });
     }
 
-    // Tabel hitung
+    // tabel hitung
     function recalc() {
         var tb = document.getElementById("gfnBody");
         if (!tb) return;
@@ -168,23 +172,16 @@
         var tg = 0;
 
         rows.forEach(function (tr) {
-            var raw =
-                (tr.querySelector(".gfn-gram") &&
-                    tr.querySelector(".gfn-gram").value) ||
-                "0";
+            var raw = (tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0";
             var g = parseFloat(String(raw).replace(",", "."));
             if (!isNaN(g)) tg += g;
         });
 
-        var tp = 0,
-            tpi = 0;
+        var tp = 0, tpi = 0;
 
         rows.forEach(function (tr) {
             var idx = parseFloat(tr.dataset.index || "0");
-            var raw =
-                (tr.querySelector(".gfn-gram") &&
-                    tr.querySelector(".gfn-gram").value) ||
-                "0";
+            var raw = (tr.querySelector(".gfn-gram") && tr.querySelector(".gfn-gram").value) || "0";
             var g = parseFloat(String(raw).replace(",", "."));
             var p = tg > 0 ? (g / tg) * 100 : 0;
             var pi = p * idx;
@@ -201,13 +198,12 @@
         var elTG = document.getElementById("gfn-total-gram");
         var elTP = document.getElementById("gfn-total-percent");
         var elTPI = document.getElementById("gfn-total-percent-index");
-
         if (elTG) elTG.textContent = fmt(tg, 2);
         if (elTP) elTP.textContent = fmt(tp, 2);
         if (elTPI) elTPI.textContent = fmt(tpi, 1);
     }
 
-    // Chart render
+    // chart render
     function renderGFNCharts() {
         if (!$.plot) return;
 
@@ -216,14 +212,9 @@
 
         var dataObj = window.gfnChartData || {};
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
-        if (!rows.length) {
-            $line.empty();
-            return;
-        }
+        if (!rows.length) { $line.empty(); return; }
 
-        var ticks = [];
-        var lineData = [];
-
+        var ticks = [], lineData = [];
         for (var i = 0; i < rows.length; i++) {
             var x = i + 1;
             var pct = parseFloat(rows[i] && rows[i].percentage) || 0;
@@ -235,33 +226,16 @@
         try {
             plot = $.plot(
                 $line,
-                [
-                    {
-                        data: lineData,
-                        label: "%",
-                        lines: { show: true, lineWidth: 2 },
-                        points: { show: true, radius: 3 },
-                    },
-                ],
+                [{ data: lineData, label: "%", lines: { show: true, lineWidth: 2 }, points: { show: true, radius: 3 } }],
                 {
                     xaxis: { ticks: ticks },
                     yaxis: { min: 0 },
-                    grid: {
-                        hoverable: true,
-                        clickable: true,
-                        borderWidth: 1,
-                        labelMargin: 10,
-                    },
+                    grid: { hoverable: true, clickable: true, borderWidth: 1, labelMargin: 10 },
                     tooltip: true,
-                    tooltipOpts: {
-                        content: "No %x: %y.2%%",
-                        defaultTheme: false,
-                    },
+                    tooltipOpts: { content: "No %x: %y.2%%", defaultTheme: false },
                 }
             );
-        } catch (e) {
-            return;
-        }
+        } catch (e) { return; }
 
         try {
             var ctx = plot.getCanvas().getContext("2d");
@@ -279,21 +253,19 @@
         } catch (_) {}
     }
 
-    // Resize debounce
+    // resize debounce
     var _resizeTimer = null;
     function onWinResize() {
         if (_resizeTimer) clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(renderGFNCharts, 150);
     }
 
-    // Warn host
+    // warn host
     function ensureWarnHost() {
         var m = document.getElementById("modal-greensand");
         if (!m) return null;
-
         var box = m.querySelector(".modal-body");
         if (!box) return null;
-
         var host = m.querySelector("#gfnDupAlert");
         if (!host) {
             host = document.createElement("div");
@@ -306,52 +278,44 @@
         return host;
     }
 
-    // Warn show
+    // warn show
     function showWarn(msg) {
         var host = ensureWarnHost();
-        if (host) {
-            host.textContent = msg || "Data sudah ada.";
-            host.classList.remove("d-none");
-        } else {
-            alert(msg || "Data sudah ada.");
-        }
+        if (host) { host.textContent = msg || "Data sudah ada."; host.classList.remove("d-none"); }
+        else { alert(msg || "Data sudah ada."); }
     }
 
-    // Warn hide
+    // warn hide
     function hideWarn() {
         var host = document.getElementById("gfnDupAlert");
         if (host) host.classList.add("d-none");
     }
 
-    // Dup check
+    // warn destroy
+    function destroyWarn() {
+        var host = document.getElementById("gfnDupAlert");
+        if (host && host.parentNode) host.parentNode.removeChild(host);
+    }
+
+    // dup check
     async function checkDuplicate(date, shift) {
         if (!(window.aceRoutes && aceRoutes.gfnExists)) return false;
-
-        var url =
-            aceRoutes.gfnExists +
-            "?date=" +
-            encodeURIComponent(date || "") +
-            (shift ? "&shift=" + encodeURIComponent(shift) : "");
-
+        var url = aceRoutes.gfnExists + "?date=" + encodeURIComponent(date || "") + (shift ? "&shift=" + encodeURIComponent(shift) : "");
         try {
-            var res = await fetch(url, {
-                headers: { Accept: "application/json" },
-                credentials: "same-origin",
-            });
+            var res = await fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" });
             if (!res.ok) return false;
             var j = await res.json();
             return !!(j.exists || j.found || j.duplicate || j.data_exists);
-        } catch (_) {
-            return false;
-        }
+        } catch (_) { return false; }
     }
 
-    // Edit prefill
+    // edit prefill
     function openEditModalFromDisplay() {
+        destroyWarn();
+
         var dataObj = window.gfnChartData || {};
         var recap = dataObj.recap || null;
         var rows = Array.isArray(dataObj.rows) ? dataObj.rows : [];
-
         if (!recap || !rows.length) return;
 
         GFN_MODE = "edit";
@@ -359,26 +323,17 @@
         var $m = $("#modal-greensand");
         var $form = $m.find("form#form-greensand");
 
-        // Judul tombol
+        // judul tombol
         $m.find(".modal-title").text("Edit Data GFN ACE LINE");
-        $m.find('button[type="submit"]').html(
-            '<i class="ri-save-3-line me-1"></i> Update'
-        );
+        $m.find('button[type="submit"]').html('<i class="ri-save-3-line me-1"></i> Update');
 
-        // Aksi metode
-        if (window.aceRoutes && aceRoutes.gfnUpdate) {
-            $form.attr("action", aceRoutes.gfnUpdate);
-        }
-        if ($form.find('input[name="_method"]').length === 0) {
-            $('<input type="hidden" name="_method" value="PUT">').appendTo(
-                $form
-            );
-        } else {
-            $form.find('input[name="_method"]').val("PUT");
-        }
+        // aksi metode
+        if (window.aceRoutes && aceRoutes.gfnUpdate) $form.attr("action", aceRoutes.gfnUpdate);
+        if ($form.find('input[name="_method"]').length === 0) $('<input type="hidden" name="_method" value="PUT">').appendTo($form);
+        else $form.find('input[name="_method"]').val("PUT");
 
-        // Date kunci
-        var $gd = $("#gfnDate");
+        // kunci tanggal
+        var $gd = $m.find("#gfnDate");
         var d = recap.gfn_date;
         $gd.val(d);
         if ($.fn.datepicker) {
@@ -390,8 +345,8 @@
             } catch (e) {}
         }
 
-        // Shift kunci
-        var $gs = $('select[name="shift"]');
+        // kunci shift
+        var $gs = $m.find('select[name="shift"]');
         $gs.find("option").prop("disabled", false);
         $gs.find("option").each(function () {
             var v = $(this).val();
@@ -399,50 +354,32 @@
         });
         $gs.val(recap.shift).trigger("change");
 
-        // Isi gram tampak
-        var $tb = $("#gfnBody");
-        $tb.find("tr[data-row]").each(function (i, tr) {
-            var gram = 0;
-            if (rows[i] && typeof rows[i].mesh !== "undefined") {
-                gram = rows[i].gram || 0; // catatan awal
-            }
-        });
-
-        // Gram estimasi
-        var totalGram =
-            recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
-        var rowsData = rows;
-        $("#gfnBody tr[data-row]").each(function (i, tr) {
-            var pct = rowsData[i] ? parseFloat(rowsData[i].percentage || 0) : 0;
+        // estimasi gram
+        var totalGram = recap && recap.total_gram ? parseFloat(recap.total_gram) : 0;
+        $m.find("#gfnBody tr[data-row]").each(function (i, tr) {
+            var pct = rows[i] ? parseFloat(rows[i].percentage || 0) : 0;
             var g = totalGram > 0 ? (pct / 100.0) * totalGram : 0;
             var inp = tr.querySelector(".gfn-gram");
             if (inp) inp.value = String(Math.round(g * 100) / 100);
         });
 
         recalc();
-
-        // Modal tampil
         $m.modal("show");
+        unlockSubmit();
     }
 
-    // Input recalc
+    // input recalc
     document.addEventListener("input", function (e) {
-        if (e.target && e.target.classList.contains("gfn-gram")) {
-            recalc();
-        }
+        if (e.target && e.target.classList.contains("gfn-gram")) recalc();
     });
 
-    // Input clamp
+    // input clamp
     ["blur", "change"].forEach(function (ev) {
         document.addEventListener(ev, function (e) {
             if (e.target && e.target.classList.contains("gfn-gram")) {
                 var s = (e.target.value || "").trim().replace(",", ".");
                 var n = parseFloat(s);
-                if (!Number.isFinite(n)) {
-                    e.target.value = "";
-                    recalc();
-                    return;
-                }
+                if (!Number.isFinite(n)) { e.target.value = ""; recalc(); return; }
                 if (n > 1000) n = 1000;
                 if (n < 0) n = 0;
                 e.target.value = String(n);
@@ -451,16 +388,19 @@
         });
     });
 
-    // Modal flag
+    // modal flag
     if (window.openModalGFN) {
         $(function () {
+            destroyWarn();
             $("#modal-greensand").modal("show");
             recalc();
+            unlockSubmit();
         });
     }
 
-    // Delete fill
+    // delete fill
     $(document).on("click", ".btn-delete-gs", function () {
+        destroyWarn();
         var d = $(this).data("gfn-date");
         var s = $(this).data("shift");
         $("#delDateText").text(d || "—");
@@ -469,31 +409,33 @@
         $("#delShift").val(s || "");
     });
 
-    // Edit click
+    // edit click
     $(document).on("click", ".btn-edit-gs", function () {
+        destroyWarn();
         openEditModalFromDisplay();
     });
 
-    // Modal shown
+    // modal shown
     $(document).on("shown.bs.modal", "#modal-greensand", function () {
-        var $gd = $("#gfnDate");
-        var $gs = $('select[name="shift"]');
+        hideWarn();
+        unlockSubmit();
 
-        if ($.fn.datepicker && $("#gfnDate").data("datepicker") == null) {
-            $("#gfnDate")
-                .datepicker({
-                    format: "yyyy-mm-dd",
-                    autoclose: true,
-                    orientation: "bottom",
-                    container: "#modal-greensand",
-                    startDate: new Date(),
-                    endDate: new Date(),
-                })
-                .datepicker("setDate", new Date());
+        var $m = $("#modal-greensand");
+        var $gd = $m.find("#gfnDate");
+        var $gs = $m.find('select[name="shift"]');
+
+        if ($.fn.datepicker && $gd.data("datepicker") == null) {
+            $gd.datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true,
+                orientation: "bottom",
+                container: "#modal-greensand",
+                startDate: new Date(),
+                endDate: new Date(),
+            }).datepicker("setDate", new Date());
         }
 
         if (GFN_MODE === "create") {
-            // Create sinkron
             syncModalFromFilter();
 
             if ($gd.length && (!$gd.val() || !$gd.val().trim())) {
@@ -513,19 +455,18 @@
         }
     });
 
-    // Modal clear
+    // modal clear
     $(document).on("hidden.bs.modal", "#modal-greensand", function () {
-        var $m = $(this);
+        destroyWarn();
+        unlockSubmit();
+
+        var $m = $("#modal-greensand");
         var $form = $m.find("form#form-greensand");
 
         $m.find(".gfn-gram").val("");
         var $gd = $m.find("#gfnDate");
         $gd.val("");
-        if ($.fn.datepicker) {
-            try {
-                $gd.datepicker("update", "");
-            } catch (_) {}
-        }
+        if ($.fn.datepicker) { try { $gd.datepicker("update", ""); } catch (_) {} }
         $m.find('select[name="shift"]').val("").trigger("change.select2");
 
         $m.find(".gfn-percent").text("0,00");
@@ -534,49 +475,40 @@
         $("#gfn-total-percent").text("100,00");
         $("#gfn-total-percent-index").text("0,0");
 
-        // Mode reset
+        // mode reset
         GFN_MODE = "create";
         $m.find(".modal-title").text("Form Add Data GFN ACE LINE");
-        $m.find('button[type="submit"]').html(
-            '<i class="ri-checkbox-circle-line me-1"></i> Submit'
-        );
+        $m.find('button[type="submit"]').html('<i class="ri-checkbox-circle-line me-1"></i> Submit');
 
-        if ($form.find('input[name="_method"]').length) {
-            $form.find('input[name="_method"]').remove();
-        }
-        if (window.aceRoutes && aceRoutes.gfnStore) {
-            $form.attr("action", aceRoutes.gfnStore);
-        }
+        if ($form.find('input[name="_method"]').length) $form.find('input[name="_method"]').remove();
+        if (window.aceRoutes && aceRoutes.gfnStore) $form.attr("action", aceRoutes.gfnStore);
     });
 
-    // Submit guard
+    // submit guard
     $(document).on("submit", "#form-greensand", async function (e) {
         hideWarn();
+        lockSubmit();
 
         var $form = $(this);
         var d = ($form.find("#gfnDate").val() || "").trim();
         var s = ($form.find('select[name="shift"]').val() || "").trim();
         if (!d) return;
 
-        var isEdit =
-            $form.find('input[name="_method"][value="PUT"]').length > 0;
-        if (isEdit) return; // langsung submit
+        var isEdit = $form.find('input[name="_method"][value="PUT"]').length > 0;
+        if (isEdit) return;
 
         e.preventDefault();
         var dup = await checkDuplicate(d, s);
         if (dup) {
-            showWarn(
-                "Data untuk tanggal " +
-                    d +
-                    (s ? " (shift " + s + ")" : "") +
-                    " sudah ada. Hapus data tersebut dulu sebelum input ulang."
-            );
+            showWarn("Data untuk tanggal " + d + (s ? " (shift " + s + ")" : "") + " sudah ada. Hapus data tersebut dulu sebelum input ulang.");
+            unlockSubmit();
             return;
         }
+
         this.submit();
     });
 
-    // DOM ready
+    // dom ready
     $(function () {
         initSelect2();
         initDatepickers();
@@ -586,6 +518,7 @@
         var btn = document.getElementById("btn-add-greensand");
         if (btn) {
             btn.addEventListener("click", function () {
+                destroyWarn();
                 setTimeout(function () {
                     var el = document.getElementById("modal-greensand");
                     if (el) $(el).modal("show");

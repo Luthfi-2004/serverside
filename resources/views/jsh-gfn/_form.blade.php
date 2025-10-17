@@ -81,7 +81,7 @@
                     data-dismiss="modal">
                     <i class="ri-close-line me-1"></i> Cancel
                 </button>
-                <button type="submit" class="btn btn-success d-flex align-items-center">
+                <button id="gsSubmitBtn" type="submit" class="btn btn-success d-flex align-items-center">
                     <i class="ri-checkbox-circle-line me-1"></i> Submit
                 </button>
             </div>
